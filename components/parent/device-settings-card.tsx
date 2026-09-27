@@ -65,7 +65,7 @@ export function DeviceSettingsCard() {
             <DialogDescription className="leading-relaxed">
               {cleared
                 ? 'Every flower is white again and the garden is empty.'
-                : 'Drafts and every flower in the garden will be removed from this device. This cannot be undone.'}
+                : 'Drafts and every flower in the garden will be removed from this device. This cannot be undone. Copies saved to a parent account with cloud saving stay there.'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="rounded-b-3xl">

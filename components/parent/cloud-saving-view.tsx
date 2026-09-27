@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Cloud, CloudOff, LogIn, RotateCw } from 'lucide-react'
+import { CloudSyncStatus } from '@/components/parent/cloud-sync-status'
 import { ConsentNoticeArticle, NoticeSections, formatConsentDate } from '@/components/parent/consent-notice'
 import { FreshSignInPrompt } from '@/components/parent/fresh-sign-in-prompt'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -26,6 +27,7 @@ import {
   type ConsentNotice,
 } from '@/lib/cloud-consent/client'
 import { freshSignInRemainingMs } from '@/lib/cloud-consent/notice'
+import { cloudSync } from '@/lib/cloud-sync/client'
 import { cn } from '@/lib/utils'
 
 const TICK_MS = 15_000
@@ -171,6 +173,7 @@ function SignedInCloudSaving({ userId, email }: { userId: string; email: string 
           notice={data.notice}
           consent={data.consent}
           remainingMs={remainingMs}
+          now={now}
           onChanged={onChanged}
         />
       ) : (
@@ -208,7 +211,11 @@ function ConsentStep({ email, notice, outdatedConsent, remainingMs, signedInMinu
     setPending(true)
     try {
       await giveCloudConsent(notice.version)
-      await onChanged({ kind: 'success', message: 'Cloud saving is on. Thank you.' })
+      void cloudSync.syncNow()
+      await onChanged({
+        kind: 'success',
+        message: 'Cloud saving is on. Garden pictures on this device are being copied to your account.',
+      })
     } catch (err) {
       if (err instanceof CloudConsentError && err.code === 'recent_sign_in_required') setServerSaysStale(true)
       else setError(errorMessage(err))
@@ -293,10 +300,11 @@ type CloudSavingOnProps = {
   notice: ConsentNotice
   consent: ActiveConsent
   remainingMs: number
+  now: number
   onChanged: (flash: Flash | null) => Promise<void>
 }
 
-function CloudSavingOn({ userId, email, notice, consent, remainingMs, onChanged }: CloudSavingOnProps) {
+function CloudSavingOn({ userId, email, notice, consent, remainingMs, now, onChanged }: CloudSavingOnProps) {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [needsFreshLink, setNeedsFreshLink] = useState(false)
   const [pending, setPending] = useState(false)
@@ -311,6 +319,7 @@ function CloudSavingOn({ userId, email, notice, consent, remainingMs, onChanged 
   const turnOff = async () => {
     setError(null)
     setPending(true)
+    await cloudSync.pause()
     try {
       await disableCloudSaving(userId)
       setConfirmOpen(false)
@@ -330,6 +339,7 @@ function CloudSavingOn({ userId, email, notice, consent, remainingMs, onChanged 
       }
     } finally {
       setPending(false)
+      void cloudSync.resume()
     }
   }
 
@@ -352,10 +362,7 @@ function CloudSavingOn({ userId, email, notice, consent, remainingMs, onChanged 
             </p>
           </div>
         </div>
-        <p className="rounded-2xl bg-secondary p-4 text-sm leading-relaxed">
-          Copying garden pictures to your account is the next part being built. Until it ships, nothing has been
-          uploaded and pictures stay on this device.
-        </p>
+        <CloudSyncStatus now={now} />
         <Button
           variant="outline"
           onClick={requestTurnOff}

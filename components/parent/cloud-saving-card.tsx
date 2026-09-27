@@ -5,13 +5,29 @@ import { ParentCard } from '@/components/parent/parent-card'
 import { buttonVariants } from '@/components/ui/button'
 import { useAuthState } from '@/lib/auth/client'
 import { useCloudConsent } from '@/lib/cloud-consent/client'
+import { useCloudSync } from '@/lib/cloud-sync/client'
 import { cn } from '@/lib/utils'
 
 export function CloudSavingCard() {
   const auth = useAuthState()
   const { data, error } = useCloudConsent(auth.user?.id ?? null)
 
+  const { summary } = useCloudSync()
   const isOn = Boolean(data?.notice && data.consent?.noticeVersion === data.notice.version)
+  const syncLine =
+    summary.state === 'synced'
+      ? summary.total === 0
+        ? 'Garden pictures will be copied as they’re added.'
+        : summary.total === 1
+          ? 'Your garden picture is saved.'
+          : `All ${summary.total} garden pictures saved.`
+      : summary.state === 'syncing'
+        ? `Saving ${summary.saved} of ${summary.total}…`
+        : summary.state === 'waiting' || summary.state === 'offline'
+          ? `${summary.waiting} of ${summary.total} not saved yet.`
+          : summary.state === 'unavailable'
+            ? 'Couldn’t check the cloud right now.'
+            : null
   const description =
     auth.status === 'loading' || (auth.status === 'signed-in' && !data && !error)
       ? 'Checking…'
@@ -20,7 +36,7 @@ export function CloudSavingCard() {
         : error
           ? 'We couldn’t check cloud saving right now.'
           : isOn
-            ? 'On. You gave permission with a recent sign-in.'
+            ? `On. ${syncLine ?? 'Checking your cloud pictures…'}`
             : 'Off. Pictures stay on this device only.'
 
   return (

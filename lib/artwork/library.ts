@@ -35,12 +35,30 @@ export const STORAGE_KEYS = Object.freeze({
   drafts: 'lm:v2:drafts',
   gallery: 'lm:v2:gallery',
   history: 'lm:v2:history',
+  /** Garden pictures a child took out on this device. Cloud sync deletes their cloud copies. */
+  removed: 'lm:v2:removed',
+  /** Pictures a grown-up cleared from this device. Cloud sync won't copy them back here. */
+  dismissed: 'lm:v2:dismissed',
 })
 
 const KEY_LIST = [STORAGE_KEYS.artworks, STORAGE_KEYS.drafts, STORAGE_KEYS.gallery, STORAGE_KEYS.history] as const
 
 /** Per flower, per direction. Keeps the saved history small enough for on-device storage. */
 export const MAX_HISTORY = 50
+
+export const MAX_SYNC_MARKS = 1000
+const SYNC_MARK_TTL_MS = 180 * 24 * 60 * 60 * 1000
+
+/** A garden picture as stored in the parent's cloud account. */
+export type CloudArtwork = Readonly<{
+  id: string
+  templateId: string
+  templateVersion: number
+  fills: unknown
+  createdAt: number
+}>
+
+export type SyncMarks = Readonly<{ removed: readonly string[]; dismissed: readonly string[] }>
 
 const EDIT_KINDS = new Set<string>(['fill', 'erase', 'clear'])
 
@@ -425,22 +443,99 @@ export function createArtworkLibrary({
     return commit([[STORAGE_KEYS.gallery, [artworkId, ...gallery]]])
   }
 
-  const isActiveDraft = (artworkId: string) => Object.values(getState().drafts).includes(artworkId)
+  /** Adds ids to a mark list, dropping marks older than the TTL and keeping the newest MAX_SYNC_MARKS. */
+  const markWrite = (s: KeyValueStorage, key: string, ids: readonly string[]): Write => {
+    const t = now()
+    const marks = readRawMap(s, key)
+    for (const id of ids) marks[id] = t
+    const kept = Object.entries(marks)
+      .filter((entry): entry is [string, number] => typeof entry[1] === 'number' && t - entry[1] < SYNC_MARK_TTL_MS)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, MAX_SYNC_MARKS)
+    return [key, Object.fromEntries(kept)]
+  }
 
-  /** Drops gallery membership. A finished artwork is deleted; an open draft keeps autosaving as a draft only. */
+  const readMarks = (s: KeyValueStorage, key: string) => Object.keys(readRawMap(s, key))
+
+  const syncMarks = (): SyncMarks => {
+    const s = safeStorage()
+    if (!s) return { removed: [], dismissed: [] }
+    try {
+      return { removed: readMarks(s, STORAGE_KEYS.removed), dismissed: readMarks(s, STORAGE_KEYS.dismissed) }
+    } catch {
+      return { removed: [], dismissed: [] }
+    }
+  }
+
+  /**
+   * Drops gallery membership and marks the id as removed, so cloud sync deletes its cloud copy.
+   * A finished artwork is deleted. An open draft keeps going under a new id, because the old id
+   * can never be saved to the cloud again.
+   */
   const removeFromGallery = (artworkId: string) => {
     const s = safeStorage()
     if (!s) return false
+    const state = getState()
     const gallery = readRawList(s, STORAGE_KEYS.gallery)
     if (!gallery.includes(artworkId)) return false
+    const artworks = readRawMap(s, STORAGE_KEYS.artworks)
     const writes: Write[] = []
-    if (!isActiveDraft(artworkId)) {
-      const artworks = readRawMap(s, STORAGE_KEYS.artworks)
-      delete artworks[artworkId]
-      writes.push([STORAGE_KEYS.artworks, artworks])
+    const templateId = Object.keys(state.drafts).find((key) => state.drafts[key] === artworkId)
+    const record = artworks[artworkId]
+    if (templateId && isRecord(record)) {
+      const id = newId()
+      artworks[id] = { ...record, id }
+      const drafts = readRawMap(s, STORAGE_KEYS.drafts)
+      drafts[templateId] = id
+      writes.push([STORAGE_KEYS.artworks, { ...artworks }], [STORAGE_KEYS.drafts, drafts])
     }
-    writes.unshift([STORAGE_KEYS.gallery, gallery.filter((id) => id !== artworkId)])
+    delete artworks[artworkId]
+    writes.push(
+      [STORAGE_KEYS.gallery, gallery.filter((id) => id !== artworkId)],
+      [STORAGE_KEYS.artworks, artworks],
+      markWrite(s, STORAGE_KEYS.removed, [artworkId]),
+    )
     return commit(writes)
+  }
+
+  /**
+   * Adds garden pictures saved from the parent's other devices. Skips anything already on this
+   * device, taken out here, or cleared here, and anything that doesn't match an approved template.
+   */
+  const importFromCloud = (records: readonly CloudArtwork[]) => {
+    const s = safeStorage()
+    if (!s || records.length === 0) return 0
+    const state = getState()
+    const { removed, dismissed } = syncMarks()
+    const skip = new Set([...removed, ...dismissed])
+    const artworks = readRawMap(s, STORAGE_KEYS.artworks)
+    const added: Artwork[] = []
+    for (const record of records) {
+      if (skip.has(record.id) || artworks[record.id] || !/^art_[0-9a-f-]{32,36}$/.test(record.id)) continue
+      const version = templates.version(record.templateId, record.templateVersion)
+      if (!version) continue
+      const createdAt = toNumber(record.createdAt)
+      const artwork: Artwork = {
+        id: record.id,
+        templateId: record.templateId,
+        templateVersion: record.templateVersion,
+        fills: sanitizeFills(record.fills, version),
+        createdAt,
+        updatedAt: createdAt,
+      }
+      artworks[record.id] = artwork
+      added.push(artwork)
+    }
+    if (added.length === 0) return 0
+    const gallery = [...state.gallery, ...added]
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((artwork) => artwork.id)
+    return commit([
+      [STORAGE_KEYS.artworks, artworks],
+      [STORAGE_KEYS.gallery, gallery],
+    ])
+      ? added.length
+      : 0
   }
 
   /** Lets go of this flower's draft and its undo history, so the next visit starts a fresh artwork. */
@@ -460,7 +555,17 @@ export function createArtworkLibrary({
     return commit(writes)
   }
 
-  const clearAll = () => commit(KEY_LIST.map((key): Write => [key, null]))
+  /**
+   * Clears this device only. Cleared garden pictures are marked so sync won't copy them back here;
+   * cloud copies stay in the parent's account. Pending cloud removals are kept.
+   */
+  const clearAll = () => {
+    const s = safeStorage()
+    const galleryIds = getState().gallery.map((artwork) => artwork.id)
+    const writes = KEY_LIST.map((key): Write => [key, null])
+    if (s && galleryIds.length > 0) writes.unshift(markWrite(s, STORAGE_KEYS.dismissed, galleryIds))
+    return commit(writes)
+  }
 
   const subscribe = (listener: () => void) => {
     listeners.add(listener)
@@ -489,6 +594,8 @@ export function createArtworkLibrary({
     removeFromGallery,
     finishDraft,
     clearAll,
+    syncMarks,
+    importFromCloud,
   }
 }
 
