@@ -1,17 +1,18 @@
 import type { Metadata } from 'next'
-import { SignInForm } from '@/components/parent/sign-in-form'
+import { SignInForm, type LinkError } from '@/components/parent/sign-in-form'
+import { safeNext } from '@/lib/auth/redirect'
 
 export const metadata: Metadata = { title: 'Parent sign in' }
 
-type Props = { searchParams: Promise<{ next?: string | string[] }> }
+type Props = { searchParams: Promise<{ next?: string | string[]; error?: string | string[] }> }
 
-function safeNext(value: string | string[] | undefined) {
-  const next = Array.isArray(value) ? value[0] : value
-  return next && next.startsWith('/parent/') && !next.startsWith('//') ? next : '/parent/home'
+function parseLinkError(value: string | string[] | undefined): LinkError | null {
+  const error = Array.isArray(value) ? value[0] : value
+  return error === 'expired' || error === 'link' ? error : null
 }
 
 export default async function SignInPage({ searchParams }: Props) {
-  const { next } = await searchParams
+  const { next, error } = await searchParams
 
   return (
     <main className="flex flex-1 items-start justify-center px-5 py-12 md:py-16">
@@ -22,7 +23,7 @@ export default async function SignInPage({ searchParams }: Props) {
             Only grown-ups have accounts. Children never sign in.
           </p>
         </div>
-        <SignInForm next={safeNext(next)} />
+        <SignInForm next={safeNext(next)} linkError={parseLinkError(error)} />
       </div>
     </main>
   )

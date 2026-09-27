@@ -6,8 +6,10 @@ const ROWS = [
   {
     icon: KeyRound,
     title: 'Parent sign-in',
-    detail: 'Uses a mock account on this device until Supabase Auth is connected.',
-    status: <NotConnectedBadge service="Supabase" />,
+    detail: 'Parents sign in with a one-time email link, handled by Supabase Auth.',
+    status: (
+      <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">Live</span>
+    ),
   },
   {
     icon: CreditCard,

@@ -1,65 +1,93 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Mail, MailCheck } from 'lucide-react'
-import { NotConnectedBadge } from '@/components/parent/not-connected-badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { authClient, useParentUser } from '@/lib/auth/client'
-import { simulateMagicLinkSignIn } from '@/lib/auth/mock'
+import { authClient, useAuthState } from '@/lib/auth/client'
 import { cn } from '@/lib/utils'
 
-type Mode = 'password' | 'magic'
+const RESEND_COOLDOWN_SECONDS = 60
 
-export function SignInForm({ next }: { next: string }) {
-  const router = useRouter()
-  const user = useParentUser()
-  const [mode, setMode] = useState<Mode>('password')
+export type LinkError = 'expired' | 'link'
+
+const LINK_ERROR_MESSAGES: Record<LinkError, string> = {
+  expired: 'That sign-in link has expired or was already used. Send yourself a new one below.',
+  link: 'That sign-in link didn’t work. Open it in the same browser where you asked for it, or send a new one below.',
+}
+
+export function SignInForm({ next, linkError }: { next: string; linkError: LinkError | null }) {
+  const auth = useAuthState()
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [pending, setPending] = useState(false)
-  const [linkSentTo, setLinkSentTo] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [sentTo, setSentTo] = useState<string | null>(null)
+  const [secondsLeft, setSecondsLeft] = useState(0)
+  const [error, setError] = useState<string | null>(linkError ? LINK_ERROR_MESSAGES[linkError] : null)
 
-  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  useEffect(() => {
+    if (secondsLeft <= 0) return
+    const timer = setTimeout(() => setSecondsLeft((s) => s - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [secondsLeft])
+
+  const sendLink = async (address: string) => {
     setError(null)
     setPending(true)
     try {
-      if (mode === 'password') {
-        await authClient.signInWithPassword(email, password)
-        router.push(next)
-      } else {
-        await authClient.sendMagicLink(email)
-        setLinkSentTo(email.trim().toLowerCase())
-      }
+      await authClient.sendEmailLink(address, next)
+      setSentTo(address.trim().toLowerCase())
+      setSecondsLeft(RESEND_COOLDOWN_SECONDS)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     } finally {
       setPending(false)
     }
   }
 
-  if (user) {
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    void sendLink(email)
+  }
+
+  const signOut = async () => {
+    setError(null)
+    try {
+      await authClient.signOut()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Signing out didn’t finish. Please try again.')
+    }
+  }
+
+  const errorMessage = error && (
+    <p role="alert" className="text-sm font-semibold leading-relaxed text-destructive">
+      {error}
+    </p>
+  )
+
+  if (auth.status === 'loading') {
+    return (
+      <p aria-live="polite" className="leading-relaxed text-muted-foreground">
+        {'Checking whether you’re signed in…'}
+      </p>
+    )
+  }
+
+  if (auth.status === 'signed-in') {
     return (
       <div className="flex flex-col gap-5">
         <p className="leading-relaxed">
           {'Signed in as '}
-          <span className="font-bold">{user.email}</span>
-          {' (mock account).'}
+          <span className="font-bold break-all">{auth.user.email}</span>
+          {'.'}
         </p>
+        {errorMessage}
         <div className="flex flex-wrap gap-3">
           <Link href={next} className={cn(buttonVariants(), 'h-11 rounded-full px-5 font-bold')}>
             Continue
           </Link>
-          <Button
-            variant="outline"
-            onClick={() => authClient.signOut()}
-            className="h-11 rounded-full px-5 font-bold"
-          >
+          <Button variant="outline" onClick={signOut} className="h-11 rounded-full px-5 font-bold">
             Sign out
           </Button>
         </div>
@@ -67,30 +95,35 @@ export function SignInForm({ next }: { next: string }) {
     )
   }
 
-  if (linkSentTo) {
+  if (sentTo) {
     return (
       <div className="flex flex-col gap-5">
-        <div className="flex items-start gap-3 rounded-2xl bg-secondary p-4">
+        <div className="flex items-start gap-3 rounded-2xl bg-secondary p-4" aria-live="polite">
           <MailCheck className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
-          <p className="text-sm leading-relaxed">
-            {'Once Supabase is connected, a sign-in link will be emailed to '}
-            <span className="font-bold">{linkSentTo}</span>
-            {'. Nothing was sent in this preview.'}
-          </p>
+          <div className="flex flex-col gap-1 text-sm leading-relaxed">
+            <p className="font-bold">Check your email</p>
+            <p>
+              {'We sent a sign-in link to '}
+              <span className="font-bold break-all">{sentTo}</span>
+              {'. Open it on this device, in this browser. Each link works once.'}
+            </p>
+          </div>
         </div>
+        {errorMessage}
         <div className="flex flex-wrap gap-3">
           <Button
-            onClick={() => {
-              simulateMagicLinkSignIn(linkSentTo)
-              router.push(next)
-            }}
+            onClick={() => void sendLink(sentTo)}
+            disabled={pending || secondsLeft > 0}
             className="h-11 rounded-full px-5 font-bold"
           >
-            Simulate opening the link
+            {pending ? 'Sending…' : secondsLeft > 0 ? `Send again in ${secondsLeft}s` : 'Send again'}
           </Button>
           <Button
             variant="outline"
-            onClick={() => setLinkSentTo(null)}
+            onClick={() => {
+              setSentTo(null)
+              setError(null)
+            }}
             className="h-11 rounded-full px-5 font-bold"
           >
             Use a different email
@@ -101,85 +134,35 @@ export function SignInForm({ next }: { next: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div role="group" aria-label="Sign-in method" className="grid grid-cols-2 gap-1 rounded-full bg-secondary p-1">
-        {(
-          [
-            { id: 'password', label: 'Password' },
-            { id: 'magic', label: 'Email link' },
-          ] as const
-        ).map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            aria-pressed={mode === tab.id}
-            onClick={() => {
-              setMode(tab.id)
-              setError(null)
-            }}
-            className={cn(
-              'h-10 rounded-full text-sm font-bold outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50',
-              mode === tab.id ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+    <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+      {errorMessage}
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="email" className="font-bold">
+          Email
+        </Label>
+        <Input
+          id="email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="h-12 rounded-xl text-base"
+          placeholder="you@example.com"
+        />
       </div>
 
-      <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="email" className="font-bold">
-            Email
-          </Label>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="h-12 rounded-xl text-base"
-            placeholder="you@example.com"
-          />
-        </div>
+      <Button type="submit" disabled={pending} className="h-12 rounded-full text-base font-bold">
+        <Mail data-icon="inline-start" />
+        {pending ? 'Sending…' : 'Email me a sign-in link'}
+      </Button>
 
-        {mode === 'password' && (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="password" className="font-bold">
-              Password
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="h-12 rounded-xl text-base"
-            />
-          </div>
-        )}
-
-        {error && (
-          <p role="alert" className="text-sm font-semibold text-destructive">
-            {error}
-          </p>
-        )}
-
-        <Button type="submit" disabled={pending} className="h-12 rounded-full text-base font-bold">
-          {mode === 'magic' && <Mail data-icon="inline-start" />}
-          {pending ? 'Please wait…' : mode === 'password' ? 'Sign in' : 'Email me a link'}
-        </Button>
-      </form>
-
-      <div className="flex flex-col gap-2 rounded-2xl border border-dashed p-4">
-        <NotConnectedBadge service="Supabase" className="self-start" />
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          This preview signs you in with a mock account saved on this device. No details are sent anywhere.
-        </p>
-      </div>
-    </div>
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        No password needed. New here? The same link creates your parent account.
+      </p>
+    </form>
   )
 }
