@@ -9,7 +9,7 @@ export default function DeleteAccountPage() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-black">Delete your account</h1>
         <p className="leading-relaxed text-muted-foreground text-pretty">
-          Removes your parent account and everything stored with it. Coloring on this device keeps working.
+          Removes your parent account and your family’s data. Payment records are kept for accounting without your name or email. Coloring on this device keeps working.
         </p>
       </div>
       <DeleteAccountView />
