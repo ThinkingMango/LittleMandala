@@ -4,7 +4,8 @@
 //   pnpm trace-pack ocean-friends            trace every page that has a source image
 //   pnpm trace-pack ocean-friends seal-pup   trace one page
 //   --min-area=0.004                         smallest tap area, as a share of the canvas
-//                                            (about 63×63 units; the 40-unit width check still applies)
+//                                            (about 63×63 units; the 40-unit width check still applies).
+//                                            A page's "minArea" in pages.json sets its own default.
 //
 // Reads  art/<pack>/pages.json and art/<pack>/source/<id>.png
 // Writes lib/templates/<pack>/<id>.json and review sheets in /tmp/trace-pack/<id>.png
@@ -63,7 +64,8 @@ for (const page of pages) {
     .raw()
     .toBuffer()
 
-  const result = segment(new Uint8Array(gray), SIZE, SIZE, options)
+  const pageOptions = page.minArea && !flags['min-area'] ? { ...options, minAreaShare: page.minArea } : options
+  const result = segment(new Uint8Array(gray), SIZE, SIZE, pageOptions)
   const review = checkPage(result)
 
   const outFile = join(outDir, `${page.id}.json`)
