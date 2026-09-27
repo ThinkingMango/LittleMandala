@@ -143,6 +143,19 @@
   }
 }
 
+/* Points a child at Undo right after a clear. */
+@keyframes attention {
+  50% {
+    outline-offset: 10px;
+  }
+}
+
+.attention {
+  outline: 4px solid var(--primary);
+  outline-offset: 4px;
+  animation: attention 1.1s ease-in-out infinite;
+}
+
 .animate-bubble-in {
   animation: bubble-in 220ms ease-out both;
 }
@@ -152,7 +165,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .animate-bubble-in,
-  .animate-twinkle {
+  .animate-twinkle,
+  .attention {
     animation: none;
   }
   .tactile,

@@ -16,7 +16,8 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { clearAllArtwork, settingsStore, type DeviceSettings } from '@/lib/device-stores'
+import { useArtworkLibrary } from '@/hooks/use-artwork-library'
+import { settingsStore, type DeviceSettings } from '@/lib/device-stores'
 import { useLocalStore } from '@/lib/local-store'
 
 const TOGGLES: { key: keyof DeviceSettings; label: string; hint: string }[] = [
@@ -26,6 +27,7 @@ const TOGGLES: { key: keyof DeviceSettings; label: string; hint: string }[] = [
 
 export function DeviceSettingsCard() {
   const settings = useLocalStore(settingsStore)
+  const { library } = useArtworkLibrary()
   const [cleared, setCleared] = useState(false)
 
   return (
@@ -62,8 +64,8 @@ export function DeviceSettingsCard() {
             </DialogTitle>
             <DialogDescription className="leading-relaxed">
               {cleared
-                ? 'Every flower is white again.'
-                : 'Colors on every flower will be removed from this device. This cannot be undone.'}
+                ? 'Every flower is white again and the garden is empty.'
+                : 'Drafts and every flower in the garden will be removed from this device. This cannot be undone.'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="rounded-b-3xl">
@@ -75,7 +77,7 @@ export function DeviceSettingsCard() {
                 variant="destructive"
                 className="h-10 rounded-full px-4 font-bold"
                 onClick={() => {
-                  clearAllArtwork()
+                  library.clearAll()
                   setCleared(true)
                 }}
               >

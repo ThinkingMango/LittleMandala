@@ -14,21 +14,44 @@ type Layer = {
   offset?: number
 }
 
-type MandalaDefinition = {
-  id: string
-  name: string
-  tier: Tier
+export type VersionDefinition = {
+  version: number
   layers: Layer[]
   centerRadius: number
 }
 
-export type Region = { id: string; d: string; label: string }
-
-export type Mandala = {
+export type TemplateDefinition = {
   id: string
   name: string
   tier: Tier
-  regions: Region[]
+  /**
+   * Append-only. Published versions are never edited: saved artwork is pinned to the
+   * version it was started on, so changing one would scramble existing drawings.
+   */
+  versions: VersionDefinition[]
+}
+
+export type Region = Readonly<{ id: string; d: string; label: string }>
+
+export type TemplateVersion = Readonly<{
+  templateId: string
+  version: number
+  regions: readonly Region[]
+  /** The only region ids that may ever hold a color for this version. */
+  approvedRegionIds: readonly string[]
+}>
+
+export type Mandala = Readonly<{
+  id: string
+  name: string
+  tier: Tier
+  latestVersion: number
+  versions: readonly TemplateVersion[]
+}>
+
+export type TemplateSource = {
+  version: (templateId: string, version: number) => TemplateVersion | undefined
+  latest: (templateId: string) => TemplateVersion | undefined
 }
 
 type Pt = [number, number]
@@ -133,11 +156,11 @@ function layerNames(total: number) {
   return ['Outer petal', 'Middle petal', 'Inner petal']
 }
 
-function buildMandala(def: MandalaDefinition): Mandala {
-  const names = layerNames(def.layers.length)
+function buildRegions({ layers, centerRadius }: VersionDefinition): Region[] {
+  const names = layerNames(layers.length)
   const regions: Region[] = []
 
-  def.layers.forEach((layer, layerIndex) => {
+  layers.forEach((layer, layerIndex) => {
     const { count, shape, r0, r1, fullness = 1, offset = 0 } = layer
     const metrics = SHAPE_METRICS[shape]
     const widest = r0 + metrics.at * (r1 - r0)
@@ -155,112 +178,206 @@ function buildMandala(def: MandalaDefinition): Mandala {
     }
   })
 
-  regions.push({ id: 'center', d: circlePath(def.centerRadius), label: 'Flower center' })
-
-  return { id: def.id, name: def.name, tier: def.tier, regions }
+  regions.push({ id: 'center', d: circlePath(centerRadius), label: 'Flower center' })
+  return regions
 }
 
-const DEFINITIONS: MandalaDefinition[] = [
+/** Validates a version's regions and returns a deeply frozen, approved snapshot. */
+export function freezeVersion(templateId: string, version: number, regions: Region[]): TemplateVersion {
+  const ids = new Set<string>()
+  for (const region of regions) {
+    if (!region.id || !region.d.trim() || !region.label) {
+      throw new Error(`Template ${templateId} v${version}: region is missing an id, path, or label`)
+    }
+    if (ids.has(region.id)) {
+      throw new Error(`Template ${templateId} v${version}: duplicate region id "${region.id}"`)
+    }
+    ids.add(region.id)
+  }
+
+  return Object.freeze({
+    templateId,
+    version,
+    regions: Object.freeze(regions.map((r) => Object.freeze({ ...r }))),
+    approvedRegionIds: Object.freeze([...ids]),
+  })
+}
+
+export function defineTemplate(def: TemplateDefinition): Mandala {
+  if (def.versions.length === 0) throw new Error(`Template ${def.id} has no versions`)
+
+  const versions = def.versions.map((v, index) => {
+    if (v.version !== index + 1) {
+      throw new Error(`Template ${def.id}: versions must be numbered 1, 2, 3… in order`)
+    }
+    return freezeVersion(def.id, v.version, buildRegions(v))
+  })
+
+  return Object.freeze({
+    id: def.id,
+    name: def.name,
+    tier: def.tier,
+    latestVersion: versions.length,
+    versions: Object.freeze(versions),
+  })
+}
+
+export function latestVersion(mandala: Mandala): TemplateVersion {
+  return mandala.versions[mandala.versions.length - 1]
+}
+
+export function createTemplateSource(mandalas: readonly Mandala[]): TemplateSource {
+  const byId = new Map(mandalas.map((m) => [m.id, m]))
+  return {
+    version: (templateId, version) => byId.get(templateId)?.versions.find((v) => v.version === version),
+    latest: (templateId) => {
+      const mandala = byId.get(templateId)
+      return mandala ? latestVersion(mandala) : undefined
+    },
+  }
+}
+
+const DEFINITIONS: TemplateDefinition[] = [
   {
     id: 'sunny',
     name: 'Sunny',
     tier: 'free',
-    layers: [{ count: 8, shape: 'round', r0: 40, r1: 450 }],
-    centerRadius: 115,
+    versions: [{ version: 1, layers: [{ count: 8, shape: 'round', r0: 40, r1: 450 }], centerRadius: 115 }],
   },
   {
     id: 'daisy',
     name: 'Daisy',
     tier: 'free',
-    layers: [{ count: 12, shape: 'almond', r0: 60, r1: 455 }],
-    centerRadius: 125,
+    versions: [{ version: 1, layers: [{ count: 12, shape: 'almond', r0: 60, r1: 455 }], centerRadius: 125 }],
   },
   {
     id: 'tulip',
     name: 'Tulip Star',
     tier: 'free',
-    layers: [
-      { count: 6, shape: 'heart', r0: 50, r1: 455 },
-      { count: 6, shape: 'almond', r0: 50, r1: 300, offset: 0.5, fullness: 0.85 },
+    versions: [
+      {
+        version: 1,
+        layers: [
+          { count: 6, shape: 'heart', r0: 50, r1: 455 },
+          { count: 6, shape: 'almond', r0: 50, r1: 300, offset: 0.5, fullness: 0.85 },
+        ],
+        centerRadius: 95,
+      },
     ],
-    centerRadius: 95,
   },
   {
     id: 'lotus',
     name: 'Lotus',
     tier: 'free',
-    layers: [
-      { count: 8, shape: 'pointy', r0: 50, r1: 460 },
-      { count: 8, shape: 'round', r0: 50, r1: 310, offset: 0.5 },
+    versions: [
+      {
+        version: 1,
+        layers: [
+          { count: 8, shape: 'pointy', r0: 50, r1: 460 },
+          { count: 8, shape: 'round', r0: 50, r1: 310, offset: 0.5 },
+        ],
+        centerRadius: 95,
+      },
     ],
-    centerRadius: 95,
   },
   {
     id: 'starburst',
     name: 'Starburst',
     tier: 'family',
-    layers: [
-      { count: 10, shape: 'pointy', r0: 50, r1: 460 },
-      { count: 5, shape: 'round', r0: 50, r1: 290 },
+    versions: [
+      {
+        version: 1,
+        layers: [
+          { count: 10, shape: 'pointy', r0: 50, r1: 460 },
+          { count: 5, shape: 'round', r0: 50, r1: 290 },
+        ],
+        centerRadius: 90,
+      },
     ],
-    centerRadius: 90,
   },
   {
     id: 'clover',
     name: 'Clover',
     tier: 'family',
-    layers: [
-      { count: 4, shape: 'heart', r0: 40, r1: 450 },
-      { count: 4, shape: 'almond', r0: 40, r1: 400, offset: 0.5, fullness: 0.5 },
+    versions: [
+      {
+        version: 1,
+        layers: [
+          { count: 4, shape: 'heart', r0: 40, r1: 450 },
+          { count: 4, shape: 'almond', r0: 40, r1: 400, offset: 0.5, fullness: 0.5 },
+        ],
+        centerRadius: 105,
+      },
     ],
-    centerRadius: 105,
   },
   {
     id: 'dahlia',
     name: 'Dahlia',
     tier: 'family',
-    layers: [
-      { count: 12, shape: 'round', r0: 50, r1: 460 },
-      { count: 12, shape: 'round', r0: 50, r1: 340, offset: 0.5 },
-      { count: 6, shape: 'round', r0: 40, r1: 220 },
+    versions: [
+      {
+        version: 1,
+        layers: [
+          { count: 12, shape: 'round', r0: 50, r1: 460 },
+          { count: 12, shape: 'round', r0: 50, r1: 340, offset: 0.5 },
+          { count: 6, shape: 'round', r0: 40, r1: 220 },
+        ],
+        centerRadius: 75,
+      },
     ],
-    centerRadius: 75,
   },
   {
     id: 'snowbloom',
     name: 'Snowbloom',
     tier: 'family',
-    layers: [
-      { count: 6, shape: 'almond', r0: 60, r1: 460, fullness: 0.8 },
-      { count: 6, shape: 'pointy', r0: 50, r1: 350, offset: 0.5 },
-      { count: 6, shape: 'round', r0: 40, r1: 210 },
+    versions: [
+      {
+        version: 1,
+        layers: [
+          { count: 6, shape: 'almond', r0: 60, r1: 460, fullness: 0.8 },
+          { count: 6, shape: 'pointy', r0: 50, r1: 350, offset: 0.5 },
+          { count: 6, shape: 'round', r0: 40, r1: 210 },
+        ],
+        centerRadius: 75,
+      },
     ],
-    centerRadius: 75,
   },
   {
     id: 'poppy',
     name: 'Poppy',
     tier: 'family',
-    layers: [
-      { count: 5, shape: 'round', r0: 40, r1: 450 },
-      { count: 5, shape: 'heart', r0: 40, r1: 300, offset: 0.5 },
+    versions: [
+      {
+        version: 1,
+        layers: [
+          { count: 5, shape: 'round', r0: 40, r1: 450 },
+          { count: 5, shape: 'heart', r0: 40, r1: 300, offset: 0.5 },
+        ],
+        centerRadius: 105,
+      },
     ],
-    centerRadius: 105,
   },
   {
     id: 'garden',
     name: 'Garden',
     tier: 'family',
-    layers: [
-      { count: 8, shape: 'heart', r0: 50, r1: 460 },
-      { count: 8, shape: 'almond', r0: 50, r1: 360, offset: 0.5, fullness: 0.8 },
-      { count: 8, shape: 'round', r0: 40, r1: 220 },
+    versions: [
+      {
+        version: 1,
+        layers: [
+          { count: 8, shape: 'heart', r0: 50, r1: 460 },
+          { count: 8, shape: 'almond', r0: 50, r1: 360, offset: 0.5, fullness: 0.8 },
+          { count: 8, shape: 'round', r0: 40, r1: 220 },
+        ],
+        centerRadius: 75,
+      },
     ],
-    centerRadius: 75,
   },
 ]
 
-export const MANDALAS: Mandala[] = DEFINITIONS.map(buildMandala)
+export const MANDALAS: readonly Mandala[] = Object.freeze(DEFINITIONS.map(defineTemplate))
+
+export const templates = createTemplateSource(MANDALAS)
 
 export function getMandala(id: string) {
   return MANDALAS.find((m) => m.id === id)

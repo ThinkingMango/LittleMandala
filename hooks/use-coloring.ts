@@ -1,64 +1,61 @@
 'use client'
 
-import { useCallback, useState } from 'react'
-import { getArtStore, type Fills } from '@/lib/device-stores'
-import { useLocalStore } from '@/lib/local-store'
+import { useState } from 'react'
+import { useDraftView } from '@/hooks/use-artwork-library'
+import type { Fills } from '@/lib/artwork/library'
+import type { Mandala } from '@/lib/mandalas'
 import type { ColorKey } from '@/lib/palette'
 
-type Step =
-  | { type: 'fill'; regionId: string; prev: ColorKey | null }
-  | { type: 'reset'; prev: Fills }
+type Step = { kind: 'fill' | 'clear'; artworkId: string; before: Fills }
 
-const MAX_HISTORY = 200
+const MAX_HISTORY = 100
 
-export function useColoring(mandalaId: string) {
-  const store = getArtStore(mandalaId)
-  const fills = useLocalStore(store)
+export function useColoring(mandala: Mandala) {
+  const { library, draft, version, fills } = useDraftView(mandala)
   const [history, setHistory] = useState<Step[]>([])
+  const lastStep = history.at(-1)
 
-  const push = useCallback((step: Step) => {
-    setHistory((h) => [...h.slice(-(MAX_HISTORY - 1)), step])
-  }, [])
+  const push = (step: Step) => setHistory((h) => [...h.slice(-(MAX_HISTORY - 1)), step])
 
-  const fill = useCallback(
-    (regionId: string, color: ColorKey) => {
-      const current = store.read()
-      const prev = current[regionId] ?? null
-      if (prev === color) return false
-      push({ type: 'fill', regionId, prev })
-      store.write({ ...current, [regionId]: color })
-      return true
-    },
-    [store, push],
-  )
+  const fill = (regionId: string, color: ColorKey) => {
+    const result = library.fillRegion(mandala.id, regionId, color)
+    if (!result) return false
+    push({ kind: 'fill', ...result })
+    return true
+  }
 
-  const undo = useCallback(() => {
-    const last = history.at(-1)
-    if (!last) return
-    setHistory((h) => h.slice(0, -1))
-    if (last.type === 'reset') {
-      store.write(last.prev)
-      return
+  /** Clearing is a single history step, so one Undo brings every color back. */
+  const clear = () => {
+    if (!draft) return false
+    const before = library.clearArtwork(draft.id)
+    if (!before) return false
+    push({ kind: 'clear', artworkId: draft.id, before })
+    return true
+  }
+
+  const undo = () => {
+    if (!lastStep) return null
+    if (lastStep.artworkId !== draft?.id) {
+      setHistory([])
+      return null
     }
-    const next = { ...store.read() }
-    if (last.prev === null) delete next[last.regionId]
-    else next[last.regionId] = last.prev
-    store.write(next)
-  }, [history, store])
+    setHistory((h) => h.slice(0, -1))
+    return library.setFills(lastStep.artworkId, lastStep.before) ? lastStep.kind : null
+  }
 
-  const startOver = useCallback(() => {
-    const current = store.read()
-    if (Object.keys(current).length === 0) return
-    push({ type: 'reset', prev: current })
-    store.write({})
-  }, [store, push])
+  const saveToGallery = () => (draft ? library.saveToGallery(draft.id) : false)
+  const finish = () => library.finishDraft(mandala.id)
 
   return {
+    draft,
+    version,
     fills,
     fill,
+    clear,
     undo,
-    startOver,
-    canUndo: history.length > 0,
+    saveToGallery,
+    finish,
+    canUndo: Boolean(draft && lastStep?.artworkId === draft.id),
     hasColor: Object.keys(fills).length > 0,
   }
 }

@@ -8,7 +8,8 @@ import { ParentCard } from '@/components/parent/parent-card'
 import { buttonVariants } from '@/components/ui/button'
 import { PLANS } from '@/lib/billing/plans'
 import { useEntitlements } from '@/lib/entitlements'
-import { MANDALAS } from '@/lib/mandalas'
+import { EMPTY_FILLS } from '@/lib/artwork/library'
+import { MANDALAS, latestVersion } from '@/lib/mandalas'
 import { cn } from '@/lib/utils'
 
 export function PlanSummaryCard() {
@@ -30,7 +31,7 @@ export function PlanSummaryCard() {
               key={m.id}
               className="relative flex aspect-square items-center justify-center rounded-2xl bg-secondary p-2"
             >
-              <MandalaArt mandala={m} fills={{}} className={open ? 'size-full' : 'size-full opacity-30'} />
+              <MandalaArt version={latestVersion(m)} fills={EMPTY_FILLS} className={open ? 'size-full' : 'size-full opacity-30'} />
               {!open && (
                 <Lock className="absolute size-4 text-foreground" strokeWidth={2.75} aria-hidden="true" />
               )}

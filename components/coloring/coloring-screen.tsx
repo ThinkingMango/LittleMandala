@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, House, RotateCcw, Undo2 } from 'lucide-react'
+import { Check, Eraser, House, Undo2 } from 'lucide-react'
 import { ColorPalette } from '@/components/coloring/color-palette'
-import { ConfirmStartOverDialog, DoneDialog } from '@/components/coloring/kid-dialogs'
+import { ClearPreview, CrossCheckDialog, DoneDialog } from '@/components/coloring/kid-dialogs'
 import { MandalaArt } from '@/components/coloring/mandala-art'
 import { ToolButton, ToolLink } from '@/components/coloring/tool-button'
 import { AskGrownUp } from '@/components/kid/ask-grown-up'
 import { useColoring } from '@/hooks/use-coloring'
+import { EMPTY_FILLS, type Fills } from '@/lib/artwork/library'
 import { settingsStore } from '@/lib/device-stores'
 import { useEntitlements } from '@/lib/entitlements'
 import { useHydrated, useLocalStore } from '@/lib/local-store'
@@ -24,10 +25,11 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
   const hydrated = useHydrated()
   const { isUnlocked } = useEntitlements()
   const settings = useLocalStore(settingsStore)
-  const { fills, fill, undo, startOver, canUndo, hasColor } = useColoring(mandala.id)
+  const coloring = useColoring(mandala)
   const [color, setColor] = useState<ColorKey>(DEFAULT_COLOR)
-  const [confirmOpen, setConfirmOpen] = useState(false)
-  const [doneOpen, setDoneOpen] = useState(false)
+  const [clearOpen, setClearOpen] = useState(false)
+  const [done, setDone] = useState<{ open: boolean; fills: Fills }>({ open: false, fills: EMPTY_FILLS })
+  const [undoHint, setUndoHint] = useState(false)
   const [announcement, setAnnouncement] = useState('')
 
   if (!hydrated) {
@@ -39,7 +41,8 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
   }
 
   const handleRegionTap = (region: Region, element: SVGPathElement) => {
-    if (!fill(region.id, color)) return
+    if (!coloring.fill(region.id, color)) return
+    setUndoHint(false)
     setAnnouncement(`${region.label} is now ${colorLabel(color)}`)
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -49,6 +52,24 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
     if (settings.haptics) {
       navigator.vibrate?.(12)
     }
+  }
+
+  const handleClear = () => {
+    if (!coloring.clear()) return
+    setUndoHint(true)
+    setAnnouncement('Flower cleared. Tap undo to bring the colors back.')
+  }
+
+  const handleUndo = () => {
+    const undone = coloring.undo()
+    setUndoHint(false)
+    if (undone === 'clear') setAnnouncement('Your colors are back.')
+    else if (undone === 'fill') setAnnouncement('Undone.')
+  }
+
+  const handleDone = () => {
+    coloring.saveToGallery()
+    setDone({ open: true, fills: coloring.fills })
   }
 
   return (
@@ -64,28 +85,31 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
           <ToolButton
             label="Undo"
             icon={<Undo2 strokeWidth={2.75} />}
-            onClick={undo}
-            disabled={!canUndo}
+            onClick={handleUndo}
+            disabled={!coloring.canUndo}
+            className={undoHint ? 'attention' : undefined}
           />
           <ToolButton
-            label="Start over"
-            icon={<RotateCcw strokeWidth={2.75} />}
-            onClick={() => setConfirmOpen(true)}
-            disabled={!hasColor}
+            label="Clear"
+            icon={<Eraser strokeWidth={2.5} />}
+            onClick={() => setClearOpen(true)}
+            disabled={!coloring.hasColor}
           />
         </div>
         <ToolButton
           label="I'm done"
           icon={<Check strokeWidth={3.25} />}
           variant="primary"
-          onClick={() => setDoneOpen(true)}
+          onClick={handleDone}
+          disabled={!coloring.hasColor}
         />
       </nav>
 
       <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center landscape:order-2">
         <MandalaArt
-          mandala={mandala}
-          fills={fills}
+          version={coloring.version}
+          fills={coloring.fills}
+          label={`${mandala.name} flower. Tap a part to color it.`}
           onRegionTap={handleRegionTap}
           className="size-full max-h-full max-w-full"
         />
@@ -101,8 +125,23 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
         {announcement}
       </p>
 
-      <ConfirmStartOverDialog open={confirmOpen} onOpenChange={setConfirmOpen} onConfirm={startOver} />
-      <DoneDialog open={doneOpen} onOpenChange={setDoneOpen} mandala={mandala} fills={fills} />
+      <CrossCheckDialog
+        open={clearOpen}
+        onOpenChange={setClearOpen}
+        title="Clear this flower?"
+        description="All the colors on this flower will go away. You can bring them back with undo."
+        preview={<ClearPreview version={coloring.version} fills={coloring.fills} />}
+        cancelLabel="No, keep my colors"
+        confirmLabel="Yes, clear it"
+        onConfirm={handleClear}
+      />
+      <DoneDialog
+        open={done.open}
+        onOpenChange={(open) => setDone((d) => ({ ...d, open }))}
+        version={coloring.version}
+        fills={done.fills}
+        onFinish={coloring.finish}
+      />
     </main>
   )
 }
