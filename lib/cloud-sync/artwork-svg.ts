@@ -23,10 +23,17 @@ export function renderArtworkSvg(version: TemplateVersion, fills: Fills) {
       return `<path d="${region.d}" fill="${fill}"/>`
     })
     .join('')
+  const details = version.details
+    .map((detail) =>
+      detail.kind === 'dot'
+        ? `<path d="${detail.d}" fill="${INK}" stroke="none"/>`
+        : `<path d="${detail.d}" fill="none"/>`,
+    )
+    .join('')
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-24 -24 1048 1048" width="1048" height="1048">` +
     `<rect x="-24" y="-24" width="1048" height="1048" fill="${CANVAS}"/>` +
-    `<g stroke="${INK}" stroke-width="14" stroke-linejoin="round" stroke-linecap="round">${paths}</g>` +
+    `<g stroke="${INK}" stroke-width="14" stroke-linejoin="round" stroke-linecap="round">${paths}${details}</g>` +
     `</svg>`
   )
 }

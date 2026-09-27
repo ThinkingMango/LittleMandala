@@ -8,6 +8,10 @@ afterEach(() => {
   window.sessionStorage.clear()
 })
 
+// Screens subscribe to auth on mount; without these the browser client throws and the test run is signed-out anyway.
+process.env.NEXT_PUBLIC_SUPABASE_URL ??= 'http://localhost:54321'
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??= 'test-anon-key'
+
 // jsdom gaps used by the coloring screen and Base UI.
 if (!window.matchMedia) {
   window.matchMedia = (query: string) =>

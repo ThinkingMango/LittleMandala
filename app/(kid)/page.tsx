@@ -10,7 +10,7 @@ export default function PickerPage() {
         <BrandMark />
         <ParentEntryButton />
       </header>
-      <h1 className="text-4xl font-black text-balance md:text-5xl">Pick a flower</h1>
+      <h1 className="text-4xl font-black text-balance md:text-5xl">Pick a picture</h1>
       <MandalaGrid />
       <MyGarden />
     </main>

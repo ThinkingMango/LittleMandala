@@ -19,11 +19,11 @@ export function PlanSummaryCard() {
   return (
     <ParentCard
       title={`${PLANS[plan].name} plan`}
-      description={`${unlocked} of ${MANDALAS.length} flowers unlocked`}
+      description={`${unlocked} of ${MANDALAS.length} pictures unlocked`}
       badge={<NotConnectedBadge service="Paddle" />}
       className="md:col-span-2"
     >
-      <ul className="grid grid-cols-5 gap-3 md:grid-cols-10" aria-label="Flowers and their status">
+      <ul className="grid grid-cols-6 gap-3 md:grid-cols-9" aria-label="Pictures and their status">
         {MANDALAS.map((m) => {
           const open = isUnlocked(m)
           return (
@@ -47,7 +47,7 @@ export function PlanSummaryCard() {
           'h-11 self-start rounded-full px-5 font-bold',
         )}
       >
-        {plan === 'family' ? 'Manage plan' : 'Unlock all flowers'}
+        {plan === 'family' ? 'Manage plan' : 'Unlock all pictures'}
       </Link>
     </ParentCard>
   )

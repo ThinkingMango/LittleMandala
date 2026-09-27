@@ -62,6 +62,17 @@ export function MandalaArt({ version, fills, className, label, onRegionTap }: Ma
           />
         )
       })}
+      {version.details.map((detail, i) => (
+        <path
+          key={i}
+          d={detail.d}
+          fill={detail.kind === 'dot' ? 'var(--ink)' : 'none'}
+          stroke={detail.kind === 'dot' ? 'none' : 'var(--ink)'}
+          strokeWidth={interactive ? 7 : 14}
+          strokeLinecap="round"
+          pointerEvents="none"
+        />
+      ))}
     </svg>
   )
 }

@@ -3,11 +3,13 @@
 import Link from 'next/link'
 import { Info } from 'lucide-react'
 import { NotConnectedBadge } from '@/components/parent/not-connected-badge'
+import { PackCard } from '@/components/parent/pack-card'
 import { PlanCard } from '@/components/parent/plan-card'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { useParentUser } from '@/lib/auth/client'
 import { PLANS } from '@/lib/billing/plans'
 import { useEntitlements } from '@/lib/entitlements'
+import { PACKS } from '@/lib/packs'
 import { cn } from '@/lib/utils'
 
 const FUTURE_FLOW = [
@@ -59,6 +61,13 @@ export function BillingView() {
       <div className="grid gap-5 md:grid-cols-2">
         <PlanCard plan={PLANS.free} current={ready && !hasFamily} />
         <PlanCard plan={PLANS.family} current={hasFamily} highlighted={!hasFamily} action={familyAction} />
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <h2 className="text-2xl font-black">Picture packs</h2>
+        {PACKS.map((pack) => (
+          <PackCard key={pack.id} pack={pack} />
+        ))}
       </div>
 
       {hasFamily && (

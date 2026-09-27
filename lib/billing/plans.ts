@@ -1,4 +1,9 @@
 import type { Plan, PlanId } from '@/lib/billing/types'
+import { MANDALAS } from '@/lib/mandalas'
+import { PACKS } from '@/lib/packs'
+
+const freeCount = MANDALAS.filter((m) => m.tier === 'free').length
+const packNames = PACKS.map((p) => p.name).join(', ')
 
 export const PLANS: Record<PlanId, Plan> = {
   free: {
@@ -7,17 +12,17 @@ export const PLANS: Record<PlanId, Plan> = {
     priceLabel: '$0',
     cadence: 'forever',
     summary: 'A handful of flowers to start with.',
-    features: ['4 flower mandalas', 'All six colors', 'Artwork saved on this device'],
+    features: [`${freeCount} flower pictures`, 'All six colors', 'Artwork saved on this device'],
   },
   family: {
     id: 'family',
     name: 'Family',
     priceLabel: '$3.99',
     cadence: 'per month · placeholder price',
-    summary: 'Every flower, plus new ones as they bloom.',
+    summary: 'Every picture, plus new ones as they bloom.',
     features: [
-      'All 10 flower mandalas',
-      'New flowers added regularly',
+      `All ${MANDALAS.length} pictures, including ${packNames}`,
+      'New pictures added regularly',
       'Covers the whole household',
       'Cancel any time',
     ],
