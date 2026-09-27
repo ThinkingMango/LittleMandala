@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 const NAV = [
   { href: '/parent/home', label: 'Overview' },
   { href: '/parent/billing', label: 'Plan & billing' },
+  { href: '/parent/cloud-saving', label: 'Cloud saving' },
 ]
 
 export function ParentHeader() {

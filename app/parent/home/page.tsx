@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { AccountCard } from '@/components/parent/account-card'
+import { CloudSavingCard } from '@/components/parent/cloud-saving-card'
 import { DeviceSettingsCard } from '@/components/parent/device-settings-card'
 import { IntegrationStatusCard } from '@/components/parent/integration-status-card'
 import { PlanSummaryCard } from '@/components/parent/plan-summary-card'
@@ -13,6 +14,7 @@ export default function ParentHomePage() {
       <div className="grid items-start gap-5 md:grid-cols-2">
         <PlanSummaryCard />
         <AccountCard />
+        <CloudSavingCard />
         <DeviceSettingsCard />
         <IntegrationStatusCard />
       </div>
