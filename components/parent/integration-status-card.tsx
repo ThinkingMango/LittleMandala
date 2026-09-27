@@ -20,7 +20,7 @@ const ROWS = [
   {
     icon: Tablet,
     title: "Children's artwork",
-    detail: 'Always stored on this device only. It is never uploaded.',
+    detail: 'Kept on this device. Garden pictures are copied to your account only if you turn on cloud saving.',
     status: (
       <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-muted-foreground">
         On device

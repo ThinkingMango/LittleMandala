@@ -12,7 +12,7 @@ export type LocalStore<T> = {
 
 /**
  * A tiny on-device store with a stable snapshot, suitable for useSyncExternalStore.
- * Used for mock billing, device settings and kids' artwork, which never leaves the device.
+ * Used for mock billing, device settings and kids' artwork on this device.
  */
 export function createLocalStore<T>(
   key: string,
