@@ -1,0 +1,53 @@
+'use client'
+
+import Link from 'next/link'
+import { Lock } from 'lucide-react'
+import { MandalaArt } from '@/components/coloring/mandala-art'
+import { NotConnectedBadge } from '@/components/parent/not-connected-badge'
+import { ParentCard } from '@/components/parent/parent-card'
+import { buttonVariants } from '@/components/ui/button'
+import { PLANS } from '@/lib/billing/plans'
+import { useEntitlements } from '@/lib/entitlements'
+import { MANDALAS } from '@/lib/mandalas'
+import { cn } from '@/lib/utils'
+
+export function PlanSummaryCard() {
+  const { plan, isUnlocked } = useEntitlements()
+  const unlocked = MANDALAS.filter(isUnlocked).length
+
+  return (
+    <ParentCard
+      title={`${PLANS[plan].name} plan`}
+      description={`${unlocked} of ${MANDALAS.length} flowers unlocked`}
+      badge={<NotConnectedBadge service="Paddle" />}
+      className="md:col-span-2"
+    >
+      <ul className="grid grid-cols-5 gap-3 md:grid-cols-10" aria-label="Flowers and their status">
+        {MANDALAS.map((m) => {
+          const open = isUnlocked(m)
+          return (
+            <li
+              key={m.id}
+              className="relative flex aspect-square items-center justify-center rounded-2xl bg-secondary p-2"
+            >
+              <MandalaArt mandala={m} fills={{}} className={open ? 'size-full' : 'size-full opacity-30'} />
+              {!open && (
+                <Lock className="absolute size-4 text-foreground" strokeWidth={2.75} aria-hidden="true" />
+              )}
+              <span className="sr-only">{`${m.name}: ${open ? 'unlocked' : 'locked'}`}</span>
+            </li>
+          )
+        })}
+      </ul>
+      <Link
+        href="/parent/billing"
+        className={cn(
+          buttonVariants({ variant: plan === 'family' ? 'outline' : 'default' }),
+          'h-11 self-start rounded-full px-5 font-bold',
+        )}
+      >
+        {plan === 'family' ? 'Manage plan' : 'Unlock all flowers'}
+      </Link>
+    </ParentCard>
+  )
+}
