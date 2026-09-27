@@ -46,7 +46,8 @@ async function hasLivePlan(admin: SupabaseClient, parentId: string) {
 /**
  * Deletes the signed-in parent's account right away. Needs a fresh email-link sign-in and the
  * account email typed back. Cloud picture files are removed first; deleting the user then removes
- * every row that belongs to them (profile, consent, artworks, entitlements, billing).
+ * every row that belongs to them (profile, consent, artworks, entitlements, subscriptions). Payment
+ * transactions are kept for accounting but unlinked from the account by the database.
  */
 export async function DELETE(request: NextRequest) {
   const fetchSite = request.headers.get('sec-fetch-site')

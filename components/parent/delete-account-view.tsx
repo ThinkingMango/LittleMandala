@@ -22,7 +22,7 @@ const DELETED = [
   'Your sign-in and email address',
   'Every cloud copy of your child’s pictures',
   'Your cloud saving permission records',
-  'Your plan records in Little Mandala',
+  'Your plan and flower unlock records in Little Mandala',
 ]
 
 export function DeleteAccountView() {
@@ -114,6 +114,9 @@ function DeleteAccountForm({ userId, email, onDeleted }: FormProps) {
             </li>
           ))}
         </ul>
+        <p className="leading-relaxed text-muted-foreground">
+          {'If you ever paid for a plan, we keep a record of each payment for accounting: the amount, date, plan and payment number. It no longer shows your email or links to you. Paddle, our payment provider, keeps its own receipts.'}
+        </p>
         <p className="leading-relaxed text-muted-foreground">
           {'Deletion happens right away and can’t be undone. Pictures on this device stay here. To remove them too, use Clear this device on the Overview page first.'}
         </p>
