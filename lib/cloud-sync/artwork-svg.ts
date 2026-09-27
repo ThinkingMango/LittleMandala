@@ -5,11 +5,17 @@ import type { ColorKey } from '@/lib/palette'
 /** sRGB versions of the palette tokens in globals.css, so the file looks right outside the app. */
 const FILE_COLORS: Record<ColorKey, string> = {
   red: '#f54748',
+  pink: '#f893bc',
   orange: '#fd9836',
+  peach: '#f8c19c',
   yellow: '#fcd936',
+  lime: '#aee659',
   green: '#3fc168',
+  sky: '#77d2f5',
   blue: '#3797e9',
   purple: '#9860d0',
+  brown: '#9a633b',
+  gray: '#a1a5ab',
 }
 const CANVAS = '#ffffff'
 const INK = '#242b3b'

@@ -9,7 +9,7 @@ A calm, tablet-first coloring app for young children. Kids pick a flower mandala
 ### For kids
 
 - **Flower picker** — 10 flower mandalas, 4 of them free. Locked flowers point to a grown-up instead of a paywall.
-- **Tap-to-fill coloring** — six colors plus an eraser that turns a single petal white again.
+- **Tap-to-fill coloring** — twelve colors plus an eraser that turns a single petal white again.
 - **Undo and Redo** — up to 50 steps per flower, covering fills, erases, and Start over. History is saved on the device, so it survives leaving the flower or reloading the page.
 - **Start over** — clears the flower after a confirmation, and can itself be undone.
 - **My Garden** — finished pictures are saved here. Garden pictures are never modified: continuing to color a finished flower creates a new copy.

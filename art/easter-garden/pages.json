@@ -1,0 +1,23 @@
+{
+  "pack": "easter-garden",
+  "generator": "v0 built-in image generation",
+  "style": "Children's coloring book page, square 1:1. Pure white background with a wide empty white margin on all sides; nothing touches the edges. Bold uniform thick black outlines, same weight everywhere. No shading, no grey, no texture, no fur, no hatching, no black fills except tiny eye dots, no text, no border frame. Every shape fully closed. One large friendly spring subject, centered, in a simple garden with big flowers and painted eggs. About 16 large closed areas to color. Eyes are small solid black dots, smile is one short line. Very simple, cute, for a 3-year-old.",
+  "pages": [
+    { "id": "bunny-bloom", "name": "Bunny Bloom", "subject": "a bunny with long ears holding a big tulip" },
+    { "id": "egg-basket", "name": "Egg Basket", "subject": "a woven basket with a handle holding five eggs with wide stripes" },
+    { "id": "chick-hatch", "name": "Chick Hatch", "subject": "a fluffy chick hatching from a cracked egg, with daisies" },
+    { "id": "painted-egg", "name": "Painted Egg", "subject": "one giant egg decorated with wide bands of zigzags, dots as circles and flowers" },
+    { "id": "lamb-meadow", "name": "Lamb Meadow", "subject": "a lamb whose wool is made of big round puffs, standing among flowers" },
+    { "id": "tulip-pot", "name": "Tulip Pot", "subject": "three big tulips with wide leaves growing in a round flower pot" },
+    { "id": "duckling-puddle", "name": "Duckling Puddle", "subject": "a duckling splashing in a round puddle with daisies around it" },
+    { "id": "butterfly-garden", "name": "Butterfly Garden", "subject": "a butterfly with big wing sections flying above three flowers" },
+    { "id": "carrot-patch", "name": "Carrot Patch", "subject": "a bunny pulling a giant carrot out of the ground" },
+    { "id": "egg-hunt", "name": "Egg Hunt", "subject": "six decorated eggs hiding among big grass tufts and flowers" },
+    { "id": "hen-nest", "name": "Hen Nest", "subject": "a hen sitting on a round nest with three eggs peeking out" },
+    { "id": "spring-wreath", "name": "Spring Wreath", "subject": "a wreath made of separate big flowers, leaves and eggs with a bow at the bottom" },
+    { "id": "bunny-wagon", "name": "Bunny Wagon", "subject": "a bunny pulling a little wagon full of painted eggs" },
+    { "id": "snail-daisy", "name": "Snail Daisy", "subject": "a snail with a shell of four big segments sliding past a daisy" },
+    { "id": "bee-blossom", "name": "Bee Blossom", "subject": "a round bumblebee with wide stripes visiting a big blossom" },
+    { "id": "egg-balloon", "name": "Egg Balloon", "subject": "a bunny riding in a basket under a hot air balloon shaped like a striped egg" }
+  ]
+}

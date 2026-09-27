@@ -12,7 +12,7 @@ export const PLANS: Record<PlanId, Plan> = {
     priceLabel: '$0',
     cadence: 'forever',
     summary: 'A handful of flowers to start with.',
-    features: [`${freeCount} flower pictures`, 'All six colors', 'Artwork saved on this device'],
+    features: [`${freeCount} flower pictures`, 'All twelve colors', 'Artwork saved on this device'],
   },
   family: {
     id: 'family',
