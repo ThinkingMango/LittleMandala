@@ -330,13 +330,13 @@ export const AUDIENCE_RULES: Readonly<Record<Audience, PageRules>> = {
     keepLines: false,
     line: 'bold',
   },
-  // Every area stays at least 16 units wide and about 24 units square: the coloring screen has no zoom.
+  // Fine detail for adults: areas can be as narrow as 10 units, which is still tappable with a stylus or fingertip.
   'grown-ups': {
-    minRegions: 40,
-    maxRegions: 320,
-    minThickness: 16,
-    maxBackgroundShare: 0.75,
-    minAreaShare: 0.0006,
+  minRegions: 40,
+  maxRegions: 640,
+  minThickness: 10,
+  maxBackgroundShare: 0.75,
+  minAreaShare: 0.00025,
     absorbThin: true,
     keepLines: true,
     line: 'fine',
