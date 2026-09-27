@@ -23,7 +23,7 @@ const POP_FRAMES: Keyframe[] = [
 
 export function ColoringScreen({ mandala }: { mandala: Mandala }) {
   const hydrated = useHydrated()
-  const { isUnlocked } = useEntitlements()
+  const entitlements = useEntitlements()
   const settings = useLocalStore(settingsStore)
   const coloring = useColoring(mandala)
   const [tool, setTool] = useState<Tool>(DEFAULT_COLOR)
@@ -32,11 +32,11 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
   const [undoHint, setUndoHint] = useState(false)
   const [announcement, setAnnouncement] = useState('')
 
-  if (!hydrated) {
+  if (!hydrated || (mandala.tier !== 'free' && !entitlements.ready)) {
     return <main className="min-h-dvh bg-background" aria-busy="true" />
   }
 
-  if (!isUnlocked(mandala)) {
+  if (!entitlements.isUnlocked(mandala)) {
     return <AskGrownUp mandala={mandala} />
   }
 

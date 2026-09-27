@@ -1,11 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
-import { LogOut } from 'lucide-react'
 import { ParentCard } from '@/components/parent/parent-card'
-import { Button, buttonVariants } from '@/components/ui/button'
-import { authClient, useAuthState } from '@/lib/auth/client'
+import { SignOutButton } from '@/components/parent/sign-out-button'
+import { buttonVariants } from '@/components/ui/button'
+import { useAuthState } from '@/lib/auth/client'
 import { cn } from '@/lib/utils'
 
 const DESCRIPTIONS = {
@@ -16,25 +15,11 @@ const DESCRIPTIONS = {
 
 export function AccountCard() {
   const auth = useAuthState()
-  const [signingOut, setSigningOut] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const signOut = async () => {
-    setError(null)
-    setSigningOut(true)
-    try {
-      await authClient.signOut()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Signing out didn’t finish. Please try again.')
-    } finally {
-      setSigningOut(false)
-    }
-  }
 
   return (
     <ParentCard title="Account" description={DESCRIPTIONS[auth.status]}>
       {auth.status === 'signed-in' ? (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <span
@@ -45,21 +30,14 @@ export function AccountCard() {
               </span>
               <span className="truncate font-bold">{auth.user.email}</span>
             </div>
-            <Button
-              variant="outline"
-              onClick={signOut}
-              disabled={signingOut}
-              className="h-11 rounded-full px-4 font-bold"
-            >
-              <LogOut data-icon="inline-start" />
-              {signingOut ? 'Signing out…' : 'Sign out'}
-            </Button>
+            <SignOutButton />
           </div>
-          {error && (
-            <p role="alert" className="text-sm font-semibold text-destructive">
-              {error}
-            </p>
-          )}
+          <Link
+            href="/parent/delete-account"
+            className="self-start text-sm font-semibold text-muted-foreground underline underline-offset-4 hover:text-destructive"
+          >
+            Delete account
+          </Link>
         </div>
       ) : auth.status === 'signed-out' ? (
         <Link

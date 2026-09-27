@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button'
 import { authClient } from '@/lib/auth/client'
 
 const RESEND_COOLDOWN_SECONDS = 60
-const RETURN_PATH = '/parent/cloud-saving'
 
-type Props = { email: string; action: 'turn on' | 'turn off' }
+/** `action` completes "only a grown-up who signed in recently can …", e.g. "turn on cloud saving". */
+type Props = { email: string; action: string; returnPath: string }
 
-export function FreshSignInPrompt({ email, action }: Props) {
+export function FreshSignInPrompt({ email, action, returnPath }: Props) {
   const [pending, setPending] = useState(false)
   const [sent, setSent] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(0)
@@ -26,7 +26,7 @@ export function FreshSignInPrompt({ email, action }: Props) {
     setError(null)
     setPending(true)
     try {
-      await authClient.sendEmailLink(email, RETURN_PATH)
+      await authClient.sendEmailLink(email, returnPath)
       setSent(true)
       setSecondsLeft(RESEND_COOLDOWN_SECONDS)
     } catch (err) {
@@ -51,14 +51,14 @@ export function FreshSignInPrompt({ email, action }: Props) {
               <p>
                 {'We sent a fresh link to '}
                 <span className="font-bold break-all">{email}</span>
-                {`. Open it in this browser. It brings you back here, and you then have 10 minutes to ${action} cloud saving.`}
+                {`. Open it in this browser. It brings you back here, and you then have 10 minutes to ${action}.`}
               </p>
             </>
           ) : (
             <>
               <p className="font-bold">Confirm it’s you with a fresh email link</p>
               <p>
-                {`To protect your child, only a grown-up who signed in during the last 10 minutes can ${action} cloud saving. This stops anyone using an already signed-in family tablet from changing it.`}
+                {`To protect your child, only a grown-up who signed in during the last 10 minutes can ${action}. This stops anyone using an already signed-in family tablet from doing it.`}
               </p>
             </>
           )}

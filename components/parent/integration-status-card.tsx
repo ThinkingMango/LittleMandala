@@ -14,7 +14,7 @@ const ROWS = [
   {
     icon: CreditCard,
     title: 'Payments',
-    detail: 'Checkout is simulated. No card is charged until Paddle Billing is connected.',
+    detail: 'No plan can be bought until Paddle Billing is connected. Flowers unlock only from plans the billing server records.',
     status: <NotConnectedBadge service="Paddle" />,
   },
   {
@@ -33,7 +33,7 @@ export function IntegrationStatusCard() {
   return (
     <ParentCard
       title="Setup status"
-      description="What is real and what is simulated in this preview."
+      description="What is live and what is still being connected."
       className="md:col-span-2"
     >
       <ul className="flex flex-col divide-y">

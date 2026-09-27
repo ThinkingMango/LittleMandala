@@ -499,6 +499,36 @@ export function createArtworkLibrary({
   }
 
   /**
+   * Takes pictures that are safe in the parent's account off this device, e.g. at sign-out on a
+   * shared device. Nothing is marked, so the cloud copies stay and return when that parent signs
+   * in again. An open draft keeps going under a new id so a child's unfinished work stays.
+   */
+  const forgetOnDevice = (artworkIds: readonly string[]) => {
+    const s = safeStorage()
+    if (!s || artworkIds.length === 0) return 0
+    const gallery = readRawList(s, STORAGE_KEYS.gallery)
+    const forget = new Set(artworkIds.filter((id) => gallery.includes(id)))
+    if (forget.size === 0) return 0
+    const artworks = readRawMap(s, STORAGE_KEYS.artworks)
+    const drafts = readRawMap(s, STORAGE_KEYS.drafts)
+    for (const [templateId, draftId] of Object.entries(getState().drafts)) {
+      const record = artworks[draftId]
+      if (!forget.has(draftId) || !isRecord(record)) continue
+      const id = newId()
+      artworks[id] = { ...record, id }
+      drafts[templateId] = id
+    }
+    for (const id of forget) delete artworks[id]
+    return commit([
+      [STORAGE_KEYS.gallery, gallery.filter((id) => !forget.has(id))],
+      [STORAGE_KEYS.artworks, artworks],
+      [STORAGE_KEYS.drafts, drafts],
+    ])
+      ? forget.size
+      : 0
+  }
+
+  /**
    * Adds garden pictures saved from the parent's other devices. Skips anything already on this
    * device, taken out here, or cleared here, and anything that doesn't match an approved template.
    */
@@ -596,6 +626,7 @@ export function createArtworkLibrary({
     clearAll,
     syncMarks,
     importFromCloud,
+    forgetOnDevice,
   }
 }
 

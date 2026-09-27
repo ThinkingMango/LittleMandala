@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { Cloud, CloudOff, LogIn, RotateCw } from 'lucide-react'
 import { CloudSyncStatus } from '@/components/parent/cloud-sync-status'
@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { useNow } from '@/hooks/use-now'
 import { useAuthState } from '@/lib/auth/client'
 import {
   CloudConsentError,
@@ -30,19 +31,10 @@ import { freshSignInRemainingMs } from '@/lib/cloud-consent/notice'
 import { cloudSync } from '@/lib/cloud-sync/client'
 import { cn } from '@/lib/utils'
 
-const TICK_MS = 15_000
 const PANEL = 'flex flex-col gap-5 rounded-3xl border bg-card p-6 md:p-8'
+const RETURN_PATH = '/parent/cloud-saving'
 
 type Flash = { kind: 'success' | 'files_remaining'; message: string }
-
-function useNow() {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), TICK_MS)
-    return () => clearInterval(timer)
-  }, [])
-  return now
-}
 
 function errorMessage(err: unknown) {
   return err instanceof Error ? err.message : 'That didn’t go through. Please try again.'
@@ -281,7 +273,7 @@ function ConsentStep({ email, notice, outdatedConsent, remainingMs, signedInMinu
             </p>
           </div>
         ) : (
-          <FreshSignInPrompt email={email} action="turn on" />
+          <FreshSignInPrompt email={email} action="turn on cloud saving" returnPath={RETURN_PATH} />
         )}
 
         {error && (
@@ -371,7 +363,9 @@ function CloudSavingOn({ userId, email, notice, consent, remainingMs, now, onCha
           <CloudOff data-icon="inline-start" />
           Turn off cloud saving
         </Button>
-        {needsFreshLink && <FreshSignInPrompt email={email} action="turn off" />}
+        {needsFreshLink && (
+          <FreshSignInPrompt email={email} action="turn off cloud saving" returnPath={RETURN_PATH} />
+        )}
         {error && (
           <p role="alert" className="text-sm font-semibold text-destructive">
             {error}

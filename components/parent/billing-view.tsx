@@ -1,36 +1,24 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { Info } from 'lucide-react'
-import { MockCheckoutDialog } from '@/components/parent/mock-checkout-dialog'
 import { NotConnectedBadge } from '@/components/parent/not-connected-badge'
 import { PlanCard } from '@/components/parent/plan-card'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { useParentUser } from '@/lib/auth/client'
-import { billingClient, useSubscription } from '@/lib/billing/client'
 import { PLANS } from '@/lib/billing/plans'
+import { useEntitlements } from '@/lib/entitlements'
 import { cn } from '@/lib/utils'
 
 const FUTURE_FLOW = [
   'Paddle.js opens an overlay checkout, tagged with the signed-in parent’s id.',
   'Paddle sends a signed webhook to /api/paddle/webhook, which verifies it.',
-  'The subscription is saved in Supabase, and flowers unlock from that record.',
+  'The billing server records the plan in Supabase. Flowers unlock only from that record.',
 ]
 
 export function BillingView() {
   const user = useParentUser()
-  const subscription = useSubscription()
-  const [checkoutOpen, setCheckoutOpen] = useState(false)
-  const [checkoutAttempt, setCheckoutAttempt] = useState(0)
-  const [cancelling, setCancelling] = useState(false)
-  const onFamily = subscription.plan === 'family' && subscription.status === 'active'
-
-  const cancelPlan = async () => {
-    setCancelling(true)
-    await billingClient.cancel()
-    setCancelling(false)
-  }
+  const { hasFamily, membership, ready, failed } = useEntitlements()
 
   const familyAction = !user ? (
     <Link
@@ -39,24 +27,13 @@ export function BillingView() {
     >
       Sign in to subscribe
     </Link>
-  ) : onFamily ? (
-    <Button
-      variant="outline"
-      onClick={cancelPlan}
-      disabled={cancelling}
-      className="h-12 w-full rounded-full text-base font-bold"
-    >
-      {cancelling ? 'Cancelling…' : 'Cancel plan (simulated)'}
-    </Button>
   ) : (
-    <Button
-      onClick={() => {
-        setCheckoutAttempt((n) => n + 1)
-        setCheckoutOpen(true)
-      }}
-      className="h-12 w-full rounded-full text-base font-bold">
-      Subscribe
-    </Button>
+    <div className="flex flex-col gap-2">
+      <Button disabled className="h-12 w-full rounded-full text-base font-bold">
+        {hasFamily ? 'Manage plan' : 'Subscribe'}
+      </Button>
+      <p className="text-center text-sm text-muted-foreground">Available once Paddle is connected.</p>
+    </div>
   )
 
   return (
@@ -69,27 +46,32 @@ export function BillingView() {
       <div className="flex items-start gap-3 rounded-2xl bg-warning p-4 text-warning-foreground">
         <Info className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
         <p className="text-sm leading-relaxed font-semibold">
-          Payments are simulated. Paddle is not connected, so no real checkout opens and no card is charged.
-          Prices are placeholders.
+          {'Payments aren’t connected yet, so no plan can be bought and no card is charged. Prices are placeholders.'}
         </p>
       </div>
 
+      {failed && (
+        <p role="alert" className="text-sm font-semibold text-destructive">
+          {'We couldn’t check your plan right now. Paid flowers stay locked until we can.'}
+        </p>
+      )}
+
       <div className="grid gap-5 md:grid-cols-2">
-        <PlanCard plan={PLANS.free} current={!onFamily} />
-        <PlanCard plan={PLANS.family} current={onFamily} highlighted={!onFamily} action={familyAction} />
+        <PlanCard plan={PLANS.free} current={ready && !hasFamily} />
+        <PlanCard plan={PLANS.family} current={hasFamily} highlighted={!hasFamily} action={familyAction} />
       </div>
 
-      {onFamily && subscription.since && (
+      {hasFamily && (
         <p className="text-sm text-muted-foreground">
-          {`Family plan active since ${new Date(subscription.since).toLocaleDateString(undefined, {
-            dateStyle: 'long',
-          })} (simulated).`}
+          {membership?.endsAt
+            ? `Family plan active until ${membership.endsAt.toLocaleDateString(undefined, { dateStyle: 'long' })}.`
+            : 'Family plan active.'}
         </p>
       )}
 
       <section aria-labelledby="future-flow" className="flex flex-col gap-4 rounded-3xl border border-dashed bg-card p-6">
         <h2 id="future-flow" className="font-extrabold">
-          How real billing will work
+          How billing will work
         </h2>
         <ol className="flex flex-col gap-3">
           {FUTURE_FLOW.map((step, i) => (
@@ -105,12 +87,6 @@ export function BillingView() {
           ))}
         </ol>
       </section>
-
-      {user && (
-        <MockCheckoutDialog
-          key={checkoutAttempt}
-          open={checkoutOpen} onOpenChange={setCheckoutOpen} customerEmail={user.email} />
-      )}
     </div>
   )
 }

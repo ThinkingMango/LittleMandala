@@ -7,7 +7,8 @@ import { createClient } from '@/lib/supabase/client'
 const LOADING: AuthState = { status: 'loading', user: null }
 const SIGNED_OUT: AuthState = { status: 'signed-out', user: null }
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const LEGACY_MOCK_USER_KEY = 'lm:mock:user'
+/** Left behind by the old mock account and mock checkout. A plan stored on the device must never count. */
+const LEGACY_MOCK_KEYS = ['lm:mock:user', 'lm:mock:subscription']
 
 let state: AuthState = LOADING
 let started = false
@@ -31,7 +32,7 @@ function start() {
   if (started || typeof window === 'undefined') return
   started = true
   try {
-    window.localStorage.removeItem(LEGACY_MOCK_USER_KEY)
+    for (const key of LEGACY_MOCK_KEYS) window.localStorage.removeItem(key)
   } catch {}
   // Fires INITIAL_SESSION immediately, then on every sign-in, refresh and sign-out (including other tabs).
   createClient().auth.onAuthStateChange((_event, session) => setUser(session?.user))

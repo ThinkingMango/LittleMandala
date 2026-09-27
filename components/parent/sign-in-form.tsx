@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { Mail, MailCheck } from 'lucide-react'
+import { SignOutButton } from '@/components/parent/sign-out-button'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -51,15 +52,6 @@ export function SignInForm({ next, linkError }: { next: string; linkError: LinkE
     void sendLink(email)
   }
 
-  const signOut = async () => {
-    setError(null)
-    try {
-      await authClient.signOut()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Signing out didn’t finish. Please try again.')
-    }
-  }
-
   const errorMessage = error && (
     <p role="alert" className="text-sm font-semibold leading-relaxed text-destructive">
       {error}
@@ -87,9 +79,7 @@ export function SignInForm({ next, linkError }: { next: string; linkError: LinkE
           <Link href={next} className={cn(buttonVariants(), 'h-11 rounded-full px-5 font-bold')}>
             Continue
           </Link>
-          <Button variant="outline" onClick={signOut} className="h-11 rounded-full px-5 font-bold">
-            Sign out
-          </Button>
+          <SignOutButton className="px-5" />
         </div>
       </div>
     )
