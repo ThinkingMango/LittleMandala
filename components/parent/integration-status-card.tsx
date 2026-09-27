@@ -14,7 +14,7 @@ const ROWS = [
   {
     icon: CreditCard,
     title: 'Payments',
-    detail: 'No plan can be bought until Paddle Billing is connected. Flowers unlock only from plans the billing server records.',
+    detail: 'Nothing can be bought until Paddle Billing is connected. Pictures unlock only from purchases the billing server records.',
     status: <NotConnectedBadge service="Paddle" />,
   },
   {

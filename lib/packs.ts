@@ -25,7 +25,7 @@ export type Pack = Readonly<{
 const STANDARD: Pack = {
   id: 'standard',
   name: 'Standard',
-  description: 'Ten flower mandalas. Four are free for everyone, and six more open with the Family plan.',
+  description: 'Ten flower mandalas. Four are free for everyone, and six more open with a one-time unlock.',
   icon: 'flower-2',
   status: 'published',
   artSource: 'Original geometric artwork drawn in code for Little Mandala. No third-party images or licenses are used.',

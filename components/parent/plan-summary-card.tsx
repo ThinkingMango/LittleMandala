@@ -6,19 +6,19 @@ import { MandalaArt } from '@/components/coloring/mandala-art'
 import { NotConnectedBadge } from '@/components/parent/not-connected-badge'
 import { ParentCard } from '@/components/parent/parent-card'
 import { buttonVariants } from '@/components/ui/button'
-import { PLANS } from '@/lib/billing/plans'
 import { useEntitlements } from '@/lib/entitlements'
 import { EMPTY_FILLS } from '@/lib/artwork/library'
 import { MANDALAS, latestVersion } from '@/lib/mandalas'
 import { cn } from '@/lib/utils'
 
 export function PlanSummaryCard() {
-  const { plan, isUnlocked } = useEntitlements()
+  const { isUnlocked } = useEntitlements()
   const unlocked = MANDALAS.filter(isUnlocked).length
+  const allOpen = unlocked === MANDALAS.length
 
   return (
     <ParentCard
-      title={`${PLANS[plan].name} plan`}
+      title="Pictures"
       description={`${unlocked} of ${MANDALAS.length} pictures unlocked`}
       badge={<NotConnectedBadge service="Paddle" />}
       className="md:col-span-2"
@@ -43,11 +43,11 @@ export function PlanSummaryCard() {
       <Link
         href="/parent/billing"
         className={cn(
-          buttonVariants({ variant: plan === 'family' ? 'outline' : 'default' }),
+          buttonVariants({ variant: allOpen ? 'outline' : 'default' }),
           'h-11 self-start rounded-full px-5 font-bold',
         )}
       >
-        {plan === 'family' ? 'Manage plan' : 'Unlock all pictures'}
+        {allOpen ? 'See prices' : 'Unlock more pictures'}
       </Link>
     </ParentCard>
   )

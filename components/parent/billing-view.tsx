@@ -1,86 +1,111 @@
 'use client'
 
-import Link from 'next/link'
+import { useState } from 'react'
 import { Info } from 'lucide-react'
 import { NotConnectedBadge } from '@/components/parent/not-connected-badge'
 import { PackCard } from '@/components/parent/pack-card'
-import { PlanCard } from '@/components/parent/plan-card'
-import { Button, buttonVariants } from '@/components/ui/button'
-import { useParentUser } from '@/lib/auth/client'
-import { PLANS } from '@/lib/billing/plans'
+import { OfferGrid } from '@/components/parent/pricing/offer-grid'
+import { OrderSummary } from '@/components/parent/pricing/order-summary'
+import { StandardUnlockCard } from '@/components/parent/pricing/standard-unlock-card'
 import { useEntitlements } from '@/lib/entitlements'
-import { SOLD_PACKS } from '@/lib/packs'
-import { cn } from '@/lib/utils'
+import { SOLD_PACKS, packPages, type PackId } from '@/lib/packs'
 
 const FUTURE_FLOW = [
-  'Paddle.js opens an overlay checkout, tagged with the signed-in parent’s id.',
+  'Paddle.js opens an overlay checkout for the packs in your order, tagged with the signed-in parent’s id.',
   'Paddle sends a signed webhook to /api/paddle/webhook, which verifies it.',
-  'The billing server records the plan in Supabase. Flowers unlock only from that record.',
+  'The billing server records each pack in Supabase. Pictures unlock only from that record.',
 ]
 
-export function BillingView() {
-  const user = useParentUser()
-  const { hasFamily, membership, ready, failed } = useEntitlements()
+const STANDARD_PAID = packPages('standard').filter((page) => page.tier !== 'free')
 
-  const familyAction = !user ? (
-    <Link
-      href="/parent/sign-in?next=/parent/billing"
-      className={cn(buttonVariants(), 'h-12 w-full rounded-full text-base font-bold')}
-    >
-      Sign in to subscribe
-    </Link>
-  ) : (
-    <div className="flex flex-col gap-2">
-      <Button disabled className="h-12 w-full rounded-full text-base font-bold">
-        {hasFamily ? 'Manage plan' : 'Subscribe'}
-      </Button>
-      <p className="text-center text-sm text-muted-foreground">Available once Paddle is connected.</p>
-    </div>
-  )
+export function BillingView() {
+  const { hasFamily, packs: owned, isUnlocked, failed } = useEntitlements()
+  const [chosen, setChosen] = useState<ReadonlySet<PackId>>(() => new Set())
+  const [standardChosen, setStandardChosen] = useState(false)
+
+  const statusOf = (id: PackId) => (owned.has(id) ? 'Yours to keep' : hasFamily ? 'Included with your plan' : null)
+  const buyable = SOLD_PACKS.filter((pack) => !statusOf(pack.id))
+  const inOrder = buyable.filter((pack) => chosen.has(pack.id))
+  const standardUnlocked = STANDARD_PAID.every(isUnlocked)
+
+  const toggle = (id: PackId) =>
+    setChosen((current) => {
+      const next = new Set(current)
+      if (!next.delete(id)) next.add(id)
+      return next
+    })
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-black">Plan & billing</h1>
-        <NotConnectedBadge service="Paddle" />
-      </div>
-
-      <div className="flex items-start gap-3 rounded-2xl bg-warning p-4 text-warning-foreground">
-        <Info className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-        <p className="text-sm leading-relaxed font-semibold">
-          {'Payments aren’t connected yet, so no plan can be bought and no card is charged. Prices are placeholders.'}
-        </p>
-      </div>
-
-      {failed && (
-        <p role="alert" className="text-sm font-semibold text-destructive">
-          {'We couldn’t check your plan right now. Paid flowers stay locked until we can.'}
-        </p>
-      )}
-
-      <div className="grid gap-5 md:grid-cols-2">
-        <PlanCard plan={PLANS.free} current={ready && !hasFamily} />
-        <PlanCard plan={PLANS.family} current={hasFamily} highlighted={!hasFamily} action={familyAction} />
-      </div>
-
+    <div className="flex flex-col gap-10">
       <div className="flex flex-col gap-4">
-        <h2 className="text-2xl font-black">Picture packs</h2>
-        {SOLD_PACKS.map((pack) => (
-          <PackCard key={pack.id} pack={pack} />
-        ))}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-3xl font-black">Pricing</h1>
+          <NotConnectedBadge service="Paddle" />
+        </div>
+        <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty">
+          Buy picture packs once and keep them for good. There’s no subscription, and bundles bring the price down.
+        </p>
+
+        <div className="flex items-start gap-3 rounded-2xl bg-warning p-4 text-warning-foreground">
+          <Info className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+          <p className="text-sm leading-relaxed font-semibold">
+            {'Payments aren’t connected yet, so nothing can be bought and no card is charged. These are the proposed prices.'}
+          </p>
+        </div>
+
+        {failed && (
+          <p role="alert" className="text-sm font-semibold text-destructive">
+            {'We couldn’t check your purchases right now. Paid pictures stay locked until we can.'}
+          </p>
+        )}
       </div>
 
-      {hasFamily && (
-        <p className="text-sm text-muted-foreground">
-          {membership?.endsAt
-            ? `Family plan active until ${membership.endsAt.toLocaleDateString(undefined, { dateStyle: 'long' })}.`
-            : 'Family plan active.'}
-        </p>
-      )}
+      <section aria-labelledby="offers" className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 id="offers" className="text-2xl font-black">
+            Picture packs
+          </h2>
+          <p className="leading-relaxed text-muted-foreground">Every pack has 16 pictures. Mix and match any packs you like.</p>
+        </div>
+        <OfferGrid />
+      </section>
+
+      <section aria-labelledby="choose" className="flex flex-col gap-4">
+        <h2 id="choose" className="text-2xl font-black">
+          Choose your packs
+        </h2>
+
+        {hasFamily && (
+          <p className="rounded-2xl bg-secondary p-4 text-sm leading-relaxed font-semibold">
+            Your earlier plan already includes every picture, so there’s nothing more to buy.
+          </p>
+        )}
+
+        <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="flex flex-col gap-4">
+            {SOLD_PACKS.map((pack) => (
+              <PackCard
+                key={pack.id}
+                pack={pack}
+                status={statusOf(pack.id)}
+                selected={chosen.has(pack.id) && !statusOf(pack.id)}
+                onToggle={() => toggle(pack.id)}
+              />
+            ))}
+            <StandardUnlockCard
+              unlocked={standardUnlocked}
+              selected={standardChosen && !standardUnlocked}
+              onToggle={() => setStandardChosen((value) => !value)}
+            />
+          </div>
+
+          <OrderSummary packs={inOrder} withStandard={standardChosen && !standardUnlocked} buyable={buyable.length} />
+        </div>
+      </section>
 
       <section aria-labelledby="future-flow" className="flex flex-col gap-4 rounded-3xl border border-dashed bg-card p-6">
         <h2 id="future-flow" className="font-extrabold">
-          How billing will work
+          How buying will work
         </h2>
         <ol className="flex flex-col gap-3">
           {FUTURE_FLOW.map((step, i) => (
