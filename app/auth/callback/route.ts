@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 const EMAIL_OTP_TYPES: readonly EmailOtpType[] = ['magiclink', 'signup', 'email']
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl
+  const { searchParams } = request.nextUrl
   const next = safeNext(request.cookies.get(AFTER_SIGN_IN_COOKIE)?.value)
   const code = searchParams.get('code')
   const tokenHash = searchParams.get('token_hash')
@@ -25,7 +25,9 @@ export async function GET(request: NextRequest) {
   const target = failure
     ? `/parent/sign-in?error=${failure}&next=${encodeURIComponent(next)}`
     : next
-  const response = NextResponse.redirect(new URL(target, origin))
+  // Relative Location: behind a proxy, request.nextUrl.origin can mix the forwarded
+  // protocol with the internal host, so let the browser resolve against the URL it used.
+  const response = new NextResponse(null, { status: 307, headers: { Location: target } })
   response.cookies.delete(AFTER_SIGN_IN_COOKIE)
   return response
 }
