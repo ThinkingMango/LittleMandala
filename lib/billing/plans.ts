@@ -1,9 +1,9 @@
 import type { Plan, PlanId } from '@/lib/billing/types'
 import { MANDALAS } from '@/lib/mandalas'
-import { PACKS } from '@/lib/packs'
+import { SOLD_PACKS } from '@/lib/packs'
 
 const freeCount = MANDALAS.filter((m) => m.tier === 'free').length
-const packNames = PACKS.map((p) => p.name).join(', ')
+const packNames = SOLD_PACKS.map((p) => p.name).join(', ')
 
 export const PLANS: Record<PlanId, Plan> = {
   free: {

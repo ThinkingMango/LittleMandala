@@ -1,6 +1,6 @@
 import { BrandMark } from '@/components/brand-mark'
-import { MandalaGrid } from '@/components/kid/mandala-grid'
 import { MyGarden } from '@/components/kid/my-garden'
+import { PackShelf } from '@/components/kid/pack-shelf'
 import { ParentEntryButton } from '@/components/kid/parent-entry-button'
 
 export default function PickerPage() {
@@ -10,8 +10,8 @@ export default function PickerPage() {
         <BrandMark />
         <ParentEntryButton />
       </header>
-      <h1 className="text-4xl font-black text-balance md:text-5xl">Pick a picture</h1>
-      <MandalaGrid />
+      <h1 className="text-4xl font-black text-balance md:text-5xl">Pick a pack</h1>
+      <PackShelf />
       <MyGarden />
     </main>
   )

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Check, House, Redo2, RotateCcwSquare, Undo2 } from 'lucide-react'
 import { ColorPalette } from '@/components/coloring/color-palette'
 import { ClearPreview, CrossCheckDialog, DoneDialog } from '@/components/coloring/kid-dialogs'
+import { PACK_BY_ID, packHref } from '@/lib/packs'
 import { MandalaArt } from '@/components/coloring/mandala-art'
 import { ToolButton, ToolLink } from '@/components/coloring/tool-button'
 import { AskGrownUp } from '@/components/kid/ask-grown-up'
@@ -92,7 +93,11 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
         className="flex items-center justify-between gap-4 landscape:order-3 landscape:flex-col"
       >
         <div className="flex items-center gap-4 landscape:flex-col">
-          <ToolLink href="/" label="Back to flowers" icon={<House strokeWidth={2.5} />} />
+          <ToolLink
+            href={packHref(mandala.pack)}
+            label={`Back to ${PACK_BY_ID[mandala.pack].name}`}
+            icon={<House strokeWidth={2.5} />}
+          />
           <ToolButton
             label="Start over"
             icon={<RotateCcwSquare strokeWidth={2.5} />}
@@ -161,6 +166,7 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
         onConfirm={handleClear}
       />
       <DoneDialog
+        moreHref={packHref(mandala.pack)}
         open={done.open}
         onOpenChange={(open) => setDone((d) => ({ ...d, open }))}
         version={coloring.version}

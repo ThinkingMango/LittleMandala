@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { activeRights, canColor } from '@/lib/entitlements'
-import { latestVersion } from '@/lib/mandalas'
-import { PACKS, packPages } from '@/lib/packs'
+import { MANDALAS, latestVersion } from '@/lib/mandalas'
+import { PACKS, SOLD_PACKS, packPages } from '@/lib/packs'
 
 const NOW = Date.parse('2026-09-27T12:00:00Z')
 const row = (scope: 'membership' | 'pack', pack_id: string | null, ends_at: string | null = null) => ({
@@ -61,9 +61,30 @@ describe('pack rights', () => {
   it('does not treat a pack as a plan, and ignores expired rows', () => {
     const packOnly = activeRights([row('pack', 'ocean-friends')], NOW)
     expect(packOnly.membership).toBeNull()
-    expect(canColor({ tier: 'family', pack: null }, packOnly)).toBe(false)
+    expect(canColor({ tier: 'family', pack: 'standard' }, packOnly)).toBe(false)
 
     const expired = activeRights([row('pack', 'ocean-friends', '2026-09-20T00:00:00Z')], NOW)
     expect(canColor(ocean, expired)).toBe(false)
+  })
+
+  it('opens locked Standard pages only with a plan, never with a pack row', () => {
+    const lockedStandard = packPages('standard').find((m) => m.tier === 'family')!
+    expect(canColor(lockedStandard, activeRights([row('pack', 'standard')], NOW))).toBe(false)
+    expect(canColor(lockedStandard, activeRights([row('membership', null)], NOW))).toBe(true)
+  })
+})
+
+describe('pack catalog', () => {
+  it('puts every page in exactly one known pack', () => {
+    const packIds = new Set(PACKS.map((p) => p.id))
+    for (const page of MANDALAS) expect(packIds.has(page.pack), page.id).toBe(true)
+    expect(PACKS.reduce((n, p) => n + packPages(p.id).length, 0)).toBe(MANDALAS.length)
+  })
+
+  it('makes Standard 4 free and 6 locked pages, and sells only Ocean Friends on its own', () => {
+    const standard = packPages('standard')
+    expect(standard.filter((m) => m.tier === 'free')).toHaveLength(4)
+    expect(standard.filter((m) => m.tier === 'family')).toHaveLength(6)
+    expect(SOLD_PACKS.map((p) => p.id)).toEqual(['ocean-friends'])
   })
 })

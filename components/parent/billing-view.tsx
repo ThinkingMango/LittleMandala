@@ -9,7 +9,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { useParentUser } from '@/lib/auth/client'
 import { PLANS } from '@/lib/billing/plans'
 import { useEntitlements } from '@/lib/entitlements'
-import { PACKS } from '@/lib/packs'
+import { SOLD_PACKS } from '@/lib/packs'
 import { cn } from '@/lib/utils'
 
 const FUTURE_FLOW = [
@@ -65,7 +65,7 @@ export function BillingView() {
 
       <div className="flex flex-col gap-4">
         <h2 className="text-2xl font-black">Picture packs</h2>
-        {PACKS.map((pack) => (
+        {SOLD_PACKS.map((pack) => (
           <PackCard key={pack.id} pack={pack} />
         ))}
       </div>

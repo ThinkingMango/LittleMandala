@@ -3,6 +3,7 @@ import useSWR from 'swr'
 import { useAuthState } from '@/lib/auth/client'
 import type { PlanId } from '@/lib/billing/types'
 import type { Mandala } from '@/lib/mandalas'
+import { PACK_BY_ID } from '@/lib/packs'
 import { createClient } from '@/lib/supabase/client'
 
 export type Membership = Readonly<{ endsAt: Date | null }>
@@ -34,10 +35,10 @@ export function activeRights(rows: readonly EntitlementRow[], now: number): Righ
   return { membership, packs }
 }
 
-/** Free pages are open to everyone; paid pages need a plan, or the pack they belong to. */
+/** Free pages are open to everyone; paid pages need a plan, or ownership of a pack that is sold separately. */
 export function canColor(mandala: Pick<Mandala, 'tier' | 'pack'>, rights: Rights) {
   if (mandala.tier === 'free' || rights.membership) return true
-  return mandala.pack !== null && rights.packs.has(mandala.pack)
+  return PACK_BY_ID[mandala.pack].soldSeparately && rights.packs.has(mandala.pack)
 }
 
 async function fetchRights([, parentId]: readonly [string, string]): Promise<Rights> {

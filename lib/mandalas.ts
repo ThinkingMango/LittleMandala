@@ -41,7 +41,7 @@ export type TemplateDefinition = {
   id: string
   name: string
   tier: Tier
-  /** Paid pages that can also be bought once as a pack. Unset pages unlock only with a plan. */
+  /** The pack this page is shown in. Pages without one belong to the Standard pack. */
   pack?: PackId
   /**
    * Append-only. Published versions are never edited: saved artwork is pinned to the
@@ -63,7 +63,7 @@ export type Mandala = Readonly<{
   id: string
   name: string
   tier: Tier
-  pack: PackId | null
+  pack: PackId
   latestVersion: number
   versions: readonly TemplateVersion[]
 }>
@@ -246,7 +246,7 @@ export function defineTemplate(def: TemplateDefinition): Mandala {
     id: def.id,
     name: def.name,
     tier: def.tier,
-    pack: def.pack ?? null,
+    pack: def.pack ?? 'standard',
     latestVersion: versions.length,
     versions: Object.freeze(versions),
   })

@@ -3,6 +3,7 @@ import { ToolLink } from '@/components/coloring/tool-button'
 import { MandalaArt } from '@/components/coloring/mandala-art'
 import { EMPTY_FILLS } from '@/lib/artwork/library'
 import { latestVersion, type Mandala } from '@/lib/mandalas'
+import { PACK_BY_ID, packHref } from '@/lib/packs'
 
 export function AskGrownUp({ mandala }: { mandala: Mandala }) {
   return (
@@ -15,9 +16,14 @@ export function AskGrownUp({ mandala }: { mandala: Mandala }) {
       </div>
       <h1 className="text-4xl font-black text-balance">Ask a grown-up</h1>
       <p className="max-w-sm text-lg leading-relaxed text-muted-foreground text-pretty">
-        This flower is still sleeping. A grown-up can wake it up.
+        This picture is still sleeping. A grown-up can wake it up.
       </p>
-      <ToolLink href="/" label="Back to flowers" icon={<House strokeWidth={2.5} />} variant="primary" />
+      <ToolLink
+        href={packHref(mandala.pack)}
+        label={`Back to ${PACK_BY_ID[mandala.pack].name}`}
+        icon={<House strokeWidth={2.5} />}
+        variant="primary"
+      />
     </main>
   )
 }
