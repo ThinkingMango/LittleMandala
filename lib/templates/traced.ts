@@ -6,7 +6,13 @@ import { TRACED_PACK_SOURCES } from '@/lib/templates/registry.generated'
 
 export type PackStatus = 'draft' | 'published'
 
-export type TracedArt = { id: string; name: string; regions: Region[]; details: { kind: string; d: string }[] }
+export type TracedArt = {
+  id: string
+  name: string
+  line?: string
+  regions: Region[]
+  details: { kind: string; d: string }[]
+}
 
 /** A pack made from art/<pack>, as listed in the generated registry. */
 export type TracedPackSource = Readonly<{
@@ -37,6 +43,7 @@ export function traced(art: TracedArt): Drawing {
   return {
     regions: art.regions.map(({ id, label, d }) => ({ id, label, d })),
     details: art.details.map(({ kind, d }) => ({ kind: kind === 'line' ? 'line' : 'dot', d })),
+    ...(art.line === 'fine' && { line: 'fine' as const }),
   }
 }
 

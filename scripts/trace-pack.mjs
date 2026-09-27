@@ -6,6 +6,7 @@
 //   --min-area=0.004                         smallest tap area, as a share of the canvas
 //                                            (about 63×63 units; the 40-unit width check still applies).
 //                                            A page's "minArea" in pages.json sets its own default.
+//                                            Grown-up packs ("audience": "grown-ups") use finer rules.
 //
 // Reads  art/<pack>/pages.json, art/<pack>/source/<id>.png and art/<pack>/labels.json
 // Writes lib/templates/<pack>/<id>.json, review sheets in .pack-review/<pack>/<id>.png, and the registry
@@ -18,7 +19,7 @@ import { fileURLToPath } from 'node:url'
 import { Potrace } from 'potrace'
 import sharp from 'sharp'
 import { labelsFor, paths, placeholderLabel, readLabels, writeRegistry } from './pack/pack-files.ts'
-import { checkPage, segment } from './trace-pack/segment.ts'
+import { checkPage, rulesFor, segment } from './trace-pack/segment.ts'
 
 const SIZE = 1000
 const INK = '#2b2b2b'
@@ -47,7 +48,14 @@ const savedLabels = readLabels(root, pack)
 mkdirSync(outDir, { recursive: true })
 mkdirSync(reviewDir, { recursive: true })
 
-const options = { inkThreshold: 140, minAreaShare: Number(flags['min-area'] ?? 0.004) }
+const rules = rulesFor(manifest.audience)
+const options = {
+  inkThreshold: 140,
+  minAreaShare: Number(flags['min-area'] ?? rules.minAreaShare),
+  ...(rules.absorbThin && { absorbThinnerThan: rules.minThickness }),
+  ...(rules.keepLines && { keepInkFartherThan: 4 }),
+}
+const outline = rules.line === 'fine' ? 6 : 14
 let failures = 0
 
 for (const page of pages) {
@@ -68,7 +76,7 @@ for (const page of pages) {
 
   const pageOptions = page.minArea && !flags['min-area'] ? { ...options, minAreaShare: page.minArea } : options
   const result = segment(new Uint8Array(gray), SIZE, SIZE, pageOptions)
-  const review = checkPage(result)
+  const review = checkPage(result, 1, rules)
 
   const outFile = join(outDir, `${page.id}.json`)
   const names = labelsFor(savedLabels[page.id], sha256, result.regions.length)
@@ -89,6 +97,7 @@ for (const page of pages) {
     id: page.id,
     name: page.name,
     source: { file: sourceFile, sha256 },
+    ...(rules.line === 'fine' && { line: 'fine' }),
     regions,
     details,
     review: {
@@ -120,7 +129,8 @@ async function traceMask(inside) {
   const tracer = new Potrace({ turdSize: 20, optTolerance: 0.4, threshold: 128, blackOnWhite: true })
   await new Promise((resolve, reject) => tracer.loadImage(png, (error) => (error ? reject(error) : resolve())))
   const d = tracer.getPathTag().match(/ d="([^"]*)"/)?.[1] ?? ''
-  return d.replace(/-?\d+\.\d+/g, (n) => String(Math.round(Number(n) * 10) / 10)).trim()
+  const precision = rules.line === 'fine' ? 1 : 10
+  return d.replace(/-?\d+\.\d+/g, (n) => String(Math.round(Number(n) * precision) / precision)).trim()
 }
 
 async function writeReviewSheet(id, source, drawing) {
@@ -128,11 +138,11 @@ async function writeReviewSheet(id, source, drawing) {
     Buffer.from(
       `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-24 -24 1048 1048" width="${SIZE}" height="${SIZE}">` +
         `<rect x="-24" y="-24" width="1048" height="1048" fill="#fffdf8"/>` +
-        `<g stroke="${INK}" stroke-width="14" stroke-linejoin="round">` +
+        `<g stroke="${INK}" stroke-width="${outline}" stroke-linejoin="round">` +
         drawing.regions
           .map((r, i) => `<path d="${r.d}" fill="${filled ? PREVIEW_FILLS[i % PREVIEW_FILLS.length] : '#ffffff'}"/>`)
           .join('') +
-        drawing.details.map((d) => `<path d="${d.d}" fill="${INK}" stroke="none"/>`).join('') +
+        drawing.details.map((d) => `<path d="${d.d}" fill="${INK}" fill-rule="${outline === 6 ? 'evenodd' : 'nonzero'}" stroke="none"/>`).join('') +
         `</g></svg>`,
     )
   const tile = (input) => sharp(input).flatten({ background: '#ffffff' }).resize(SIZE, SIZE, { fit: 'contain', background: '#ffffff' }).png().toBuffer()

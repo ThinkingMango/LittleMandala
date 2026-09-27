@@ -131,6 +131,9 @@
   stroke: var(--primary);
   stroke-width: 16;
 }
+[data-line='fine'] .mandala-region:focus-visible {
+  stroke-width: 8;
+}
 
 @keyframes bubble-in {
   0% {

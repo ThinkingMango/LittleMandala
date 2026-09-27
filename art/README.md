@@ -35,6 +35,8 @@ This creates `art/farm-friends/pages.json` as a **draft**. Open it and:
 
 Page ids are lowercase words joined by dashes and must be unique across every pack. `pnpm packs icons` lists the icons you can use.
 
+**Packs for grown-ups.** Add `--audience=grown-ups` to `pnpm packs new` for detailed pages like Zen Mandalas. This sets `"audience": "grown-ups"` and a line-art style for adults. The art rules change to 40 to 320 areas, each at least 16 units wide. Slivers thinner than that merge into their neighbours, and the drawing's lines inside merged areas stay on the page as linework. The app draws these pages with a thinner outline.
+
 ### 2. Draw
 
 ```bash
@@ -63,7 +65,7 @@ pnpm packs sheet farm-friends   # numbered sheets in .pack-review/farm-friends/
 pnpm packs labels farm-friends  # writes art/farm-friends/labels.json
 ```
 
-Replace each placeholder in `labels.json` with a short name, using the numbers on the sheet ("Cow face", "Left ear", "Big daisy"). Then run `pnpm packs labels farm-friends` again to put the names on the pages. Names are tied to the exact picture. If you redraw a page, its names reset and the command tells you so.
+Replace each placeholder in `labels.json` with a short name, using the numbers on the sheet ("Cow face", "Left ear", "Big daisy"). For round pages with hundreds of areas, `pnpm packs labels <pack> --by-position` fills every placeholder with its ring and clock position instead, such as "Centre" or "Middle ring, 3 o'clock". Names you've already written are kept. Then run `pnpm packs labels farm-friends` again to put the names on the pages. Names are tied to the exact picture. If you redraw a page, its names reset and the command tells you so.
 
 ### 5. Try it, then publish
 

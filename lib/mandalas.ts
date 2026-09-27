@@ -22,7 +22,10 @@ export type Region = Readonly<{ id: string; d: string; label: string }>
 /** Ink drawn on top of the regions, such as eyes and smiles. It can't be colored or tapped. */
 export type Detail = Readonly<{ d: string; kind: 'dot' | 'line' }>
 
-export type Drawing = { regions: Region[]; details?: Detail[] }
+/** How heavy the outline is drawn: bold for small hands, fine for detailed grown-up pages. */
+export type LineWeight = 'bold' | 'fine'
+
+export type Drawing = { regions: Region[]; details?: Detail[]; line?: LineWeight }
 
 type PetalVersion = {
   version: number
@@ -55,6 +58,7 @@ export type TemplateVersion = Readonly<{
   version: number
   regions: readonly Region[]
   details: readonly Detail[]
+  line: LineWeight
   /** The only region ids that may ever hold a color for this version. */
   approvedRegionIds: readonly string[]
 }>
@@ -207,7 +211,8 @@ export function freezeVersion(
   version: number,
   regions: Region[],
   details: Detail[] = [],
-): TemplateVersion {
+  line: LineWeight = 'bold',
+  ): TemplateVersion {
   if (details.some((detail) => !detail.d.trim())) {
     throw new Error(`Template ${templateId} v${version}: detail is missing a path`)
   }
@@ -227,6 +232,7 @@ export function freezeVersion(
     version,
     regions: Object.freeze(regions.map((r) => Object.freeze({ ...r }))),
     details: Object.freeze(details.map((d) => Object.freeze({ ...d }))),
+    line,
     approvedRegionIds: Object.freeze([...ids]),
   })
 }
@@ -238,7 +244,7 @@ export function defineTemplate(def: TemplateDefinition): Mandala {
     if (v.version !== index + 1) {
       throw new Error(`Template ${def.id}: versions must be numbered 1, 2, 3… in order`)
     }
-    if ('drawing' in v) return freezeVersion(def.id, v.version, v.drawing.regions, v.drawing.details)
+    if ('drawing' in v) return freezeVersion(def.id, v.version, v.drawing.regions, v.drawing.details, v.drawing.line)
     return freezeVersion(def.id, v.version, buildRegions(v))
   })
 

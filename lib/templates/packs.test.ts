@@ -7,7 +7,7 @@ import { PACK_ICON_NAMES } from '@/lib/pack-icons'
 import { PACK_BY_ID, packPages, type PackId } from '@/lib/packs'
 import { EARLIER_DRAWINGS } from '@/lib/templates/earlier-drawings'
 import { REGISTRY_FILE, inspectPack, isPlaceholder, readManifests, readTraced, renderRegistry } from '@/scripts/pack/pack-files'
-import { PAGE_RULES } from '@/scripts/trace-pack/segment'
+import { rulesFor } from '@/scripts/trace-pack/segment'
 
 const root = join(__dirname, '..', '..')
 const manifests = readManifests(root)
@@ -56,11 +56,13 @@ describe.each(published.map((m) => [m.pack, m] as const))('%s pack', (id, manife
     }
   })
 
-  it('keeps every page within the beginner and second-level region range', () => {
+  it("keeps every page within its audience's region range and line weight", () => {
+    const rules = rulesFor(manifest.audience)
     for (const page of pages) {
-      const count = latestVersion(page).regions.length
-      expect(count, page.id).toBeGreaterThanOrEqual(PAGE_RULES.minRegions)
-      expect(count, page.id).toBeLessThanOrEqual(PAGE_RULES.maxRegions)
+      const version = latestVersion(page)
+      expect(version.regions.length, page.id).toBeGreaterThanOrEqual(rules.minRegions)
+      expect(version.regions.length, page.id).toBeLessThanOrEqual(rules.maxRegions)
+      expect(version.line, page.id).toBe(rules.line)
     }
   })
 

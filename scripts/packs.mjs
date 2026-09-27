@@ -9,6 +9,7 @@ import sharp from 'sharp'
 import { PACK_ICON_NAMES } from '../lib/pack-icons.ts'
 import {
   DEFAULT_STYLE,
+  GROWN_UP_STYLE,
   PACK_ID,
   RESERVED_PACK_IDS,
   imageKey,
@@ -17,6 +18,7 @@ import {
   listPackIds,
   paths,
   placeholderLabel,
+  positionalNames,
   promptFor,
   readLabels,
   readManifest,
@@ -42,8 +44,9 @@ const [command, packId, ...pageIds] = args.filter((a) => !a.startsWith('--'))
 
 const HELP = `Add a picture pack, one step at a time. Each step tells you the next one.
 
-  1. Plan      pnpm packs new <pack> --name="Farm Friends" --icon=tractor
+  1. Plan      pnpm packs new <pack> --name="Farm Friends" --icon=tractor [--audience=grown-ups]
                Creates art/<pack>/pages.json as a draft. Write the description and list the pages.
+               Grown-up packs allow 40 to 320 finer areas and draw a thinner outline.
   2. Draw      pnpm packs prompts <pack>
                Prints the image prompt for each page that has no picture yet.
                Save each picture as art/<pack>/source/<page>.png
@@ -55,6 +58,7 @@ const HELP = `Add a picture pack, one step at a time. Each step tells you the ne
                pnpm packs labels <pack>
                Writes art/<pack>/labels.json with one name per numbered area. Replace each
                placeholder, then run it again to put the names on the pages.
+               --by-position names round pages by ring and clock position instead.
   5. Publish   pnpm packs publish <pack>
                Checks every step and makes the pack live. Until then it's a draft, shown only
                in development and the v0 preview.
@@ -99,6 +103,8 @@ async function create() {
   if (existsSync(paths.manifest(root, packId))) fail(`art/${packId}/pages.json already exists. See pnpm packs status ${packId}`)
   const icon = typeof flags.icon === 'string' ? flags.icon : 'sparkles'
   if (!PACK_ICON_NAMES.includes(icon)) fail(`Unknown icon "${icon}". Choose one of: ${PACK_ICON_NAMES.join(', ')}`)
+  const grownUps = flags.audience === 'grown-ups'
+  if (flags.audience && !grownUps && flags.audience !== 'children') fail('--audience is children or grown-ups')
 
   const name =
     typeof flags.name === 'string'
@@ -112,8 +118,9 @@ async function create() {
     icon,
     order: Math.max(0, ...readManifests(root).map((m) => m.order)) + 1,
     status: 'draft',
+    ...(grownUps && { audience: 'grown-ups' }),
     generator: 'v0 built-in image generation',
-    style: DEFAULT_STYLE,
+    style: grownUps ? GROWN_UP_STYLE : DEFAULT_STYLE,
     pages: [],
   })
   writeRegistry(root)
@@ -184,7 +191,12 @@ function labels() {
       entry = { image, areas: {} }
     }
     const areas = {}
-    for (let i = 1; i <= count; i++) areas[String(i)] = entry.areas[String(i)]?.trim() || placeholderLabel(page.name, i)
+    const byPosition = flags['by-position'] ? positionalNames(traced.regions) : null
+    for (let i = 1; i <= count; i++) {
+      const written = entry.areas[String(i)]?.trim()
+      areas[String(i)] =
+        written && !isPlaceholder(written) ? written : (byPosition?.[i - 1] ?? (written || placeholderLabel(page.name, i)))
+    }
     next[page.id] = { image, areas }
 
     const names = Object.values(areas)

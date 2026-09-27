@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BACKGROUND, PAGE_RULES, checkPage, segment } from './segment'
+import { AUDIENCE_RULES, BACKGROUND, PAGE_RULES, checkPage, rulesFor, segment } from './segment'
 
 const W = 200
 const H = 200
@@ -65,5 +65,41 @@ describe('segment', () => {
     const opened = segment(leaky, W, H, { inkThreshold: 140, minAreaShare: 0.01 })
     expect(opened.regions).toHaveLength(0)
     expect(checkPage(opened).problems.some((p) => p.includes('background'))).toBe(true)
+  })
+})
+
+/** The fish, plus a closed sliver four pixels tall across its top half, like a thin petal. */
+function drawFishWithSliver() {
+  const gray = drawFish()
+  for (let y = 48; y <= 59; y++) {
+    for (let x = 60; x <= 140; x++) {
+      const edge = y <= 49 || y >= 58 || x <= 61 || x >= 139
+      if (edge && Math.hypot(x - 100, y - 100) < 78) gray[y * W + x] = 0
+    }
+  }
+  return gray
+}
+
+describe('segment for grown-up pages', () => {
+  const base = { inkThreshold: 140, minAreaShare: 0.001 }
+
+  it('keeps a thin sliver as its own area by default, which the children rules then reject', () => {
+    const result = segment(drawFishWithSliver(), W, H, base)
+    expect(result.regions).toHaveLength(3)
+    expect(checkPage(result, 1, { ...AUDIENCE_RULES.children, minRegions: 1 }).problems.join()).toContain('narrower')
+  })
+
+  it('folds slivers into their neighbours and keeps the lines around them as linework', () => {
+    const result = segment(drawFishWithSliver(), W, H, { ...base, absorbThinnerThan: 16, keepInkFartherThan: 4 })
+    expect(result.regions).toHaveLength(2)
+    expect(result.labels[54 * W + 100]).toBe(result.labels[70 * W + 100])
+    expect(result.detailMask[48 * W + 100]).toBe(1)
+    expect(result.detailMask[100 * W + 100]).toBe(0)
+  })
+
+  it('uses the grown-up rules only when a pack asks for them', () => {
+    expect(rulesFor(undefined)).toBe(PAGE_RULES)
+    expect(rulesFor('grown-ups')).toMatchObject({ absorbThin: true, keepLines: true, line: 'fine' })
+    expect(rulesFor('grown-ups').maxRegions).toBeGreaterThan(PAGE_RULES.maxRegions)
   })
 })

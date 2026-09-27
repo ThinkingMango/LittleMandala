@@ -12,6 +12,13 @@ export type SegmentOptions = {
   inkThreshold: number
   /** Smallest area kept as its own tap target, as a share of the whole canvas. */
   minAreaShare: number
+  /** When set, areas narrower than this many pixels are absorbed into their neighbours too. */
+  absorbThinnerThan?: number
+  /**
+   * When set, ink further than this many pixels from any area's edge is kept as linework on top, so
+   * lines between absorbed shapes (leaf veins, petal ridges) still show on the page.
+   */
+  keepInkFartherThan?: number
 }
 
 export type SegmentedRegion = {
@@ -77,15 +84,34 @@ export function segment(gray: Uint8Array, width: number, height: number, options
   const componentLabel = componentArea.map((area, id) =>
     componentTouchesEdge[id] ? BACKGROUND : area >= minArea ? id : UNSET,
   )
-  const absorbed = componentLabel.filter((label) => label === UNSET).length
+  let absorbed = componentLabel.filter((label) => label === UNSET).length
 
   const labels = new Int32Array(size).fill(UNSET)
   for (let i = 0; i < size; i++) {
     if (!ink[i]) labels[i] = componentLabel[component[i]]
   }
 
-  const detailMask = findDetails(labels, width, height, stack)
+  const detailMask = findDetails(labels, ink, width, height, stack)
   growIntoInk(labels, width, height)
+
+  if (options.absorbThinnerThan) {
+    const thickness = measureThickness(labels, width, height, componentArea.length)
+    const thin = new Set(
+      componentLabel.filter((label) => label >= 0 && thickness[label] < options.absorbThinnerThan!),
+    )
+    if (thin.size) {
+      for (let i = 0; i < size; i++) if (thin.has(labels[i])) labels[i] = UNSET
+      growIntoInk(labels, width, height)
+      absorbed += thin.size
+    }
+  }
+
+  if (options.keepInkFartherThan) {
+    const fromEdge = distanceFromEdge(labels, width, height)
+    for (let i = 0; i < size; i++) {
+      if (ink[i] && labels[i] !== BACKGROUND && fromEdge[i] > options.keepInkFartherThan) detailMask[i] = 1
+    }
+  }
 
   const order = [...new Set(labels)]
     .filter((label) => label !== BACKGROUND)
@@ -117,9 +143,10 @@ export function segment(gray: Uint8Array, width: number, height: number, options
 
 /**
  * Ink pieces that touch exactly one area and nothing else are details drawn on top of that area.
- * At this point every unset pixel is ink, or a white speck too small to keep.
+ * At this point every unset pixel is ink, or a white speck too small to keep. Only the ink is drawn:
+ * specks go to the area around them, so a cluster of them never turns into a black blob.
  */
-function findDetails(labels: Int32Array, width: number, height: number, stack: Int32Array) {
+function findDetails(labels: Int32Array, ink: Uint8Array, width: number, height: number, stack: Int32Array) {
   const size = width * height
   const seen = new Uint8Array(size)
   const detailMask = new Uint8Array(size)
@@ -151,7 +178,7 @@ function findDetails(labels: Int32Array, width: number, height: number, stack: I
       }
     }
     if (touching.size === 1 && !touching.has(BACKGROUND)) {
-      for (const p of pixels) detailMask[p] = 1
+      for (const p of pixels) if (ink[p]) detailMask[p] = 1
     }
   }
   return detailMask
@@ -217,6 +244,35 @@ function measureThickness(labels: Int32Array, width: number, height: number, cou
   return best.map((d) => d * 2)
 }
 
+/** Steps from each pixel to the nearest pixel of a different area, the page edge counting as one. */
+function distanceFromEdge(labels: Int32Array, width: number, height: number) {
+  const size = width * height
+  const distance = new Int32Array(size).fill(-1)
+  let frontier: number[] = []
+  for (let p = 0; p < size; p++) {
+    const x = p % width
+    const y = (p - x) / width
+    if (neighbours4(p, x, y, width, height).some((q) => q < 0 || labels[q] !== labels[p])) {
+      distance[p] = 1
+      frontier.push(p)
+    }
+  }
+  while (frontier.length) {
+    const next: number[] = []
+    for (const p of frontier) {
+      const x = p % width
+      const y = (p - x) / width
+      for (const q of neighbours4(p, x, y, width, height)) {
+        if (q < 0 || distance[q] !== -1) continue
+        distance[q] = distance[p] + 1
+        next.push(q)
+      }
+    }
+    frontier = next
+  }
+  return distance
+}
+
 function neighbours4(p: number, x: number, y: number, width: number, height: number) {
   return [
     x > 0 ? p - 1 : -1,
@@ -243,25 +299,66 @@ function neighbours8(p: number, x: number, y: number, width: number, height: num
 
 export type PageCheck = { ok: boolean; problems: string[] }
 
-export const PAGE_RULES = {
-  minRegions: 10,
-  maxRegions: 24,
+export type Audience = 'children' | 'grown-ups'
+export const AUDIENCES: readonly Audience[] = ['children', 'grown-ups']
+
+export type PageRules = Readonly<{
+  minRegions: number
+  maxRegions: number
   /** Narrowest allowed area, in 1000-unit page space. */
-  minThickness: 40,
-  /** More background than this means the animal's outline leaked open. */
-  maxBackgroundShare: 0.75,
-} as const
+  minThickness: number
+  /** More background than this means the outline leaked open. */
+  maxBackgroundShare: number
+  /** Default smallest tap area, as a share of the canvas. A page's "minArea" overrides it. */
+  minAreaShare: number
+  /** Fold areas narrower than `minThickness` into their neighbours instead of failing the page. */
+  absorbThin: boolean
+  /** Keep the drawing's lines inside merged areas as linework on top. */
+  keepLines: boolean
+  /** Outline weight the app draws: bold for small hands, fine for detailed pages. */
+  line: 'bold' | 'fine'
+}>
+
+export const AUDIENCE_RULES: Readonly<Record<Audience, PageRules>> = {
+  children: {
+    minRegions: 10,
+    maxRegions: 24,
+    minThickness: 40,
+    maxBackgroundShare: 0.75,
+    minAreaShare: 0.004,
+    absorbThin: false,
+    keepLines: false,
+    line: 'bold',
+  },
+  // Every area stays at least 16 units wide and about 24 units square: the coloring screen has no zoom.
+  'grown-ups': {
+    minRegions: 40,
+    maxRegions: 320,
+    minThickness: 16,
+    maxBackgroundShare: 0.75,
+    minAreaShare: 0.0006,
+    absorbThin: true,
+    keepLines: true,
+    line: 'fine',
+  },
+}
+
+export const PAGE_RULES = AUDIENCE_RULES.children
+
+export function rulesFor(audience: string | undefined): PageRules {
+  return audience === 'grown-ups' ? AUDIENCE_RULES['grown-ups'] : AUDIENCE_RULES.children
+}
 
 /** Applies the pack art rules to a traced page. `scale` converts pixels to page units. */
-export function checkPage(result: Segmentation, scale = 1): PageCheck {
+export function checkPage(result: Segmentation, scale = 1, rules: PageRules = PAGE_RULES): PageCheck {
   const problems: string[] = []
   const count = result.regions.length
-  if (count < PAGE_RULES.minRegions || count > PAGE_RULES.maxRegions) {
-    problems.push(`${count} areas (needs ${PAGE_RULES.minRegions}–${PAGE_RULES.maxRegions})`)
+  if (count < rules.minRegions || count > rules.maxRegions) {
+    problems.push(`${count} areas (needs ${rules.minRegions}–${rules.maxRegions})`)
   }
-  const thin = result.regions.filter((region) => region.thickness * scale < PAGE_RULES.minThickness).length
-  if (thin) problems.push(`${thin} area${thin === 1 ? '' : 's'} narrower than ${PAGE_RULES.minThickness} units`)
-  if (result.backgroundShare > PAGE_RULES.maxBackgroundShare) {
+  const thin = result.regions.filter((region) => region.thickness * scale < rules.minThickness).length
+  if (thin) problems.push(`${thin} area${thin === 1 ? '' : 's'} narrower than ${rules.minThickness} units`)
+  if (result.backgroundShare > rules.maxBackgroundShare) {
     problems.push(`background covers ${Math.round(result.backgroundShare * 100)}% (outline probably leaks)`)
   }
   return { ok: problems.length === 0, problems }

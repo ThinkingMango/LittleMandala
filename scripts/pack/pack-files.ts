@@ -11,6 +11,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { PACK_ICON_NAMES } from '../../lib/pack-icons.ts'
+import { AUDIENCES, type Audience } from '../trace-pack/segment.ts'
 
 export type PackStatus = 'draft' | 'published'
 
@@ -24,6 +25,8 @@ export type PackManifest = {
   /** Shelf position after Standard, lowest first. */
   order: number
   status: PackStatus
+  /** Who colors it, which sets the art rules. Children when left out. */
+  audience?: Audience
   generator: string
   /** The drawing style every page's image prompt starts with. */
   style: string
@@ -39,6 +42,8 @@ export type TracedFile = {
   id: string
   name: string
   source: { file: string; sha256: string }
+  /** Written only for fine-line pages; bold is the default. */
+  line?: 'fine'
   regions: { id: string; label: string; d: string }[]
   details: { kind: string; d: string }[]
   review: { ok: boolean; problems: string[]; placeholderLabels: number; absorbedSpecks: number; backgroundShare: number }
@@ -51,6 +56,9 @@ export const REVIEW_DIR = '.pack-review'
 
 export const DEFAULT_STYLE =
   "Children's coloring book page, square 1:1. Pure white background with a wide empty white margin on all sides; nothing touches the edges. Bold uniform thick black outlines, same weight everywhere. No shading, no grey, no texture, no hatching, no black fills except tiny eye dots, no text, no border frame. Every shape fully closed. One large friendly subject, centered, with a very simple setting. About 16 large closed areas to color. Eyes are small solid black dots, smile is one short line. Very simple, cute, for a 3-year-old."
+
+export const GROWN_UP_STYLE =
+  'Adult coloring book page, square 1:1. Pure white background with a clear empty white margin on all sides; the design never touches the edges. One large circular mandala, centered, perfectly radially symmetric, filling about 90% of the page. Crisp black line art drawn with one medium line weight everywhere, never hairline. Every shape is fully closed so it can be filled. Intricate but clean: many concentric rings of petals, leaves and bands, with no shape smaller than about 2% of the page width. No shading, no grey, no stippling, no dots, no hatching, no solid black fills, no text, no border frame, nothing outside the mandala.'
 
 export const paths = {
   manifest: (root: string, pack: string) => join(root, 'art', pack, 'pages.json'),
@@ -125,6 +133,67 @@ export function labelsFor(entry: LabelEntry | undefined, sha256: string, areaCou
   return names.every((name) => typeof name === 'string') && Object.keys(entry.areas).length === areaCount ? names : null
 }
 
+type Box = { minX: number; minY: number; maxX: number; maxY: number }
+
+function boxOf(d: string): Box | null {
+  const numbers = d.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? []
+  if (numbers.length < 2) return null
+  const box = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
+  for (let i = 0; i + 1 < numbers.length; i += 2) {
+    box.minX = Math.min(box.minX, numbers[i])
+    box.maxX = Math.max(box.maxX, numbers[i])
+    box.minY = Math.min(box.minY, numbers[i + 1])
+    box.maxY = Math.max(box.maxY, numbers[i + 1])
+  }
+  return box
+}
+
+const ORDINALS = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth']
+
+/**
+ * Spoken names for a radial page's areas, from where each one sits: the rings around the middle, then
+ * every other area by its band and clock position, such as "Middle ring, 3 o'clock". Repeats get a number.
+ */
+export function positionalNames(regions: readonly { d: string }[], page = 1000): string[] {
+  const c = page / 2
+  const boxes = regions.map((r) => boxOf(r.d))
+  const surrounds = (b: Box | null) => Boolean(b && b.minX < c && b.maxX > c && b.minY < c && b.maxY > c)
+
+  const rings = boxes
+    .map((b, index) => ({ index, extent: b ? Math.max(b.maxX - b.minX, b.maxY - b.minY) : 0 }))
+    .filter(({ index }) => surrounds(boxes[index]))
+    .sort((a, b) => a.extent - b.extent)
+  const names: string[] = new Array(regions.length)
+  rings.forEach(({ index }, order) => {
+    names[index] = order === 0 ? 'Centre' : `${ORDINALS[order - 1] ?? `Ring ${order}`} ring around the centre`
+  })
+
+  for (let i = 0; i < regions.length; i++) {
+    if (names[i]) continue
+    const b = boxes[i]
+    if (!b) {
+      names[i] = 'Small shape'
+      continue
+    }
+    const x = (b.minX + b.maxX) / 2 - c
+    const y = (b.minY + b.maxY) / 2 - c
+    const r = Math.hypot(x, y) / c
+    const band = r < 0.34 ? 'Inner ring' : r < 0.62 ? 'Middle ring' : r < 0.92 ? 'Outer ring' : 'Edge'
+    const hour = Math.round(((Math.atan2(x, -y) * 180) / Math.PI + 360) % 360 / 30) % 12 || 12
+    names[i] = `${band}, ${hour} o'clock`
+  }
+
+  const seen = new Map<string, number>()
+  const totals = new Map<string, number>()
+  for (const name of names) totals.set(name, (totals.get(name) ?? 0) + 1)
+  return names.map((name) => {
+    if (totals.get(name) === 1) return name
+    const n = (seen.get(name) ?? 0) + 1
+    seen.set(name, n)
+    return `${name}, piece ${n}`
+  })
+}
+
 export type PageReport = {
   id: string
   name: string
@@ -154,6 +223,9 @@ function planProblems(manifest: PackManifest, folder: string, others: PackManife
   }
   if (!Number.isFinite(manifest.order)) problems.push('"order" must be a number')
   if (!['draft', 'published'].includes(manifest.status)) problems.push('"status" must be "draft" or "published"')
+  if (manifest.audience !== undefined && !AUDIENCES.includes(manifest.audience)) {
+    problems.push(`"audience" must be one of: ${AUDIENCES.join(', ')}`)
+  }
   if (!manifest.style?.trim()) problems.push('write the image "style"')
   if (!manifest.generator?.trim()) problems.push('record in "generator" how the pictures were made')
   if (!manifest.pages?.length) problems.push('add at least one page to "pages"')
@@ -284,6 +356,8 @@ export function renderRegistry(root: string) {
         imports.push(`import ${name} from '@/lib/templates/${manifest.pack}/${page.id}.json'`)
         return name
       })
+    const list = `[\n${names.map((n) => `      ${n},`).join('\n')}\n    ]`
+    const pages = !names.length ? '[]' : manifest.status === 'draft' ? `DRAFTS_LISTED\n      ? ${list.replace(/\n/g, '\n  ')}\n      : []` : list
     return [
       '  {',
       `    id: ${quote(manifest.pack)},`,
@@ -291,15 +365,18 @@ export function renderRegistry(root: string) {
       `    description: ${quote(manifest.description)},`,
       `    icon: ${quote(manifest.icon)},`,
       `    status: ${quote(manifest.status)},`,
-      names.length ? `    pages: [\n${names.map((n) => `      ${n},`).join('\n')}\n    ],` : '    pages: [],',
+      `    pages: ${pages},`,
       '  },',
     ].join('\n')
   })
 
   return [
     '// Generated by `pnpm packs sync` from art/*/pages.json. Do not edit by hand.',
+    '// Draft pages are only referenced in development, so production bundles leave their art out.',
     "import type { TracedPackSource } from '@/lib/templates/traced'",
     ...imports,
+    '',
+    "const DRAFTS_LISTED = process.env.NODE_ENV === 'development'",
     '',
     'export const TRACED_PACK_SOURCES = [',
     ...entries,
