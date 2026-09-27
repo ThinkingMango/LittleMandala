@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Converts a pack's chosen source images into tap-to-fill drawings.
+// Converts a pack's chosen source images into tap-to-fill drawings. Usually run as `pnpm packs trace`.
 //
 //   pnpm trace-pack ocean-friends            trace every page that has a source image
 //   pnpm trace-pack ocean-friends seal-pup   trace one page
@@ -7,22 +7,22 @@
 //                                            (about 63×63 units; the 40-unit width check still applies).
 //                                            A page's "minArea" in pages.json sets its own default.
 //
-// Reads  art/<pack>/pages.json and art/<pack>/source/<id>.png
-// Writes lib/templates/<pack>/<id>.json and review sheets in /tmp/trace-pack/<id>.png
+// Reads  art/<pack>/pages.json, art/<pack>/source/<id>.png and art/<pack>/labels.json
+// Writes lib/templates/<pack>/<id>.json, review sheets in .pack-review/<pack>/<id>.png, and the registry
 // Exits non-zero when a page is missing or breaks the art rules, so it can gate a release.
 
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Potrace } from 'potrace'
 import sharp from 'sharp'
+import { labelsFor, paths, placeholderLabel, readLabels, writeRegistry } from './pack/pack-files.ts'
 import { checkPage, segment } from './trace-pack/segment.ts'
 
 const SIZE = 1000
 const INK = '#2b2b2b'
 const PREVIEW_FILLS = ['#f28b82', '#fbbc04', '#fff475', '#ccff90', '#a7ffeb', '#aecbfa', '#d7aefb', '#fdcfe8']
-const REVIEW_DIR = '/tmp/trace-pack'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const args = process.argv.slice(2)
@@ -42,8 +42,10 @@ if (unknown.length) {
 }
 
 const outDir = join(root, 'lib', 'templates', pack)
+const reviewDir = paths.review(root, pack)
+const savedLabels = readLabels(root, pack)
 mkdirSync(outDir, { recursive: true })
-mkdirSync(REVIEW_DIR, { recursive: true })
+mkdirSync(reviewDir, { recursive: true })
 
 const options = { inkThreshold: 140, minAreaShare: Number(flags['min-area'] ?? 0.004) }
 let failures = 0
@@ -69,14 +71,13 @@ for (const page of pages) {
   const review = checkPage(result)
 
   const outFile = join(outDir, `${page.id}.json`)
-  const previous = existsSync(outFile) ? JSON.parse(readFileSync(outFile, 'utf8')) : null
-  const keepLabels = previous?.source?.sha256 === sha256
+  const names = labelsFor(savedLabels[page.id], sha256, result.regions.length)
 
   const regions = []
   for (let index = 0; index < result.regions.length; index++) {
     const id = `area-${String(index + 1).padStart(2, '0')}`
     const d = await traceMask((p) => result.labels[p] === index)
-    const label = (keepLabels && previous.regions.find((r) => r.id === id)?.label) || `${page.name} area ${index + 1}`
+    const label = names?.[index]?.trim() || placeholderLabel(page.name, index + 1)
     regions.push({ id, label, d })
   }
   const detailPath = result.detailMask.some(Boolean) ? await traceMask((p) => result.detailMask[p] === 1) : ''
@@ -103,11 +104,13 @@ for (const page of pages) {
 
   if (!review.ok) failures++
   const status = review.ok ? 'OK      ' : 'FAIL    '
-  const notes = [...review.problems, placeholders ? `${placeholders} labels to write` : ''].filter(Boolean)
+  const relabel = savedLabels[page.id] && !names ? 'labels.json was written for an earlier version of this picture' : ''
+  const notes = [...review.problems, placeholders ? `${placeholders} areas to name` : '', relabel].filter(Boolean)
   console.log(`${status}${page.id}  ${regions.length} areas, ${details.length ? 'ink details' : 'no details'}${notes.length ? `  — ${notes.join('; ')}` : ''}`)
 }
 
-console.log(`\nReview sheets: ${REVIEW_DIR}/<page>.png`)
+if (writeRegistry(root)) console.log('\nUpdated lib/templates/registry.generated.ts')
+console.log(`\nReview sheets: ${relative(root, reviewDir)}/<page>.png (source, colored, blank)`)
 process.exit(failures ? 1 : 0)
 
 async function traceMask(inside) {
@@ -140,5 +143,5 @@ async function writeReviewSheet(id, source, drawing) {
       { input: await tile(svg(false)), left: SIZE * 2, top: 0 },
     ])
     .png()
-    .toFile(join(REVIEW_DIR, `${id}.png`))
+    .toFile(join(reviewDir, `${id}.png`))
 }

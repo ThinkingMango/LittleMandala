@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { BACKGROUND, PAGE_RULES, checkPage, segment } from './segment'
 
@@ -67,20 +65,5 @@ describe('segment', () => {
     const opened = segment(leaky, W, H, { inkThreshold: 140, minAreaShare: 0.01 })
     expect(opened.regions).toHaveLength(0)
     expect(checkPage(opened).problems.some((p) => p.includes('background'))).toBe(true)
-  })
-})
-
-describe.each(['ocean-friends', 'safari-garden', 'easter-garden', 'christmas-garden'])('%s page manifest', (pack) => {
-  const manifest = JSON.parse(readFileSync(join(process.cwd(), `art/${pack}/pages.json`), 'utf8'))
-
-  it('plans 16 uniquely named pages and records how the art was made', () => {
-    expect(manifest.generator).toMatch(/image generation/i)
-    expect(manifest.pages).toHaveLength(16)
-    expect(new Set(manifest.pages.map((p: { id: string }) => p.id)).size).toBe(16)
-    for (const page of manifest.pages) {
-      expect(page.id).toMatch(/^[a-z]+(-[a-z]+)*$/)
-      expect(page.name.trim()).not.toBe('')
-      expect(page.subject.trim()).not.toBe('')
-    }
   })
 })

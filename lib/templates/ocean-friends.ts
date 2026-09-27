@@ -1,4 +1,4 @@
-import type { Detail, Drawing, Region, TemplateDefinition } from '@/lib/mandalas'
+import type { Detail, Drawing, Region } from '@/lib/mandalas'
 import {
   aim,
   bend,
@@ -19,23 +19,6 @@ import {
   type Pt,
   type Shape,
 } from '@/lib/templates/geometry'
-import clownfishHomeArt from '@/lib/templates/ocean-friends/clownfish-home.json'
-import crabCoveArt from '@/lib/templates/ocean-friends/crab-cove.json'
-import dolphinJumpArt from '@/lib/templates/ocean-friends/dolphin-jump.json'
-import fishFlowerArt from '@/lib/templates/ocean-friends/fish-flower.json'
-import jellyDanceArt from '@/lib/templates/ocean-friends/jelly-dance.json'
-import octopusHugArt from '@/lib/templates/ocean-friends/octopus-hug.json'
-import otterFloatArt from '@/lib/templates/ocean-friends/otter-float.json'
-import pufferBloomArt from '@/lib/templates/ocean-friends/puffer-bloom.json'
-import sealPupArt from '@/lib/templates/ocean-friends/seal-pup.json'
-import seahorseSwayArt from '@/lib/templates/ocean-friends/seahorse-sway.json'
-import sharkSmileArt from '@/lib/templates/ocean-friends/shark-smile.json'
-import shellBloomArt from '@/lib/templates/ocean-friends/shell-bloom.json'
-import starfishWavesArt from '@/lib/templates/ocean-friends/starfish-waves.json'
-import stingrayGlideArt from '@/lib/templates/ocean-friends/stingray-glide.json'
-import turtleFlowerArt from '@/lib/templates/ocean-friends/turtle-flower.json'
-import whaleCircleArt from '@/lib/templates/ocean-friends/whale-circle.json'
-import { tracedPage, type TracedArt } from '@/lib/templates/traced'
 
 const rad = (d: number) => (d * Math.PI) / 180
 const around = (count: number, offset = 0) => Array.from({ length: count }, (_, i) => offset + (360 / count) * i)
@@ -269,25 +252,17 @@ const crabCove = page((add, details) => {
   details.push(line(smoothLine([[-50, 70], [0, 100], [50, 70]])))
 })
 
-const oceanPage = (art: TracedArt, ...earlier: Drawing[]) => tracedPage('ocean-friends', art, ...earlier)
-
-// The first eight pages shipped with drawings made in code. Their version 1 stays so saved
-// artwork keeps opening on the drawing it was started on; the traced art is version 2.
-export const OCEAN_FRIENDS: TemplateDefinition[] = [
-  oceanPage(fishFlowerArt, fishFlower),
-  oceanPage(turtleFlowerArt, turtleFlower),
-  oceanPage(shellBloomArt, shellBloom),
-  oceanPage(starfishWavesArt, starfishWaves),
-  oceanPage(octopusHugArt, octopusHug),
-  oceanPage(pufferBloomArt, pufferBloom),
-  oceanPage(whaleCircleArt, whaleCircle),
-  oceanPage(crabCoveArt, crabCove),
-  oceanPage(seahorseSwayArt),
-  oceanPage(jellyDanceArt),
-  oceanPage(dolphinJumpArt),
-  oceanPage(sealPupArt),
-  oceanPage(clownfishHomeArt),
-  oceanPage(stingrayGlideArt),
-  oceanPage(otterFloatArt),
-  oceanPage(sharkSmileArt),
-]
+/**
+ * The first eight Ocean Friends pages shipped with these drawings made in code. They stay as version 1
+ * so saved artwork keeps opening on the drawing it was started on; the traced art is version 2.
+ */
+export const OCEAN_FRIENDS_CODE_DRAWINGS: Readonly<Record<string, readonly Drawing[]>> = {
+  'fish-flower': [fishFlower],
+  'turtle-flower': [turtleFlower],
+  'shell-bloom': [shellBloom],
+  'starfish-waves': [starfishWaves],
+  'octopus-hug': [octopusHug],
+  'puffer-bloom': [pufferBloom],
+  'whale-circle': [whaleCircle],
+  'crab-cove': [crabCove],
+}

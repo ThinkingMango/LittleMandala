@@ -1,5 +1,10 @@
 {
   "pack": "safari-garden",
+  "name": "Safari Garden",
+  "description": "Sixteen wild friends among the flowers: a lion with a petal mane, a giraffe, an elephant, a zebra, a hippo, a monkey, a rhino, a sleepy cheetah, a parrot, a flamingo, meerkats, a tortoise, a toucan, a gorilla, a chameleon and an ostrich.",
+  "icon": "paw-print",
+  "order": 2,
+  "status": "published",
   "generator": "v0 built-in image generation",
   "style": "Children's coloring book page, square 1:1. Pure white background with a wide empty white margin on all sides; nothing touches the edges. Bold uniform thick black outlines, same weight everywhere. No shading, no grey, no texture, no fur, no hatching, no black fills except tiny eye dots, no text, no border frame. Every shape fully closed. One large friendly safari animal, centered, in a simple garden with big flowers and leaves. About 16 large closed areas to color. Eyes are small solid black dots, smile is one short line. Very simple, cute, for a 3-year-old.",
   "pages": [

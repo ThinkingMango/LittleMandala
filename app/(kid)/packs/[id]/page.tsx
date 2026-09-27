@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { House } from 'lucide-react'
 import { ToolLink } from '@/components/coloring/tool-button'
+import { DraftBadge } from '@/components/kid/draft-badge'
 import { PackIcon } from '@/components/kid/pack-icon'
 import { PackPictures } from '@/components/kid/pack-pictures'
 import { ParentEntryButton } from '@/components/kid/parent-entry-button'
@@ -31,6 +32,7 @@ export default async function PackPage({ params }: Params) {
           <ToolLink href="/" label="All packs" icon={<House strokeWidth={2.5} />} />
           <PackIcon id={pack.id} className="hidden sm:flex" />
           <h1 className="text-3xl font-black text-balance md:text-5xl">{pack.name}</h1>
+          <DraftBadge pack={pack} />
         </div>
         <ParentEntryButton />
       </header>

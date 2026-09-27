@@ -1,5 +1,10 @@
 {
   "pack": "easter-garden",
+  "name": "Easter Garden",
+  "description": "Sixteen springtime pictures: bunnies, an egg basket, a hatching chick, a painted egg, a lamb, tulips, a duckling, a butterfly, a carrot patch, an egg hunt, a hen on her nest, a spring wreath, a snail, a bee and an egg balloon.",
+  "icon": "egg",
+  "order": 3,
+  "status": "published",
   "generator": "v0 built-in image generation",
   "style": "Children's coloring book page, square 1:1. Pure white background with a wide empty white margin on all sides; nothing touches the edges. Bold uniform thick black outlines, same weight everywhere. No shading, no grey, no texture, no fur, no hatching, no black fills except tiny eye dots, no text, no border frame. Every shape fully closed. One large friendly spring subject, centered, in a simple garden with big flowers and painted eggs. About 16 large closed areas to color. Eyes are small solid black dots, smile is one short line. Very simple, cute, for a 3-year-old.",
   "pages": [

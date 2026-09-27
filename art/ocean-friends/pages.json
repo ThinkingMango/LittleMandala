@@ -1,5 +1,10 @@
 {
   "pack": "ocean-friends",
+  "name": "Ocean Friends",
+  "description": "Sixteen sea friends: a flower fish and turtle, a shell with a pearl, a starfish, an octopus, a puffer fish, a whale, a crab, a seahorse, a jellyfish, a dolphin, a seal pup, a clownfish, a stingray, an otter and a friendly shark.",
+  "icon": "fish",
+  "order": 1,
+  "status": "published",
   "generator": "v0 built-in image generation (Higgsfield was unavailable)",
   "style": "Children's coloring book page, square 1:1. Pure white background. One uniform thick black outline, the same weight everywhere. No shading, no texture, no hatching, no gradients, no grey, no text, no border frame. Every shape is fully closed. One large friendly cartoon sea animal, centered and facing the viewer, filling most of the page, with a very simple ocean setting around it. Soft round shapes, big simple areas suitable for a 3-year-old to tap and fill, 10 to 24 areas in total. Eyes are small solid black dots, smile is a single short line. Nothing scary, no teeth, no sharp spikes.",
   "pages": [

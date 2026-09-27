@@ -41,13 +41,18 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-| Script           | What it does                         |
-| ---------------- | ------------------------------------ |
-| `pnpm dev`       | Start the development server         |
-| `pnpm build`     | Create a production build            |
-| `pnpm start`     | Serve the production build           |
-| `pnpm test`      | Run the test suite once              |
-| `pnpm typecheck` | Type-check the project without emit  |
+| Script           | What it does                                                   |
+| ---------------- | -------------------------------------------------------------- |
+| `pnpm dev`       | Start the development server                                   |
+| `pnpm build`     | Create a production build                                      |
+| `pnpm start`     | Serve the production build                                     |
+| `pnpm test`      | Run the test suite once                                        |
+| `pnpm typecheck` | Type-check the project without emit                            |
+| `pnpm packs`     | Add a picture pack step by step (see [art/README.md](art/README.md)) |
+
+## Adding a picture pack
+
+Every pack lives in its own folder in `art/`, holding the page list, the pictures and the area names. The app picks packs up from there, so you never edit app code to add one. Follow the five steps in [art/README.md](art/README.md), or run `pnpm packs status` to see where each pack stands.
 
 No environment variables are needed to run the app today; auth and billing run on local mocks.
 
@@ -65,6 +70,7 @@ No environment variables are needed to run the app today; auth and billing run o
 ## Project structure
 
 ```
+art/                One folder per picture pack: pages, pictures, area names
 app/
   (kid)/            Kid-facing routes: picker and coloring screen
   parent/           Gated grown-up routes
@@ -79,8 +85,11 @@ lib/
   auth/             Auth client interface and mock implementation
   billing/          Billing client interface, plans, mock implementation
   mandalas.ts       Versioned flower template definitions
+  packs.ts          The pack catalog, built from art/
+  templates/        Traced pack pages and the generated pack registry
   entitlements.ts   Which flowers a plan unlocks
   local-store.ts    Typed localStorage/sessionStorage store
+scripts/            pnpm packs and the tracer
 test/               Vitest setup
 ```
 

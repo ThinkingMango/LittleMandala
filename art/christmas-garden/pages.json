@@ -1,5 +1,10 @@
 {
   "pack": "christmas-garden",
+  "name": "Christmas Garden",
+  "description": "Sixteen snowy pictures: a Christmas tree, a snowman, a reindeer, a gingerbread house and friend, a penguin, a poinsettia, stockings, a holly wreath, a robin, a sleigh, a polar bear, a snow globe, bells, a bauble and a fox.",
+  "icon": "tree-pine",
+  "order": 4,
+  "status": "published",
   "generator": "v0 built-in image generation",
   "style": "Children's coloring book page, square 1:1. Pure white background with a wide empty white margin on all sides; nothing touches the edges. Bold uniform thick black outlines, same weight everywhere. No shading, no grey, no texture, no fur, no hatching, no black fills except tiny eye dots, no snowflake dots, no text, no border frame. Every shape fully closed. One large friendly Christmas subject, centered, in a simple snowy garden with holly and round snowy bushes. About 16 large closed areas to color. Eyes are small solid black dots, smile is one short line. Very simple, cute, for a 3-year-old.",
   "pages": [
