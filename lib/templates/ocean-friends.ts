@@ -35,6 +35,7 @@ import starfishWavesArt from '@/lib/templates/ocean-friends/starfish-waves.json'
 import stingrayGlideArt from '@/lib/templates/ocean-friends/stingray-glide.json'
 import turtleFlowerArt from '@/lib/templates/ocean-friends/turtle-flower.json'
 import whaleCircleArt from '@/lib/templates/ocean-friends/whale-circle.json'
+import { tracedPage, type TracedArt } from '@/lib/templates/traced'
 
 const rad = (d: number) => (d * Math.PI) / 180
 const around = (count: number, offset = 0) => Array.from({ length: count }, (_, i) => offset + (360 / count) * i)
@@ -268,25 +269,7 @@ const crabCove = page((add, details) => {
   details.push(line(smoothLine([[-50, 70], [0, 100], [50, 70]])))
 })
 
-type TracedArt = { id: string; name: string; regions: Region[]; details: { kind: string; d: string }[] }
-
-/** A page made by `pnpm trace-pack` from its source image in art/ocean-friends/source. */
-function traced(art: TracedArt): Drawing {
-  return {
-    regions: art.regions.map(({ id, label, d }) => ({ id, label, d })),
-    details: art.details.map(({ kind, d }) => ({ kind: kind === 'line' ? 'line' : 'dot', d })),
-  }
-}
-
-const pack = 'ocean-friends' as const
-
-const oceanPage = (art: TracedArt, ...earlier: Drawing[]): TemplateDefinition => ({
-  id: art.id,
-  name: art.name,
-  tier: 'family',
-  pack,
-  versions: [...earlier, traced(art)].map((drawing, index) => ({ version: index + 1, drawing })),
-})
+const oceanPage = (art: TracedArt, ...earlier: Drawing[]) => tracedPage('ocean-friends', art, ...earlier)
 
 // The first eight pages shipped with drawings made in code. Their version 1 stays so saved
 // artwork keeps opening on the drawing it was started on; the traced art is version 2.

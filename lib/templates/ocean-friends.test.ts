@@ -93,10 +93,14 @@ describe('pack catalog', () => {
     expect(PACKS.reduce((n, p) => n + packPages(p.id).length, 0)).toBe(MANDALAS.length)
   })
 
-  it('makes Standard 4 free and 6 locked pages, and sells only Ocean Friends on its own', () => {
+  it('makes Standard 4 free and 6 locked pages, and sells every picture pack but Standard on its own', () => {
     const standard = packPages('standard')
     expect(standard.filter((m) => m.tier === 'free')).toHaveLength(4)
     expect(standard.filter((m) => m.tier === 'family')).toHaveLength(6)
-    expect(SOLD_PACKS.map((p) => p.id)).toEqual(['ocean-friends'])
+    expect(SOLD_PACKS.map((p) => p.id)).toEqual(['ocean-friends', 'safari-garden', 'easter-garden', 'christmas-garden'])
+  })
+
+  it('gives every page a unique id across all packs', () => {
+    expect(new Set(MANDALAS.map((m) => m.id)).size).toBe(MANDALAS.length)
   })
 })

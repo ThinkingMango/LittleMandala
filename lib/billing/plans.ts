@@ -3,7 +3,7 @@ import { MANDALAS } from '@/lib/mandalas'
 import { SOLD_PACKS } from '@/lib/packs'
 
 const freeCount = MANDALAS.filter((m) => m.tier === 'free').length
-const packNames = SOLD_PACKS.map((p) => p.name).join(', ')
+const packNames = new Intl.ListFormat('en', { type: 'conjunction' }).format(SOLD_PACKS.map((p) => p.name))
 
 export const PLANS: Record<PlanId, Plan> = {
   free: {

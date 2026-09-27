@@ -70,8 +70,8 @@ describe('segment', () => {
   })
 })
 
-describe('Ocean Friends page manifest', () => {
-  const manifest = JSON.parse(readFileSync(join(process.cwd(), 'art/ocean-friends/pages.json'), 'utf8'))
+describe.each(['ocean-friends', 'safari-garden', 'easter-garden', 'christmas-garden'])('%s page manifest', (pack) => {
+  const manifest = JSON.parse(readFileSync(join(process.cwd(), `art/${pack}/pages.json`), 'utf8'))
 
   it('plans 16 uniquely named pages and records how the art was made', () => {
     expect(manifest.generator).toMatch(/image generation/i)

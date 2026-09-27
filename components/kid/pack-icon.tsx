@@ -1,8 +1,14 @@
-import { Fish, Flower2, type LucideIcon } from 'lucide-react'
+import { Egg, Fish, Flower2, PawPrint, TreePine, type LucideIcon } from 'lucide-react'
 import type { PackId } from '@/lib/packs'
 import { cn } from '@/lib/utils'
 
-const ICONS: Record<PackId, LucideIcon> = { standard: Flower2, 'ocean-friends': Fish }
+const ICONS: Record<PackId, LucideIcon> = {
+  standard: Flower2,
+  'ocean-friends': Fish,
+  'safari-garden': PawPrint,
+  'easter-garden': Egg,
+  'christmas-garden': TreePine,
+}
 
 export function PackIcon({ id, className }: { id: PackId; className?: string }) {
   const Icon = ICONS[id]

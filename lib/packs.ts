@@ -1,6 +1,9 @@
 import { MANDALAS, type Mandala } from '@/lib/mandalas'
 
-export type PackId = 'standard' | 'ocean-friends'
+export type PackId = 'standard' | 'ocean-friends' | 'safari-garden' | 'easter-garden' | 'christmas-garden'
+
+const tracedArtSource = (id: PackId) =>
+  `Original line art made for Little Mandala with v0 image generation, then traced into tap-to-fill areas by scripts/trace-pack.mjs. Each source image is kept in art/${id}/source with its checksum. No third-party images or licenses are used.`
 
 export type Pack = Readonly<{
   /** For packs sold separately, this matches `entitlements.pack_id`, written by the billing server. */
@@ -29,14 +32,43 @@ export const PACK_BY_ID: Readonly<Record<PackId, Pack>> = Object.freeze({
     name: 'Ocean Friends',
     description:
       'Sixteen sea friends: a flower fish and turtle, a shell with a pearl, a starfish, an octopus, a puffer fish, a whale, a crab, a seahorse, a jellyfish, a dolphin, a seal pup, a clownfish, a stingray, an otter and a friendly shark.',
-    artSource:
-      'Original line art made for Little Mandala with v0 image generation, then traced into tap-to-fill areas by scripts/trace-pack.mjs. Each source image is kept in art/ocean-friends/source with its checksum. No third-party images or licenses are used.',
+    artSource: tracedArtSource('ocean-friends'),
+    soldSeparately: true,
+  },
+  'safari-garden': {
+    id: 'safari-garden',
+    name: 'Safari Garden',
+    description:
+      'Sixteen wild friends among the flowers: a lion with a petal mane, a giraffe, an elephant, a zebra, a hippo, a monkey, a rhino, a sleepy cheetah, a parrot, a flamingo, meerkats, a tortoise, a toucan, a gorilla, a chameleon and an ostrich.',
+    artSource: tracedArtSource('safari-garden'),
+    soldSeparately: true,
+  },
+  'easter-garden': {
+    id: 'easter-garden',
+    name: 'Easter Garden',
+    description:
+      'Sixteen springtime pictures: bunnies, an egg basket, a hatching chick, a painted egg, a lamb, tulips, a duckling, a butterfly, a carrot patch, an egg hunt, a hen on her nest, a spring wreath, a snail, a bee and an egg balloon.',
+    artSource: tracedArtSource('easter-garden'),
+    soldSeparately: true,
+  },
+  'christmas-garden': {
+    id: 'christmas-garden',
+    name: 'Christmas Garden',
+    description:
+      'Sixteen snowy pictures: a Christmas tree, a snowman, a reindeer, a gingerbread house and friend, a penguin, a poinsettia, stockings, a holly wreath, a robin, a sleigh, a polar bear, a snow globe, bells, a bauble and a fox.',
+    artSource: tracedArtSource('christmas-garden'),
     soldSeparately: true,
   },
 })
 
 /** Every pack, in the order children see them. */
-export const PACKS: readonly Pack[] = Object.freeze([PACK_BY_ID.standard, PACK_BY_ID['ocean-friends']])
+export const PACKS: readonly Pack[] = Object.freeze([
+  PACK_BY_ID.standard,
+  PACK_BY_ID['ocean-friends'],
+  PACK_BY_ID['safari-garden'],
+  PACK_BY_ID['easter-garden'],
+  PACK_BY_ID['christmas-garden'],
+])
 
 /** Packs a parent can buy once, outside the Family plan. */
 export const SOLD_PACKS: readonly Pack[] = Object.freeze(PACKS.filter((p) => p.soldSeparately))

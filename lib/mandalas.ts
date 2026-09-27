@@ -1,5 +1,8 @@
 import type { PackId } from '@/lib/packs'
+import { CHRISTMAS_GARDEN } from '@/lib/templates/christmas-garden'
+import { EASTER_GARDEN } from '@/lib/templates/easter-garden'
 import { OCEAN_FRIENDS } from '@/lib/templates/ocean-friends'
+import { SAFARI_GARDEN } from '@/lib/templates/safari-garden'
 
 export type PetalShape = 'round' | 'almond' | 'pointy' | 'heart'
 export type Tier = 'free' | 'family'
@@ -405,7 +408,9 @@ const DEFINITIONS: TemplateDefinition[] = [
   },
 ]
 
-export const MANDALAS: readonly Mandala[] = Object.freeze([...DEFINITIONS, ...OCEAN_FRIENDS].map(defineTemplate))
+export const MANDALAS: readonly Mandala[] = Object.freeze(
+  [...DEFINITIONS, ...OCEAN_FRIENDS, ...SAFARI_GARDEN, ...EASTER_GARDEN, ...CHRISTMAS_GARDEN].map(defineTemplate),
+)
 
 export const templates = createTemplateSource(MANDALAS)
 
