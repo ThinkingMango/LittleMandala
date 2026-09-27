@@ -183,6 +183,7 @@ export const TRACED_PACK_SOURCES = [
     description: 'Eight detailed mandalas for grown-ups to color: rings of lotus petals, ferns, cherry blossom, ginkgo, peonies, roses, tropical leaves and wildflowers, with finer areas and lighter outlines than the children\'s packs.',
     icon: 'leaf',
     status: 'draft',
+    audience: 'grown-ups',
     pages: DRAFTS_LISTED
       ? [
         zenMandalasLotusBloom,

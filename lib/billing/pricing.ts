@@ -1,6 +1,8 @@
-/** One-time prices, in US cents. Nothing here is a subscription: every purchase is kept for good. */
+/**
+ * One-time prices, in US cents. Nothing here is a subscription: every purchase is kept for good.
+ * Every pack costs the same however many pages it has.
+ */
 
-export const PAGES_PER_PACK = 16
 export const PACK_PRICE_CENTS = 499
 export const STANDARD_UNLOCK_CENTS = 199
 
@@ -24,10 +26,6 @@ const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' 
 
 export function formatPrice(cents: number) {
   return usd.format(cents / 100)
-}
-
-export function pagesIn(offer: PackOffer) {
-  return offer.packs * PAGES_PER_PACK
 }
 
 export function averagePerPackCents(offer: PackOffer) {

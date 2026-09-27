@@ -7,6 +7,7 @@ import { PackCard } from '@/components/parent/pack-card'
 import { OfferGrid } from '@/components/parent/pricing/offer-grid'
 import { OrderSummary } from '@/components/parent/pricing/order-summary'
 import { StandardUnlockCard } from '@/components/parent/pricing/standard-unlock-card'
+import { PACK_PRICE_CENTS, formatPrice } from '@/lib/billing/pricing'
 import { useEntitlements } from '@/lib/entitlements'
 import { SOLD_PACKS, packPages, type PackId } from '@/lib/packs'
 
@@ -65,7 +66,9 @@ export function BillingView() {
           <h2 id="offers" className="text-2xl font-black">
             Picture packs
           </h2>
-          <p className="leading-relaxed text-muted-foreground">Every pack has 16 pictures. Mix and match any packs you like.</p>
+          <p className="leading-relaxed text-muted-foreground">
+            {`Every pack is ${formatPrice(PACK_PRICE_CENTS)}, however many pictures it has. Mix and match any packs you like.`}
+          </p>
         </div>
         <OfferGrid />
       </section>

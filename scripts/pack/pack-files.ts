@@ -365,6 +365,7 @@ export function renderRegistry(root: string) {
       `    description: ${quote(manifest.description)},`,
       `    icon: ${quote(manifest.icon)},`,
       `    status: ${quote(manifest.status)},`,
+      ...(manifest.audience === 'grown-ups' ? [`    audience: 'grown-ups',`] : []),
       `    pages: ${pages},`,
       '  },',
     ].join('\n')

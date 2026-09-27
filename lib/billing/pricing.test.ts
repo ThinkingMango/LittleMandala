@@ -1,34 +1,33 @@
 import { describe, expect, it } from 'vitest'
 import {
   PACK_OFFERS,
-  PAGES_PER_PACK,
+  PACK_PRICE_CENTS,
   STANDARD_UNLOCK_CENTS,
   averagePerPackCents,
   bundleNudge,
   formatPrice,
-  pagesIn,
   quotePacks,
 } from '@/lib/billing/pricing'
-import { SOLD_PACKS, packPages } from '@/lib/packs'
 
 describe('pack offers', () => {
   it('match the pricing table', () => {
     const table = PACK_OFFERS.map((offer) => [
       offer.name,
-      pagesIn(offer),
+      offer.packs,
       formatPrice(offer.priceCents),
       formatPrice(averagePerPackCents(offer)),
     ])
     expect(table).toEqual([
-      ['One pack', 16, '$4.99', '$4.99'],
-      ['Any three packs', 48, '$12.99', '$4.33'],
-      ['Any five packs', 80, '$19.99', '$4.00'],
+      ['One pack', 1, '$4.99', '$4.99'],
+      ['Any three packs', 3, '$12.99', '$4.33'],
+      ['Any five packs', 5, '$19.99', '$4.00'],
     ])
     expect(formatPrice(STANDARD_UNLOCK_CENTS)).toBe('$1.99')
   })
 
-  it('assumes the page count every sold pack really has', () => {
-    for (const pack of SOLD_PACKS) expect(packPages(pack.id), pack.id).toHaveLength(PAGES_PER_PACK)
+  it('prices a pack the same whatever its page count', () => {
+    expect(formatPrice(PACK_PRICE_CENTS)).toBe('$4.99')
+    expect(quotePacks(1).totalCents).toBe(PACK_PRICE_CENTS)
   })
 })
 

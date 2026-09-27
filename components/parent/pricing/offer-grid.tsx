@@ -1,4 +1,4 @@
-import { PACK_OFFERS, averagePerPackCents, formatPrice, offerSavingsCents, pagesIn } from '@/lib/billing/pricing'
+import { PACK_OFFERS, averagePerPackCents, formatPrice, offerSavingsCents } from '@/lib/billing/pricing'
 import { SOLD_PACKS } from '@/lib/packs'
 import { cn } from '@/lib/utils'
 
@@ -23,7 +23,9 @@ export function OfferGrid() {
 
             <div className="flex flex-col gap-1">
               <h3 className="text-lg font-extrabold">{offer.name}</h3>
-              <p className="text-sm text-muted-foreground">{`${pagesIn(offer)} pictures`}</p>
+              <p className="text-sm text-muted-foreground">
+                {offer.packs === 1 ? '1 pack of your choice' : `${offer.packs} packs of your choice`}
+              </p>
             </div>
 
             <p className="flex items-baseline gap-2">

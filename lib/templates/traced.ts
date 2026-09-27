@@ -6,6 +6,9 @@ import { TRACED_PACK_SOURCES } from '@/lib/templates/registry.generated'
 
 export type PackStatus = 'draft' | 'published'
 
+/** Who a pack is drawn for. Grown-up pages are finer and get the 24-color palette. */
+export type PackAudience = 'children' | 'grown-ups'
+
 export type TracedArt = {
   id: string
   name: string
@@ -21,6 +24,8 @@ export type TracedPackSource = Readonly<{
   description: string
   icon: PackIconName
   status: PackStatus
+  /** Written only for grown-up packs; children is the default. */
+  audience?: 'grown-ups'
   pages: readonly TracedArt[]
 }>
 

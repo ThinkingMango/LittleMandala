@@ -1,5 +1,5 @@
 import type { TemplateSource, TemplateVersion } from '@/lib/mandalas'
-import { PALETTE, type ColorKey } from '@/lib/palette'
+import { ALL_COLORS, type ColorKey } from '@/lib/palette'
 
 export type Fills = Readonly<Record<string, ColorKey>>
 
@@ -73,7 +73,7 @@ export const EMPTY_STATE: LibraryState = Object.freeze({
   history: Object.freeze({}),
 })
 
-const COLOR_KEYS = new Set<string>(PALETTE.map((c) => c.key))
+const COLOR_KEYS = new Set<string>(ALL_COLORS.map((c) => c.key))
 
 export function isColorKey(value: unknown): value is ColorKey {
   return typeof value === 'string' && COLOR_KEYS.has(value)

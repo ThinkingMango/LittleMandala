@@ -1,7 +1,8 @@
 'use client'
 
-import { useRef, type CSSProperties, type KeyboardEvent } from 'react'
+import type { CSSProperties } from 'react'
 import { Check, Eraser } from 'lucide-react'
+import { usePaletteRadios } from '@/components/coloring/use-palette-radios'
 import { ERASER, PALETTE, colorVar, type Tool } from '@/lib/palette'
 import { cn } from '@/lib/utils'
 
@@ -12,10 +13,6 @@ type ColorPaletteProps = {
 }
 
 const TOOLS: readonly Tool[] = [...PALETTE.map((c) => c.key), ERASER]
-const ERASER_INDEX = TOOLS.length - 1
-
-const NEXT_KEYS = ['ArrowRight', 'ArrowDown']
-const PREV_KEYS = ['ArrowLeft', 'ArrowUp']
 
 function swatchClass(selected: boolean, className?: string) {
   return cn(
@@ -27,42 +24,8 @@ function swatchClass(selected: boolean, className?: string) {
 }
 
 export function ColorPalette({ value, onChange, className }: ColorPaletteProps) {
-  const refs = useRef<(HTMLButtonElement | null)[]>([])
-
-  const handleKeyDown = (index: number) => (e: KeyboardEvent<HTMLButtonElement>) => {
-    let next = index
-    if (NEXT_KEYS.includes(e.key)) next = (index + 1) % TOOLS.length
-    else if (PREV_KEYS.includes(e.key)) next = (index - 1 + TOOLS.length) % TOOLS.length
-    else if (e.key === 'Home') next = 0
-    else if (e.key === 'End') next = TOOLS.length - 1
-    else return
-    e.preventDefault()
-    onChange(TOOLS[next])
-    refs.current[next]?.focus()
-  }
-
-  const radioProps = (index: number, label: string) => {
-    const tool = TOOLS[index]
-    const selected = tool === value
-    return {
-      selected,
-      props: {
-        ref: (el: HTMLButtonElement | null) => {
-          refs.current[index] = el
-        },
-        type: 'button' as const,
-        role: 'radio',
-        'aria-checked': selected,
-        'aria-label': label,
-        title: label,
-        tabIndex: selected ? 0 : -1,
-        onClick: () => onChange(tool),
-        onKeyDown: handleKeyDown(index),
-      },
-    }
-  }
-
-  const eraser = radioProps(ERASER_INDEX, 'Eraser')
+  const radio = usePaletteRadios(TOOLS, value, onChange)
+  const eraser = radio(ERASER, 'Eraser')
 
   return (
     <div
@@ -74,8 +37,8 @@ export function ColorPalette({ value, onChange, className }: ColorPaletteProps) 
       )}
     >
       <div className="grid grid-flow-col grid-rows-2 gap-1.5 sm:gap-3 landscape:grid-flow-row landscape:grid-cols-2 landscape:grid-rows-none">
-        {PALETTE.map((color, index) => {
-          const { selected, props } = radioProps(index, color.label)
+        {PALETTE.map((color) => {
+          const { selected, props } = radio(color.key, color.label)
           return (
             <button
               key={color.key}

@@ -1,6 +1,12 @@
 import { MANDALAS, type Mandala } from '@/lib/mandalas'
 import type { PackIconName } from '@/lib/pack-icons'
-import { LISTED_TRACED_PACKS, TRACED_PACKS, type PackStatus, type TracedPack } from '@/lib/templates/traced'
+import {
+  LISTED_TRACED_PACKS,
+  TRACED_PACKS,
+  type PackAudience,
+  type PackStatus,
+  type TracedPack,
+} from '@/lib/templates/traced'
 
 /** Standard, plus every pack in art/. Add a pack with `pnpm packs new`; see art/README.md. */
 export type PackId = 'standard' | TracedPack['id']
@@ -13,6 +19,7 @@ export type Pack = Readonly<{
   icon: PackIconName
   /** Draft packs are listed only while developing. */
   status: PackStatus
+  audience: PackAudience
   /** Where the artwork came from, kept with the pack as its art record. */
   artSource: string
   /**
@@ -28,6 +35,7 @@ const STANDARD: Pack = {
   description: 'Ten flower mandalas. Four are free for everyone, and six more open with a one-time unlock.',
   icon: 'flower-2',
   status: 'published',
+  audience: 'children',
   artSource: 'Original geometric artwork drawn in code for Little Mandala. No third-party images or licenses are used.',
   soldSeparately: false,
 }
@@ -39,6 +47,7 @@ function tracedPack(source: TracedPack): Pack {
     description: source.description,
     icon: source.icon,
     status: source.status,
+    audience: source.audience ?? 'children',
     artSource: `Original line art made for Little Mandala with v0 image generation, then traced into tap-to-fill areas by scripts/trace-pack.mjs. Each source image is kept in art/${source.id}/source with its checksum. No third-party images or licenses are used.`,
     soldSeparately: true,
   }
