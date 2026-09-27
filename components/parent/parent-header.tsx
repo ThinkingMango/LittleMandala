@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { BrandMark } from '@/components/brand-mark'
+import { useAuthState } from '@/lib/auth/client'
 import { buttonVariants } from '@/components/ui/button'
 import { parentGateStore } from '@/lib/device-stores'
 import { useLocalStore } from '@/lib/local-store'
@@ -17,7 +18,9 @@ const NAV = [
 export function ParentHeader() {
   const pathname = usePathname()
   const passed = useLocalStore(parentGateStore)
+  const auth = useAuthState()
   const showNav = passed && pathname !== '/parent'
+  const nav = auth.status === 'signed-out' ? [...NAV, { href: '/parent/sign-in', label: 'Sign in' }] : NAV
 
   return (
     <header className="sticky top-0 z-20 border-b bg-background">
@@ -31,7 +34,7 @@ export function ParentHeader() {
 
         {showNav && (
           <nav aria-label="Parent area" className="order-3 flex w-full gap-1 md:order-none md:w-auto">
-            {NAV.map((item) => {
+            {nav.map((item) => {
               const active = pathname.startsWith(item.href)
               return (
                 <Link

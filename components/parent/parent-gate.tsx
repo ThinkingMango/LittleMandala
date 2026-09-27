@@ -18,7 +18,7 @@ function newProblem(): Problem {
   return { a: 11 + Math.floor(Math.random() * 9), b: 6 + Math.floor(Math.random() * 4) }
 }
 
-export function ParentGate() {
+export function ParentGate({ next }: { next: string }) {
   const router = useRouter()
   const [progress, setProgress] = useState(0)
   const frame = useRef<number | null>(null)
@@ -30,7 +30,7 @@ export function ParentGate() {
 
   const pass = () => {
     parentGateStore.write(true)
-    router.push('/parent/home')
+    router.replace(next)
   }
 
   const cancelFrame = () => {
