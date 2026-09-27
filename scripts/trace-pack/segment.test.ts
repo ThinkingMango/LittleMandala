@@ -73,8 +73,8 @@ describe('segment', () => {
 describe('Ocean Friends page manifest', () => {
   const manifest = JSON.parse(readFileSync(join(process.cwd(), 'art/ocean-friends/pages.json'), 'utf8'))
 
-  it('plans 16 uniquely named pages made with Higgsfield', () => {
-    expect(manifest.generator).toBe('Higgsfield')
+  it('plans 16 uniquely named pages and records how the art was made', () => {
+    expect(manifest.generator).toMatch(/image generation/i)
     expect(manifest.pages).toHaveLength(16)
     expect(new Set(manifest.pages.map((p: { id: string }) => p.id)).size).toBe(16)
     for (const page of manifest.pages) {

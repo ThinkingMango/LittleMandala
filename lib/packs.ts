@@ -28,8 +28,9 @@ export const PACK_BY_ID: Readonly<Record<PackId, Pack>> = Object.freeze({
     id: 'ocean-friends',
     name: 'Ocean Friends',
     description:
-      'Fish petals, a turtle whose shell is a flower, striped shells, a smiling starfish, an octopus, a puffer fish, whales and a crab.',
-    artSource: 'Original geometric artwork drawn in code for Little Mandala. No third-party images or licenses are used.',
+      'Sixteen sea friends: a flower fish and turtle, a shell with a pearl, a starfish, an octopus, a puffer fish, a whale, a crab, a seahorse, a jellyfish, a dolphin, a seal pup, a clownfish, a stingray, an otter and a friendly shark.',
+    artSource:
+      'Original line art made for Little Mandala with v0 image generation, then traced into tap-to-fill areas by scripts/trace-pack.mjs. Each source image is kept in art/ocean-friends/source with its checksum. No third-party images or licenses are used.',
     soldSeparately: true,
   },
 })

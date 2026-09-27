@@ -19,6 +19,22 @@ import {
   type Pt,
   type Shape,
 } from '@/lib/templates/geometry'
+import clownfishHomeArt from '@/lib/templates/ocean-friends/clownfish-home.json'
+import crabCoveArt from '@/lib/templates/ocean-friends/crab-cove.json'
+import dolphinJumpArt from '@/lib/templates/ocean-friends/dolphin-jump.json'
+import fishFlowerArt from '@/lib/templates/ocean-friends/fish-flower.json'
+import jellyDanceArt from '@/lib/templates/ocean-friends/jelly-dance.json'
+import octopusHugArt from '@/lib/templates/ocean-friends/octopus-hug.json'
+import otterFloatArt from '@/lib/templates/ocean-friends/otter-float.json'
+import pufferBloomArt from '@/lib/templates/ocean-friends/puffer-bloom.json'
+import sealPupArt from '@/lib/templates/ocean-friends/seal-pup.json'
+import seahorseSwayArt from '@/lib/templates/ocean-friends/seahorse-sway.json'
+import sharkSmileArt from '@/lib/templates/ocean-friends/shark-smile.json'
+import shellBloomArt from '@/lib/templates/ocean-friends/shell-bloom.json'
+import starfishWavesArt from '@/lib/templates/ocean-friends/starfish-waves.json'
+import stingrayGlideArt from '@/lib/templates/ocean-friends/stingray-glide.json'
+import turtleFlowerArt from '@/lib/templates/ocean-friends/turtle-flower.json'
+import whaleCircleArt from '@/lib/templates/ocean-friends/whale-circle.json'
 
 const rad = (d: number) => (d * Math.PI) / 180
 const around = (count: number, offset = 0) => Array.from({ length: count }, (_, i) => offset + (360 / count) * i)
@@ -252,15 +268,43 @@ const crabCove = page((add, details) => {
   details.push(line(smoothLine([[-50, 70], [0, 100], [50, 70]])))
 })
 
+type TracedArt = { id: string; name: string; regions: Region[]; details: { kind: string; d: string }[] }
+
+/** A page made by `pnpm trace-pack` from its source image in art/ocean-friends/source. */
+function traced(art: TracedArt): Drawing {
+  return {
+    regions: art.regions.map(({ id, label, d }) => ({ id, label, d })),
+    details: art.details.map(({ kind, d }) => ({ kind: kind === 'line' ? 'line' : 'dot', d })),
+  }
+}
+
 const pack = 'ocean-friends' as const
 
+const oceanPage = (art: TracedArt, ...earlier: Drawing[]): TemplateDefinition => ({
+  id: art.id,
+  name: art.name,
+  tier: 'family',
+  pack,
+  versions: [...earlier, traced(art)].map((drawing, index) => ({ version: index + 1, drawing })),
+})
+
+// The first eight pages shipped with drawings made in code. Their version 1 stays so saved
+// artwork keeps opening on the drawing it was started on; the traced art is version 2.
 export const OCEAN_FRIENDS: TemplateDefinition[] = [
-  { id: 'fish-flower', name: 'Fish Flower', tier: 'family', pack, versions: [{ version: 1, drawing: fishFlower }] },
-  { id: 'turtle-flower', name: 'Turtle Flower', tier: 'family', pack, versions: [{ version: 1, drawing: turtleFlower }] },
-  { id: 'shell-bloom', name: 'Shell Bloom', tier: 'family', pack, versions: [{ version: 1, drawing: shellBloom }] },
-  { id: 'starfish-waves', name: 'Starfish Waves', tier: 'family', pack, versions: [{ version: 1, drawing: starfishWaves }] },
-  { id: 'octopus-hug', name: 'Octopus Hug', tier: 'family', pack, versions: [{ version: 1, drawing: octopusHug }] },
-  { id: 'puffer-bloom', name: 'Puffer Bloom', tier: 'family', pack, versions: [{ version: 1, drawing: pufferBloom }] },
-  { id: 'whale-circle', name: 'Whale Circle', tier: 'family', pack, versions: [{ version: 1, drawing: whaleCircle }] },
-  { id: 'crab-cove', name: 'Crab Cove', tier: 'family', pack, versions: [{ version: 1, drawing: crabCove }] },
+  oceanPage(fishFlowerArt, fishFlower),
+  oceanPage(turtleFlowerArt, turtleFlower),
+  oceanPage(shellBloomArt, shellBloom),
+  oceanPage(starfishWavesArt, starfishWaves),
+  oceanPage(octopusHugArt, octopusHug),
+  oceanPage(pufferBloomArt, pufferBloom),
+  oceanPage(whaleCircleArt, whaleCircle),
+  oceanPage(crabCoveArt, crabCove),
+  oceanPage(seahorseSwayArt),
+  oceanPage(jellyDanceArt),
+  oceanPage(dolphinJumpArt),
+  oceanPage(sealPupArt),
+  oceanPage(clownfishHomeArt),
+  oceanPage(stingrayGlideArt),
+  oceanPage(otterFloatArt),
+  oceanPage(sharkSmileArt),
 ]

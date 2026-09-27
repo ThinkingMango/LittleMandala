@@ -3,7 +3,8 @@
 //
 //   pnpm trace-pack ocean-friends            trace every page that has a source image
 //   pnpm trace-pack ocean-friends seal-pup   trace one page
-//   --min-area=0.015                         smallest tap area, as a share of the canvas
+//   --min-area=0.004                         smallest tap area, as a share of the canvas
+//                                            (about 63×63 units; the 40-unit width check still applies)
 //
 // Reads  art/<pack>/pages.json and art/<pack>/source/<id>.png
 // Writes lib/templates/<pack>/<id>.json and review sheets in /tmp/trace-pack/<id>.png
@@ -27,7 +28,7 @@ const args = process.argv.slice(2)
 const flags = Object.fromEntries(args.filter((a) => a.startsWith('--')).map((a) => a.slice(2).split('=')))
 const [pack, ...only] = args.filter((a) => !a.startsWith('--'))
 if (!pack) {
-  console.error('Usage: pnpm trace-pack <pack> [page-id...] [--min-area=0.015]')
+  console.error('Usage: pnpm trace-pack <pack> [page-id...] [--min-area=0.004]')
   process.exit(2)
 }
 
@@ -43,7 +44,7 @@ const outDir = join(root, 'lib', 'templates', pack)
 mkdirSync(outDir, { recursive: true })
 mkdirSync(REVIEW_DIR, { recursive: true })
 
-const options = { inkThreshold: 140, minAreaShare: Number(flags['min-area'] ?? 0.015) }
+const options = { inkThreshold: 140, minAreaShare: Number(flags['min-area'] ?? 0.004) }
 let failures = 0
 
 for (const page of pages) {
