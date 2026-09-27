@@ -19,7 +19,7 @@ const sunny = getMandala('sunny')!
 
 /**
  * Mounts the real coloring screen against real localStorage with a brand-new library instance.
- * Unmounting and calling this again is a page reload: only what reached storage comes back.
+ * Unmounting and calling this again is leaving the screen or reloading: only what reached storage comes back.
  */
 function openColoringPage() {
   const library = createArtworkLibrary({ storage: () => window.localStorage, templates })
@@ -32,24 +32,31 @@ function openColoringPage() {
   return { user, library, ...view }
 }
 
-const region = (name: string) => screen.getByRole('button', { name })
+type User = ReturnType<typeof userEvent.setup>
 
-function storedFills() {
+const region = (name: string) => screen.getByRole('button', { name })
+const tool = (name: string) => screen.getByRole('button', { name })
+
+function storedDraftFills() {
   const artworks = JSON.parse(window.localStorage.getItem(STORAGE_KEYS.artworks) ?? '{}')
   const drafts = JSON.parse(window.localStorage.getItem(STORAGE_KEYS.drafts) ?? '{}')
   return artworks[drafts.sunny]?.fills
 }
 
-async function colorThreeRegions(user: ReturnType<typeof userEvent.setup>) {
+const THREE_COLORS = { 'l0-p0': 'red', 'l0-p1': 'blue', center: 'blue' }
+
+async function colorThreeRegions(user: User) {
   await user.click(region('Petal 1'))
   await user.click(screen.getByRole('radio', { name: 'Blue' }))
   await user.click(region('Petal 2'))
   await user.click(region('Flower center'))
 }
 
-async function openClearDialog(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('button', { name: 'Clear' }))
-  return screen.findByRole('dialog')
+async function startOver(user: User) {
+  await user.click(tool('Start over'))
+  const dialog = await screen.findByRole('dialog')
+  await user.click(within(dialog).getByRole('button', { name: 'Yes, start over' }))
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 }
 
 describe('coloring screen', () => {
@@ -65,59 +72,105 @@ describe('coloring screen', () => {
     expect(region('Petal 3')).toBeInTheDocument()
   })
 
-  it('cannot clear a flower that has no color yet', () => {
+  it('cannot start over, undo, or redo on a flower that has no color yet', () => {
     openColoringPage()
-    expect(screen.getByRole('button', { name: 'Clear' })).toBeDisabled()
+    expect(tool('Start over')).toBeDisabled()
+    expect(tool('Undo')).toBeDisabled()
+    expect(tool('Redo')).toBeDisabled()
   })
 
   it('shows a colored-to-blank preview and keeps everything when the cross is tapped', async () => {
     const { user } = openColoringPage()
     await colorThreeRegions(user)
 
-    const dialog = await openClearDialog(user)
+    await user.click(tool('Start over'))
+    const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByRole('img', { name: /colored flower will turn all white/i })).toBeInTheDocument()
 
     await user.click(within(dialog).getByRole('button', { name: 'No, keep my colors' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     expect(region('Petal 1, Red')).toBeInTheDocument()
-    expect(storedFills()).toEqual({ 'l0-p0': 'red', 'l0-p1': 'blue', center: 'blue' })
+    expect(storedDraftFills()).toEqual(THREE_COLORS)
   })
 
-  it('clears to blank on the check, saves the blank, and one undo brings every color back', async () => {
-    const { user, unmount } = openColoringPage()
+  it('starts over on the check, and one undo brings every color back, and redo clears again', async () => {
+    const { user } = openColoringPage()
     await colorThreeRegions(user)
-
-    const dialog = await openClearDialog(user)
-    await user.click(within(dialog).getByRole('button', { name: 'Yes, clear it' }))
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await startOver(user)
 
     expect(region('Petal 1')).toBeInTheDocument()
-    expect(region('Flower center')).toBeInTheDocument()
-    expect(storedFills()).toEqual({})
+    expect(storedDraftFills()).toEqual({})
 
-    await user.click(screen.getByRole('button', { name: 'Undo' }))
-
+    await user.click(tool('Undo'))
     expect(region('Petal 1, Red')).toBeInTheDocument()
-    expect(region('Petal 2, Blue')).toBeInTheDocument()
     expect(region('Flower center, Blue')).toBeInTheDocument()
-    expect(storedFills()).toEqual({ 'l0-p0': 'red', 'l0-p1': 'blue', center: 'blue' })
+    expect(storedDraftFills()).toEqual(THREE_COLORS)
 
-    unmount()
-    openColoringPage()
-    expect(region('Flower center, Blue')).toBeInTheDocument()
+    await user.click(tool('Redo'))
+    expect(region('Flower center')).toBeInTheDocument()
+    expect(storedDraftFills()).toEqual({})
+    expect(tool('Redo')).toBeDisabled()
   })
 
-  it('keeps a confirmed clear after a reload', async () => {
+  it('keeps undo and redo after the child leaves the screen and comes back', async () => {
     const first = openColoringPage()
     await colorThreeRegions(first.user)
-    const dialog = await openClearDialog(first.user)
-    await first.user.click(within(dialog).getByRole('button', { name: 'Yes, clear it' }))
+    await startOver(first.user)
+    first.unmount()
+
+    const second = openColoringPage()
+    expect(region('Petal 1')).toBeInTheDocument()
+    expect(tool('Undo')).toBeEnabled()
+    await second.user.click(tool('Undo'))
+    expect(region('Petal 1, Red')).toBeInTheDocument()
+    expect(region('Petal 2, Blue')).toBeInTheDocument()
+    second.unmount()
+
+    const third = openColoringPage()
+    expect(region('Petal 1, Red')).toBeInTheDocument()
+    await third.user.click(tool('Redo'))
+    expect(region('Petal 1')).toBeInTheDocument()
+  })
+
+  it('a new tap after undo drops what could be redone', async () => {
+    const { user } = openColoringPage()
+    await colorThreeRegions(user)
+    await user.click(tool('Undo'))
+    expect(tool('Redo')).toBeEnabled()
+
+    await user.click(region('Petal 3'))
+    expect(tool('Redo')).toBeDisabled()
+  })
+
+  it('erases a single part with the eraser, and undo and redo work on it', async () => {
+    const first = openColoringPage()
+    await colorThreeRegions(first.user)
+
+    await first.user.click(screen.getByRole('radio', { name: 'Eraser' }))
+    await first.user.click(region('Petal 2, Blue'))
+    expect(region('Petal 2')).toBeInTheDocument()
+    expect(region('Petal 1, Red')).toBeInTheDocument()
+    expect(storedDraftFills()).toEqual({ 'l0-p0': 'red', center: 'blue' })
+
+    await first.user.click(tool('Undo'))
+    expect(region('Petal 2, Blue')).toBeInTheDocument()
+    await first.user.click(tool('Redo'))
+    expect(region('Petal 2')).toBeInTheDocument()
     first.unmount()
 
     openColoringPage()
-    expect(region('Petal 1')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Clear' })).toBeDisabled()
+    expect(region('Petal 2')).toBeInTheDocument()
+    expect(region('Flower center, Blue')).toBeInTheDocument()
+  })
+
+  it('does not start an artwork when the eraser taps a blank flower', async () => {
+    const { user, library } = openColoringPage()
+    await user.click(screen.getByRole('radio', { name: 'Eraser' }))
+    await user.click(region('Petal 1'))
+
+    expect(library.getState().artworks).toEqual({})
+    expect(tool('Undo')).toBeDisabled()
   })
 
   it('saves to the garden only when the child taps done, not while autosaving', async () => {
@@ -125,7 +178,24 @@ describe('coloring screen', () => {
     await colorThreeRegions(user)
     expect(library.getState().gallery).toHaveLength(0)
 
-    await user.click(screen.getByRole('button', { name: "I'm done" }))
+    await user.click(tool("I'm done"))
     expect(library.getState().gallery).toHaveLength(1)
+  })
+
+  it('protects the garden picture when the child keeps going and starts over', async () => {
+    const { user, library } = openColoringPage()
+    await colorThreeRegions(user)
+    await user.click(tool("I'm done"))
+    await user.click(await screen.findByRole('button', { name: 'Keep going' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
+    await startOver(user)
+    await user.click(tool('Undo'))
+    await user.click(tool('Redo'))
+
+    const [saved] = library.getState().gallery
+    expect(saved.fills).toEqual(THREE_COLORS)
+    expect(library.getDraft('sunny')?.id).not.toBe(saved.id)
+    expect(storedDraftFills()).toEqual({})
   })
 })

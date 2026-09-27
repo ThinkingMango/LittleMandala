@@ -2,7 +2,14 @@ import Link from 'next/link'
 import type { ComponentProps, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
-type Variant = 'primary' | 'secondary'
+/** `inset` sits inside a `bg-secondary` group, so paired buttons read as one unit. */
+type Variant = 'primary' | 'secondary' | 'inset'
+
+const VARIANT_CLASS: Record<Variant, string> = {
+  primary: 'bg-primary text-primary-foreground [--tactile-edge:color-mix(in_oklch,var(--primary)_60%,var(--ink))]',
+  secondary: 'bg-secondary text-foreground [--tactile-edge:var(--border)]',
+  inset: 'bg-background text-foreground [--tactile-edge:var(--border)]',
+}
 
 export function toolButtonClass(variant: Variant = 'secondary', className?: string) {
   return cn(
@@ -10,9 +17,7 @@ export function toolButtonClass(variant: Variant = 'secondary', className?: stri
     'focus-visible:ring-4 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background',
     'disabled:cursor-not-allowed disabled:opacity-35 disabled:shadow-none',
     '[&_svg]:size-8 [&_svg]:shrink-0',
-    variant === 'primary'
-      ? 'bg-primary text-primary-foreground [--tactile-edge:color-mix(in_oklch,var(--primary)_60%,var(--ink))]'
-      : 'bg-secondary text-foreground [--tactile-edge:var(--border)]',
+    VARIANT_CLASS[variant],
     className,
   )
 }

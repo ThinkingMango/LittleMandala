@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   STORAGE_KEYS,
   createArtworkLibrary,
+  selectDraft,
   type KeyValueStorage,
+  type LibraryState,
 } from '@/lib/artwork/library'
 import {
   MANDALAS,
@@ -32,6 +34,8 @@ function createDevice() {
 }
 
 type Device = ReturnType<typeof createDevice>
+
+const selectDraftFills = (state: LibraryState) => selectDraft(state, 'rose')?.fills
 
 /** Opening a new library on the same device simulates a page reload: no in-memory state survives. */
 function openApp(device: Device, templates: readonly Mandala[] = [roseV1]) {
@@ -176,6 +180,97 @@ describe('artwork library', () => {
     const reloaded = openApp(device)
     expect(reloaded.getState().artworks[artworkId]).toBeUndefined()
     expect(reloaded.getState().gallery).toEqual([])
+  })
+
+  it('erases one region without starting a draft on a blank flower', () => {
+    const device = createDevice()
+    const app = openApp(device)
+    expect(app.eraseRegion('rose', 'center')).toBeNull()
+    expect(device.writes).toEqual([])
+
+    app.fillRegion('rose', 'l0-p0', 'red')
+    app.fillRegion('rose', 'center', 'blue')
+    expect(app.eraseRegion('rose', 'l0-p1')).toBeNull()
+    expect(app.eraseRegion('rose', 'center')).not.toBeNull()
+    expect(app.getDraft('rose')?.fills).toEqual({ 'l0-p0': 'red' })
+  })
+
+  it('undoes and redoes step by step, and a new edit drops the redo steps', () => {
+    const app = openApp(createDevice())
+    app.fillRegion('rose', 'l0-p0', 'red')
+    app.fillRegion('rose', 'l0-p1', 'green')
+    app.clearDraft('rose')
+
+    expect(app.undo('rose')).toBe('clear')
+    expect(app.getDraft('rose')?.fills).toEqual({ 'l0-p0': 'red', 'l0-p1': 'green' })
+    expect(app.undo('rose')).toBe('fill')
+    expect(app.getDraft('rose')?.fills).toEqual({ 'l0-p0': 'red' })
+    expect(app.redo('rose')).toBe('fill')
+    expect(app.getDraft('rose')?.fills).toEqual({ 'l0-p0': 'red', 'l0-p1': 'green' })
+
+    app.fillRegion('rose', 'center', 'yellow')
+    expect(app.redo('rose')).toBeNull()
+    expect(app.getState().history.rose.undo).toHaveLength(3)
+  })
+
+  it('keeps undo history across a reload and forgets it when the flower is finished', () => {
+    const device = createDevice()
+    const first = openApp(device)
+    first.fillRegion('rose', 'l0-p0', 'red')
+    first.clearDraft('rose')
+
+    const reloaded = openApp(device)
+    expect(reloaded.undo('rose')).toBe('clear')
+    expect(reloaded.getDraft('rose')?.fills).toEqual({ 'l0-p0': 'red' })
+
+    reloaded.finishDraft('rose')
+    expect(openApp(device).getState().history).toEqual({})
+    expect(device.data.get(STORAGE_KEYS.history)).toBe('{}')
+  })
+
+  it('scrubs tampered history down to approved regions and known steps', () => {
+    const device = createDevice()
+    openApp(device).fillRegion('rose', 'l0-p0', 'red')
+    device.data.set(
+      STORAGE_KEYS.history,
+      JSON.stringify({
+        rose: {
+          undo: [
+            { kind: 'fill', before: { injected: 'red', 'l0-p1': 'teal' }, after: { 'l0-p0': 'red' } },
+            { kind: 'delete-everything', before: {}, after: {} },
+          ],
+          redo: 'nope',
+        },
+        ghost: { undo: [{ kind: 'fill', before: {}, after: {} }], redo: [] },
+      }),
+    )
+
+    const { history } = openApp(device).getState()
+    expect(Object.keys(history)).toEqual(['rose'])
+    expect(history.rose.undo).toEqual([{ kind: 'fill', before: {}, after: { 'l0-p0': 'red' } }])
+    expect(history.rose.redo).toEqual([])
+  })
+
+  it('never changes a garden picture: edits, clears, and undo continue on a new copy', () => {
+    const device = createDevice()
+    const app = openApp(device)
+    const { artworkId: savedId } = app.fillRegion('rose', 'l0-p0', 'red')!
+    app.saveToGallery(savedId)
+
+    const next = app.fillRegion('rose', 'center', 'blue')!
+    expect(next.artworkId).not.toBe(savedId)
+    expect(app.getState().artworks[savedId].fills).toEqual({ 'l0-p0': 'red' })
+    expect(app.getDraft('rose')).toMatchObject({ id: next.artworkId, templateVersion: 1 })
+
+    app.saveToGallery(next.artworkId)
+    app.clearDraft('rose')
+    app.undo('rose')
+    app.undo('rose')
+    expect(app.setFills(savedId, {})).toBe(false)
+
+    const reloaded = openApp(device).getState()
+    expect(reloaded.gallery.map((a) => a.fills)).toEqual([{ 'l0-p0': 'red', center: 'blue' }, { 'l0-p0': 'red' }])
+    expect(selectDraftFills(reloaded)).toEqual({ 'l0-p0': 'red' })
   })
 
   it('imports pre-versioning art once and removes the old key', () => {

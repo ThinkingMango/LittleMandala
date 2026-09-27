@@ -12,12 +12,20 @@ export type Artwork = Readonly<{
   updatedAt: number
 }>
 
+export type EditKind = 'fill' | 'erase' | 'clear'
+
+export type HistoryStep = Readonly<{ kind: EditKind; before: Fills; after: Fills }>
+
+export type History = Readonly<{ undo: readonly HistoryStep[]; redo: readonly HistoryStep[] }>
+
 export type LibraryState = Readonly<{
   artworks: Readonly<Record<string, Artwork>>
   /** templateId → artworkId currently being colored for that flower. */
   drafts: Readonly<Record<string, string>>
-  /** Explicitly saved artwork, newest first. Autosave never writes this. */
+  /** Explicitly saved artwork, newest first. Autosave never writes this, and never changes these pictures. */
   gallery: readonly Artwork[]
+  /** templateId → undo/redo steps for that flower's draft. Saved so they survive leaving the screen. */
+  history: Readonly<Record<string, History>>
 }>
 
 export type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
@@ -26,16 +34,25 @@ export const STORAGE_KEYS = Object.freeze({
   artworks: 'lm:v2:artworks',
   drafts: 'lm:v2:drafts',
   gallery: 'lm:v2:gallery',
+  history: 'lm:v2:history',
 })
 
-const KEY_LIST = [STORAGE_KEYS.artworks, STORAGE_KEYS.drafts, STORAGE_KEYS.gallery] as const
+const KEY_LIST = [STORAGE_KEYS.artworks, STORAGE_KEYS.drafts, STORAGE_KEYS.gallery, STORAGE_KEYS.history] as const
+
+/** Per flower, per direction. Keeps the saved history small enough for on-device storage. */
+export const MAX_HISTORY = 50
+
+const EDIT_KINDS = new Set<string>(['fill', 'erase', 'clear'])
 
 export const EMPTY_FILLS: Fills = Object.freeze({})
+
+export const EMPTY_HISTORY: History = Object.freeze({ undo: Object.freeze([]), redo: Object.freeze([]) })
 
 export const EMPTY_STATE: LibraryState = Object.freeze({
   artworks: Object.freeze({}),
   drafts: Object.freeze({}),
   gallery: Object.freeze([]),
+  history: Object.freeze({}),
 })
 
 const COLOR_KEYS = new Set<string>(PALETTE.map((c) => c.key))
@@ -66,6 +83,10 @@ export function sanitizeFills(value: unknown, version: TemplateVersion): Fills {
 export function selectDraft(state: LibraryState, templateId: string): Artwork | null {
   const id = state.drafts[templateId]
   return id ? (state.artworks[id] ?? null) : null
+}
+
+export function selectHistory(state: LibraryState, templateId: string): History {
+  return state.history[templateId] ?? EMPTY_HISTORY
 }
 
 type LegacyImport = { templateIds: readonly string[]; key: (templateId: string) => string }
@@ -152,7 +173,23 @@ export function createArtworkLibrary({
     })
   }
 
-  const buildState = ([rawArtworks, rawDrafts, rawGallery]: (string | null)[]): LibraryState => {
+  const toSteps = (value: unknown, version: TemplateVersion): readonly HistoryStep[] => {
+    if (!Array.isArray(value)) return Object.freeze([])
+    const steps: HistoryStep[] = []
+    for (const step of value) {
+      if (!isRecord(step) || typeof step.kind !== 'string' || !EDIT_KINDS.has(step.kind)) continue
+      steps.push(
+        Object.freeze({
+          kind: step.kind as EditKind,
+          before: sanitizeFills(step.before, version),
+          after: sanitizeFills(step.after, version),
+        }),
+      )
+    }
+    return Object.freeze(steps.slice(-MAX_HISTORY))
+  }
+
+  const buildState = ([rawArtworks, rawDrafts, rawGallery, rawHistory]: (string | null)[]): LibraryState => {
     const artworks: Record<string, Artwork> = {}
     const parsedArtworks = parseJson(rawArtworks)
     if (isRecord(parsedArtworks)) {
@@ -181,10 +218,25 @@ export function createArtworkLibrary({
       }
     }
 
+    const history: Record<string, History> = {}
+    const parsedHistory = parseJson(rawHistory)
+    if (isRecord(parsedHistory)) {
+      for (const [templateId, value] of Object.entries(parsedHistory)) {
+        const draft = drafts[templateId] ? artworks[drafts[templateId]] : undefined
+        const version = draft && templates.version(draft.templateId, draft.templateVersion)
+        if (!version || !isRecord(value)) continue
+        history[templateId] = Object.freeze({
+          undo: toSteps(value.undo, version),
+          redo: toSteps(value.redo, version),
+        })
+      }
+    }
+
     return Object.freeze({
       artworks: Object.freeze(artworks),
       drafts: Object.freeze(drafts),
       gallery: Object.freeze(gallery),
+      history: Object.freeze(history),
     })
   }
 
@@ -227,28 +279,135 @@ export function createArtworkLibrary({
 
   const getDraft = (templateId: string) => selectDraft(getState(), templateId)
 
-  const createDraft = (templateId: string): Artwork | null => {
-    const s = safeStorage()
-    const version = templates.latest(templateId)
-    if (!s || !version) return null
-    const id = newId()
-    const t = now()
-    const artworks = readRawMap(s, STORAGE_KEYS.artworks)
-    artworks[id] = { id, templateId, templateVersion: version.version, fills: {}, createdAt: t, updatedAt: t }
-    const drafts = readRawMap(s, STORAGE_KEYS.drafts)
-    drafts[templateId] = id
-    if (!commit([[STORAGE_KEYS.artworks, artworks], [STORAGE_KEYS.drafts, drafts]])) return null
-    return getState().artworks[id] ?? null
-  }
+  const inGallery = (state: LibraryState, artworkId: string) => state.gallery.some((a) => a.id === artworkId)
 
   /**
-   * Autosave. Update-only: it never creates a record and never touches gallery membership,
-   * so an artwork that was removed cannot be brought back by a late save.
+   * Writes new fills to this flower's draft. Garden pictures are never changed: if the draft is
+   * already in the garden, the change goes to a new copy that becomes the draft instead.
+   */
+  const planDraftWrite = (
+    s: KeyValueStorage,
+    state: LibraryState,
+    templateId: string,
+    next: Fills,
+    allowCreate: boolean,
+  ): { artworkId: string; writes: Write[] } | null => {
+    const existing = selectDraft(state, templateId)
+    if (!existing && !allowCreate) return null
+    const version = existing
+      ? templates.version(templateId, existing.templateVersion)
+      : templates.latest(templateId)
+    if (!version) return null
+    const fills = sanitizeFills(next, version)
+    const t = now()
+    const artworks = readRawMap(s, STORAGE_KEYS.artworks)
+
+    if (existing && !inGallery(state, existing.id)) {
+      const record = artworks[existing.id]
+      if (!isRecord(record)) return null
+      artworks[existing.id] = { ...record, fills, updatedAt: t }
+      return { artworkId: existing.id, writes: [[STORAGE_KEYS.artworks, artworks]] }
+    }
+
+    const id = newId()
+    artworks[id] = { id, templateId, templateVersion: version.version, fills, createdAt: t, updatedAt: t }
+    const drafts = readRawMap(s, STORAGE_KEYS.drafts)
+    drafts[templateId] = id
+    return {
+      artworkId: id,
+      writes: [
+        [STORAGE_KEYS.artworks, artworks],
+        [STORAGE_KEYS.drafts, drafts],
+      ],
+    }
+  }
+
+  const historyWrite = (s: KeyValueStorage, templateId: string, history: History | null): Write => {
+    const all = readRawMap(s, STORAGE_KEYS.history)
+    if (history && (history.undo.length > 0 || history.redo.length > 0)) all[templateId] = history
+    else delete all[templateId]
+    return [STORAGE_KEYS.history, all]
+  }
+
+  /** Applies one edit as a single undoable step. A new edit drops anything that could be redone. */
+  const edit = (
+    templateId: string,
+    kind: EditKind,
+    compute: (before: Fills, version: TemplateVersion) => Fills | null,
+    allowCreate: boolean,
+  ) => {
+    const s = safeStorage()
+    if (!s) return null
+    const state = getState()
+    const existing = selectDraft(state, templateId)
+    if (!existing && !allowCreate) return null
+    const version = existing
+      ? templates.version(templateId, existing.templateVersion)
+      : templates.latest(templateId)
+    if (!version) return null
+    const before = existing?.fills ?? EMPTY_FILLS
+    const after = compute(before, version)
+    if (!after || sameFills(before, after)) return null
+    const plan = planDraftWrite(s, state, templateId, after, allowCreate)
+    if (!plan) return null
+    const past = selectHistory(state, templateId).undo
+    const history: History = { undo: [...past, { kind, before, after }].slice(-MAX_HISTORY), redo: [] }
+    if (!commit([...plan.writes, historyWrite(s, templateId, history)])) return null
+    return { artworkId: plan.artworkId, before }
+  }
+
+  /** Colors one region of this flower's draft, starting a new draft (new id, latest version) if needed. */
+  const fillRegion = (templateId: string, regionId: string, color: ColorKey) =>
+    edit(
+      templateId,
+      'fill',
+      (before, version) =>
+        isColorKey(color) && version.approvedRegionIds.includes(regionId) ? { ...before, [regionId]: color } : null,
+      true,
+    )
+
+  /** Turns one colored region back to white. Never starts a draft. */
+  const eraseRegion = (templateId: string, regionId: string) =>
+    edit(
+      templateId,
+      'erase',
+      (before) =>
+        regionId in before ? Object.fromEntries(Object.entries(before).filter(([id]) => id !== regionId)) : null,
+      false,
+    )
+
+  /** Start over: every region back to white as one step, so a single Undo brings it all back. */
+  const clearDraft = (templateId: string): Fills | null =>
+    edit(templateId, 'clear', () => EMPTY_FILLS, false)?.before ?? null
+
+  const travel = (templateId: string, direction: 'undo' | 'redo'): EditKind | null => {
+    const s = safeStorage()
+    if (!s) return null
+    const state = getState()
+    const history = selectHistory(state, templateId)
+    const step = history[direction].at(-1)
+    if (!step) return null
+    const plan = planDraftWrite(s, state, templateId, direction === 'undo' ? step.before : step.after, false)
+    if (!plan) return null
+    const next: History =
+      direction === 'undo'
+        ? { undo: history.undo.slice(0, -1), redo: [...history.redo, step] }
+        : { undo: [...history.undo, step], redo: history.redo.slice(0, -1) }
+    return commit([...plan.writes, historyWrite(s, templateId, next)]) ? step.kind : null
+  }
+
+  const undo = (templateId: string) => travel(templateId, 'undo')
+  const redo = (templateId: string) => travel(templateId, 'redo')
+
+  /**
+   * Low-level autosave by id. Update-only: it never creates a record, never touches gallery
+   * membership, and refuses garden pictures, so a late save can neither recreate nor alter them.
    */
   const setFills = (artworkId: string, fills: Fills): boolean => {
     const s = safeStorage()
-    const current = getState().artworks[artworkId]
-    if (!s || !current) return false
+    const state = getState()
+    const current = state.artworks[artworkId]
+    if (!s || !current || inGallery(state, artworkId)) return false
     const version = templates.version(current.templateId, current.templateVersion)
     if (!version) return false
     const artworks = readRawMap(s, STORAGE_KEYS.artworks)
@@ -256,28 +415,6 @@ export function createArtworkLibrary({
     if (!isRecord(record)) return false
     artworks[artworkId] = { ...record, fills: sanitizeFills(fills, version), updatedAt: now() }
     return commit([[STORAGE_KEYS.artworks, artworks]])
-  }
-
-  /** Colors one region of this flower's draft, starting a new draft (new id, latest version) if needed. */
-  const fillRegion = (templateId: string, regionId: string, color: ColorKey) => {
-    if (!isColorKey(color)) return null
-    const existing = getDraft(templateId)
-    const version = existing
-      ? templates.version(templateId, existing.templateVersion)
-      : templates.latest(templateId)
-    if (!version || !version.approvedRegionIds.includes(regionId)) return null
-    const before = existing?.fills ?? EMPTY_FILLS
-    if (before[regionId] === color) return null
-    const draft = existing ?? createDraft(templateId)
-    if (!draft || !setFills(draft.id, { ...before, [regionId]: color })) return null
-    return { artworkId: draft.id, before }
-  }
-
-  /** Returns the fills that were cleared, so the caller can offer a one-step undo. */
-  const clearArtwork = (artworkId: string): Fills | null => {
-    const artwork = getState().artworks[artworkId]
-    if (!artwork || Object.keys(artwork.fills).length === 0) return null
-    return setFills(artworkId, EMPTY_FILLS) ? artwork.fills : null
   }
 
   const saveToGallery = (artworkId: string) => {
@@ -306,7 +443,7 @@ export function createArtworkLibrary({
     return commit(writes)
   }
 
-  /** Lets go of this flower's draft so the next visit starts a fresh artwork. */
+  /** Lets go of this flower's draft and its undo history, so the next visit starts a fresh artwork. */
   const finishDraft = (templateId: string) => {
     const s = safeStorage()
     const state = getState()
@@ -314,8 +451,8 @@ export function createArtworkLibrary({
     if (!s || !artworkId) return false
     const drafts = readRawMap(s, STORAGE_KEYS.drafts)
     delete drafts[templateId]
-    const writes: Write[] = [[STORAGE_KEYS.drafts, drafts]]
-    if (!state.gallery.some((a) => a.id === artworkId)) {
+    const writes: Write[] = [[STORAGE_KEYS.drafts, drafts], historyWrite(s, templateId, null)]
+    if (!inGallery(state, artworkId)) {
       const artworks = readRawMap(s, STORAGE_KEYS.artworks)
       delete artworks[artworkId]
       writes.push([STORAGE_KEYS.artworks, artworks])
@@ -343,13 +480,21 @@ export function createArtworkLibrary({
     subscribe,
     getDraft,
     fillRegion,
+    eraseRegion,
+    clearDraft,
+    undo,
+    redo,
     setFills,
-    clearArtwork,
     saveToGallery,
     removeFromGallery,
     finishDraft,
     clearAll,
   }
+}
+
+function sameFills(a: Fills, b: Fills) {
+  const aKeys = Object.keys(a)
+  return aKeys.length === Object.keys(b).length && aKeys.every((key) => a[key] === b[key])
 }
 
 function parseJson(raw: string | null): unknown {
