@@ -78,34 +78,35 @@ async function createParent(label: 'A' | 'B', noticeVersion: number): Promise<Pa
   await client.storage.from('artwork').remove([`${id}/${removedArtwork}.svg`])
 
   const tag = `iso${label.toLowerCase()}${stamp}`
-  const customerId = `ctm_${tag}`
+  const customerId = `cus_${tag}`
   const subscriptionId = `sub_${tag}`
-  const transactionId = `txn_${tag}`
+  const transactionId = `cs_test_${tag}`
   const now = new Date().toISOString()
   const seeds = [
-    await admin.from('billing_customers').insert({ parent_id: id, paddle_customer_id: customerId }),
+    await admin.from('billing_customers').insert({ parent_id: id, stripe_customer_id: customerId }),
     await admin.from('subscriptions').insert({
-      paddle_subscription_id: subscriptionId,
-      paddle_customer_id: customerId,
+      stripe_subscription_id: subscriptionId,
+      stripe_customer_id: customerId,
       status: 'active',
-      price_id: 'pri_isolationtest',
-      paid_through: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+      price_id: 'price_isolationtest',
+      current_period_end: new Date(Date.now() + 30 * 86_400_000).toISOString(),
       last_event_at: now,
     }),
     await admin.from('transactions').insert({
-      paddle_transaction_id: transactionId,
-      paddle_customer_id: customerId,
-      price_id: 'pri_isolationtest',
-      amount_minor: 2999,
+      stripe_checkout_session_id: transactionId,
+      stripe_customer_id: customerId,
+      pack_ids: ['ocean-friends'],
+      amount_minor: 499,
       currency: 'USD',
-      status: 'completed',
+      status: 'paid',
       occurred_at: now,
     }),
     await admin.from('entitlements').insert({
       parent_id: id,
-      scope: 'membership',
-      source_type: 'subscription',
-      source_id: subscriptionId,
+      scope: 'pack',
+      pack_id: 'ocean-friends',
+      source_type: 'transaction',
+      source_id: transactionId,
     }),
   ]
   const failed = seeds.find((result) => result.error)
@@ -131,8 +132,8 @@ async function adminSnapshot(parent: Parent) {
     artworks: await count('artworks', 'parent_id', parent.id),
     deletions: await count('artwork_deletions', 'parent_id', parent.id),
     customers: await count('billing_customers', 'parent_id', parent.id),
-    subscriptions: await count('subscriptions', 'paddle_customer_id', parent.customerId),
-    transactions: await count('transactions', 'paddle_customer_id', parent.customerId),
+    subscriptions: await count('subscriptions', 'stripe_customer_id', parent.customerId),
+    transactions: await count('transactions', 'stripe_customer_id', parent.customerId),
     entitlements: await count('entitlements', 'parent_id', parent.id),
     files: (files.data ?? []).map((file) => file.name).sort(),
   }
@@ -166,7 +167,7 @@ afterAll(async () => {
       await admin.storage.from('artwork').remove(files.data.map((file) => `${parent.id}/${file.name}`))
     }
     await admin.auth.admin.deleteUser(parent.id).catch(() => undefined)
-    await admin.from('transactions').delete().eq('paddle_transaction_id', parent.transactionId)
+    await admin.from('transactions').delete().eq('stripe_checkout_session_id', parent.transactionId)
   }
 }, 60_000)
 
@@ -200,9 +201,9 @@ describe('two unrelated parent accounts', () => {
     for (const table of CUSTOMER_TABLES) {
       const all = await self.client.from(table).select('*')
       expect(all.error, table).toBeNull()
-      expect(all.data!.map((row) => row.paddle_customer_id), table).toEqual([self.customerId])
+      expect(all.data!.map((row) => row.stripe_customer_id), table).toEqual([self.customerId])
 
-      const targeted = await self.client.from(table).select('*').eq('paddle_customer_id', other.customerId)
+      const targeted = await self.client.from(table).select('*').eq('stripe_customer_id', other.customerId)
       expect(targeted.data, `${table} filtered to the other parent`).toEqual([])
     }
   })
@@ -261,9 +262,9 @@ describe('two unrelated parent accounts', () => {
     expect(profile.data ?? []).toEqual([])
 
     const writes = {
-      'grant self a plan': a.client.from('entitlements').insert({ parent_id: a.id, scope: 'membership', source_type: 'subscription', source_id: 'sub_forged' }),
-      'revoke the other plan': a.client.from('entitlements').update({ revoked_at: new Date().toISOString() }).eq('parent_id', b.id),
-      'delete the other plan': a.client.from('entitlements').delete().eq('parent_id', b.id),
+      'grant self a pack': a.client.from('entitlements').insert({ parent_id: a.id, scope: 'pack', pack_id: 'safari-garden', source_type: 'transaction', source_id: 'cs_test_forged' }),
+      'revoke the other pack': a.client.from('entitlements').update({ revoked_at: new Date().toISOString() }).eq('parent_id', b.id),
+      'delete the other pack': a.client.from('entitlements').delete().eq('parent_id', b.id),
       'forge consent for the other parent': a.client.from('consent_records').insert({
         parent_id: b.id,
         purpose: 'cloud_artwork_sync',
@@ -272,10 +273,20 @@ describe('two unrelated parent accounts', () => {
         verification_reference: 'forged',
       }),
       'withdraw the other consent': a.client.from('consent_records').update({ withdrawn_at: new Date().toISOString() }).eq('parent_id', b.id),
-      'create a billing customer': a.client.from('billing_customers').insert({ parent_id: a.id, paddle_customer_id: 'ctm_forged' }),
+      'create a billing customer': a.client.from('billing_customers').insert({ parent_id: a.id, stripe_customer_id: 'cus_forged' }),
       'take over the other customer': a.client.from('billing_customers').update({ parent_id: a.id }).eq('parent_id', b.id),
-      'move the other subscription': a.client.from('subscriptions').update({ paddle_customer_id: a.customerId }).eq('paddle_subscription_id', b.subscriptionId),
-      'delete the other payment': a.client.from('transactions').delete().eq('paddle_transaction_id', b.transactionId),
+      'move the other subscription': a.client.from('subscriptions').update({ stripe_customer_id: a.customerId }).eq('stripe_subscription_id', b.subscriptionId),
+      'delete the other payment': a.client.from('transactions').delete().eq('stripe_checkout_session_id', b.transactionId),
+      'record a checkout directly': a.client.rpc('fulfil_checkout_session', {
+        p_session_id: 'cs_test_forged',
+        p_payment_intent_id: null,
+        p_customer_id: null,
+        p_parent_id: a.id,
+        p_pack_ids: ['safari-garden'],
+        p_amount_minor: 0,
+        p_currency: 'usd',
+        p_occurred_at: new Date().toISOString(),
+      }),
       'clear the other removal marks': a.client.from('artwork_deletions').delete().eq('parent_id', b.id),
       'write a webhook record': a.client.from('webhook_events').insert({ event_id: `evt_forged_${stamp}`, event_type: 'subscription.created', occurred_at: new Date().toISOString() }),
     }

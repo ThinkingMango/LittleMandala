@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import useSWR from 'swr'
+import useSWR, { mutate } from 'swr'
 import { useAuthState } from '@/lib/auth/client'
 import type { Mandala } from '@/lib/mandalas'
 import { PACK_BY_ID, type PackId } from '@/lib/packs'
@@ -61,6 +61,11 @@ async function fetchRights([, parentId]: readonly [string, string]): Promise<Rig
     throw new Error('We couldn’t check your purchases right now.')
   }
   return activeRights(data as EntitlementRow[], Date.now())
+}
+
+/** Re-reads the parent's packs everywhere they're shown, after a purchase is recorded. */
+export function refreshEntitlements() {
+  return mutate((key) => Array.isArray(key) && key[0] === 'entitlements')
 }
 
 /**

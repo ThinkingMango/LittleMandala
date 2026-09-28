@@ -1,14 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { Info } from 'lucide-react'
-import { NotConnectedBadge } from '@/components/parent/not-connected-badge'
+import { Suspense, useState } from 'react'
+import type { CheckoutOutcome } from '@/app/actions/checkout'
 import { PackCard } from '@/components/parent/pack-card'
 import { OfferGrid } from '@/components/parent/pricing/offer-grid'
 import { OrderSummary } from '@/components/parent/pricing/order-summary'
+import { PurchaseNotice, ReturnedFromCheckout } from '@/components/parent/pricing/purchase-notice'
 import { StandardUnlockCard } from '@/components/parent/pricing/standard-unlock-card'
 import { PACK_PRICE_CENTS, formatPrice } from '@/lib/billing/pricing'
-import { useEntitlements } from '@/lib/entitlements'
+import { refreshEntitlements, useEntitlements } from '@/lib/entitlements'
 import { PackGroup } from '@/components/parent/pricing/pack-group'
 import {
   FOR_YOU_ANCHOR,
@@ -20,10 +20,10 @@ import {
   type PackId,
 } from '@/lib/packs'
 
-const FUTURE_FLOW = [
-  'Paddle.js opens an overlay checkout for the packs in your order, tagged with the signed-in parent’s id.',
-  'Paddle sends a signed webhook to /api/paddle/webhook, which verifies it.',
-  'The billing server records each pack in Supabase. Pictures unlock only from that record.',
+const HOW_BUYING_WORKS = [
+  'Choose your packs. Our server works out the price, so the total you see is the total you pay.',
+  'Pay once in a secure Stripe checkout. Your card details go to Stripe and never reach us.',
+  'Your packs open on your account straight away and stay yours on every device you sign in on.',
 ]
 
 const STANDARD_PAID = packPages('standard').filter((page) => page.tier !== 'free')
@@ -32,6 +32,15 @@ export function BillingView() {
   const { packs: owned, isUnlocked, failed } = useEntitlements()
   const [chosen, setChosen] = useState<ReadonlySet<PackId>>(() => new Set())
   const [standardChosen, setStandardChosen] = useState(false)
+  const [outcome, setOutcome] = useState<CheckoutOutcome | null>(null)
+
+  const handlePurchased = (result: CheckoutOutcome) => {
+    setOutcome(result)
+    if (result === 'failed') return
+    setChosen(new Set())
+    setStandardChosen(false)
+    void refreshEntitlements()
+  }
 
   const statusOf = (id: PackId) => (owned.has(id) ? 'Yours to keep' : null)
   const buyable = SOLD_PACKS.filter((pack) => !statusOf(pack.id))
@@ -60,20 +69,18 @@ export function BillingView() {
   return (
     <div className="flex flex-col gap-10">
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-3xl font-black">Pricing</h1>
-          <NotConnectedBadge service="Paddle" />
-        </div>
+        <h1 className="text-3xl font-black">Pricing</h1>
         <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty">
           Buy picture packs once and keep them for good. There’s no subscription, and bundles bring the price down.
         </p>
 
-        <div className="flex items-start gap-3 rounded-2xl bg-warning p-4 text-warning-foreground">
-          <Info className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-          <p className="text-sm leading-relaxed font-semibold">
-            {'Payments aren’t connected yet, so nothing can be bought and no card is charged. These are the proposed prices.'}
-          </p>
-        </div>
+        {outcome ? (
+          <PurchaseNotice outcome={outcome} />
+        ) : (
+          <Suspense fallback={null}>
+            <ReturnedFromCheckout />
+          </Suspense>
+        )}
 
         {failed && (
           <p role="alert" className="text-sm font-semibold text-destructive">
@@ -124,16 +131,21 @@ export function BillingView() {
             )}
           </div>
 
-          <OrderSummary packs={inOrder} withStandard={standardChosen && !standardUnlocked} buyable={buyable.length} />
+          <OrderSummary
+            packs={inOrder}
+            withStandard={standardChosen && !standardUnlocked}
+            buyable={buyable.length}
+            onPurchased={handlePurchased}
+          />
         </div>
       </section>
 
-      <section aria-labelledby="future-flow" className="flex flex-col gap-4 rounded-3xl border border-dashed bg-card p-6">
-        <h2 id="future-flow" className="font-extrabold">
-          How buying will work
+      <section aria-labelledby="how-buying-works" className="flex flex-col gap-4 rounded-3xl border bg-card p-6">
+        <h2 id="how-buying-works" className="font-extrabold">
+          How buying works
         </h2>
         <ol className="flex flex-col gap-3">
-          {FUTURE_FLOW.map((step, i) => (
+          {HOW_BUYING_WORKS.map((step, i) => (
             <li key={step} className="flex items-start gap-3 text-sm leading-relaxed text-muted-foreground">
               <span
                 className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-black text-foreground"

@@ -18,7 +18,7 @@ A calm, tablet-first coloring app for young children. Kids pick a flower mandala
 
 - **Parent gate** — a grown-up check guards every parent page for the current browser session.
 - **Sign in** — email and password or magic link (currently mocked).
-- **Pricing** — picture packs bought once and kept, with bundles and a Standard unlock. There's no subscription. Payments (Paddle) aren't connected yet.
+- **Pricing** — picture packs bought once and kept, with bundles and a Standard unlock. There's no subscription. Payments run through Stripe Embedded Checkout; `/api/stripe/webhook` records each paid order and opens its packs (needs `STRIPE_WEBHOOK_SECRET`).
 - **Device settings** — motion and haptics toggles.
 - **Integration status** — shows which backend services are connected.
 

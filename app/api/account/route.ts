@@ -29,15 +29,15 @@ async function removeAllFiles(admin: SupabaseClient, parentId: string) {
 async function hasLivePlan(admin: SupabaseClient, parentId: string) {
   const { data: customer, error } = await admin
     .from('billing_customers')
-    .select('paddle_customer_id')
+    .select('stripe_customer_id')
     .eq('parent_id', parentId)
     .maybeSingle()
   if (error) throw new Error(`checking billing failed: ${error.message}`)
   if (!customer) return false
   const { count, error: subscriptionError } = await admin
     .from('subscriptions')
-    .select('paddle_subscription_id', { count: 'exact', head: true })
-    .eq('paddle_customer_id', customer.paddle_customer_id)
+    .select('stripe_subscription_id', { count: 'exact', head: true })
+    .eq('stripe_customer_id', customer.stripe_customer_id)
     .in('status', LIVE_PLAN_STATUSES)
   if (subscriptionError) throw new Error(`checking subscriptions failed: ${subscriptionError.message}`)
   return (count ?? 0) > 0
