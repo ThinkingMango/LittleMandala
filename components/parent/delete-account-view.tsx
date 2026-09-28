@@ -118,7 +118,7 @@ function DeleteAccountForm({ userId, email, onDeleted }: FormProps) {
           {'If you ever paid for a plan, we keep a record of each payment for accounting: the amount, date, plan and payment number. It no longer shows your email or links to you. Paddle, our payment provider, keeps its own receipts.'}
         </p>
         <p className="leading-relaxed text-muted-foreground">
-          {'Deletion happens right away and can’t be undone. Pictures on this device stay here. To remove them too, use Clear this device on the Overview page first.'}
+          {'Deletion happens right away and can’t be undone. Pictures on this device stay here. To remove them too, use Clear saved coloring on the Overview page first.'}
         </p>
       </section>
 
