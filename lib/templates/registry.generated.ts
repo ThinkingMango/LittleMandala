@@ -73,6 +73,10 @@ import zenMandalasPeonyMedallion from '@/lib/templates/zen-mandalas/peony-medall
 import zenMandalasRoseWindow from '@/lib/templates/zen-mandalas/rose-window.json'
 import zenMandalasTropicalLeaves from '@/lib/templates/zen-mandalas/tropical-leaves.json'
 import zenMandalasWildflowerRing from '@/lib/templates/zen-mandalas/wildflower-ring.json'
+import zenMandalasDahliaBurst from '@/lib/templates/zen-mandalas/dahlia-burst.json'
+import zenMandalasIrisCrown from '@/lib/templates/zen-mandalas/iris-crown.json'
+import zenMandalasPoppyCircle from '@/lib/templates/zen-mandalas/poppy-circle.json'
+import zenMandalasLavenderOlive from '@/lib/templates/zen-mandalas/lavender-olive.json'
 import flowersGardenSunflowerSmile from '@/lib/templates/flowers-garden/sunflower-smile.json'
 import flowersGardenDaisyTrio from '@/lib/templates/flowers-garden/daisy-trio.json'
 import flowersGardenRoseFriend from '@/lib/templates/flowers-garden/rose-friend.json'
@@ -196,7 +200,7 @@ export const TRACED_PACK_SOURCES = [
   {
     id: 'zen-mandalas',
     name: 'Zen Mandalas',
-    description: 'Eight detailed mandalas for grown-ups to color: rings of lotus petals, ferns, cherry blossom, ginkgo, peonies, roses, tropical leaves and wildflowers, with finer areas and lighter outlines than the children\'s packs.',
+    description: 'Twelve detailed mandalas for grown-ups to color: rings of lotus petals, ferns, cherry blossom, ginkgo, peonies, roses, tropical leaves, wildflowers, dahlias, irises, poppies, and lavender with olive, with finer areas and lighter outlines than the children\'s packs.',
     icon: 'leaf',
     status: 'draft',
     audience: 'grown-ups',
@@ -210,6 +214,10 @@ export const TRACED_PACK_SOURCES = [
         zenMandalasRoseWindow,
         zenMandalasTropicalLeaves,
         zenMandalasWildflowerRing,
+        zenMandalasDahliaBurst,
+        zenMandalasIrisCrown,
+        zenMandalasPoppyCircle,
+        zenMandalasLavenderOlive,
       ]
       : [],
   },
