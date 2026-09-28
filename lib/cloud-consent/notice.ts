@@ -6,6 +6,15 @@ const SAFETY_MARGIN_MS = 30 * 1000
 
 export type NoticeSection = { heading: string | null; paragraphs: string[] }
 
+/**
+ * What changed in each notice version, shown to parents whose permission is on an earlier version
+ * that is still in force. Only list versions that don't need parents to agree again; a change that
+ * does should retire the older version instead.
+ */
+export const NOTICE_CHANGES: Partial<Record<number, string>> = {
+  2: 'To get a copy of your data, you now email us instead of downloading it here. Nothing changes about what we save or who can see it.',
+}
+
 /** The exact sentence the parent ticks. The permission record PDF quotes it word for word. */
 export function agreementStatement(noticeVersion: number) {
   return `I am this child’s parent or legal guardian. I have read notice version ${noticeVersion} above and I agree to cloud saving as it describes.`

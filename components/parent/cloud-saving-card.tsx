@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { ParentCard } from '@/components/parent/parent-card'
 import { buttonVariants } from '@/components/ui/button'
 import { useAuthState } from '@/lib/auth/client'
-import { useCloudConsent } from '@/lib/cloud-consent/client'
+import { isCloudSavingOn, useCloudConsent } from '@/lib/cloud-consent/client'
 import { useCloudSync } from '@/lib/cloud-sync/client'
 import { cn } from '@/lib/utils'
 
@@ -13,7 +13,7 @@ export function CloudSavingCard() {
   const { data, error } = useCloudConsent(auth.user?.id ?? null)
 
   const { summary } = useCloudSync()
-  const isOn = Boolean(data?.notice && data.consent?.noticeVersion === data.notice.version)
+  const isOn = isCloudSavingOn(data)
   const syncLine =
     summary.state === 'synced'
       ? summary.total === 0

@@ -10,9 +10,23 @@ const MAX_REMOVE_ROUNDS = 50
 export type ConsentNotice = { version: number; title: string; body: string; approvedAt: Date }
 export type ActiveConsent = { noticeVersion: number; givenAt: Date }
 export type CloudConsentStatus = {
+  /** The newest notice in force: what a parent agrees to now. */
   notice: ConsentNotice | null
   consent: ActiveConsent | null
+  /** The notice the active consent points at, while it is still in force. Null once it is retired. */
+  agreedNotice: ConsentNotice | null
   signedInAt: Date | null
+}
+
+type NoticeRow = { version: number; title: string; body: string; approved_at: string; retired_at: string | null }
+
+function toNotice(row: NoticeRow): ConsentNotice {
+  return { version: row.version, title: row.title, body: row.body, approvedAt: new Date(row.approved_at) }
+}
+
+/** Matches has_cloud_consent() in the database: the agreed notice must be approved and not retired. */
+export function isCloudSavingOn(status: CloudConsentStatus | undefined) {
+  return Boolean(status?.consent && status.agreedNotice)
 }
 
 type ErrorCode = 'recent_sign_in_required' | 'not_signed_in' | 'notice_not_available' | 'files_remaining' | 'unknown'
@@ -46,13 +60,12 @@ async function fetchCloudConsentStatus([, userId]: readonly [string, string]): P
   const [noticeResult, consentResult, claimsResult] = await Promise.all([
     supabase
       .from('consent_notices')
-      .select('version, title, body, approved_at')
+      .select('version, title, body, approved_at, retired_at')
       .eq('purpose', PURPOSE)
       .is('retired_at', null)
       .not('approved_at', 'is', null)
       .order('version', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+      .returns<NoticeRow[]>(),
     supabase
       .from('consent_records')
       .select('notice_version, given_at')
@@ -68,19 +81,14 @@ async function fetchCloudConsentStatus([, userId]: readonly [string, string]): P
     throw new Error('We couldn’t load cloud saving right now.')
   }
 
-  const notice = noticeResult.data
+  const inForce = noticeResult.data
   const consent = consentResult.data
+  const agreed = consent ? inForce.find((row) => row.version === consent.notice_version) : undefined
 
   return {
-    notice: notice
-      ? {
-          version: notice.version,
-          title: notice.title,
-          body: notice.body,
-          approvedAt: new Date(notice.approved_at),
-        }
-      : null,
+    notice: inForce[0] ? toNotice(inForce[0]) : null,
     consent: consent ? { noticeVersion: consent.notice_version, givenAt: new Date(consent.given_at) } : null,
+    agreedNotice: agreed ? toNotice(agreed) : null,
     signedInAt: latestSignInAt(claimsResult.data?.claims?.amr),
   }
 }
