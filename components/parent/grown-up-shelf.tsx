@@ -10,7 +10,7 @@ import { EMPTY_FILLS } from '@/lib/artwork/library'
 import { PACK_PRICE_CENTS, formatPrice } from '@/lib/billing/pricing'
 import { useEntitlements } from '@/lib/entitlements'
 import { latestVersion, type Mandala } from '@/lib/mandalas'
-import { GROWN_UP_PACKS, colorHref, packPages, type Pack } from '@/lib/packs'
+import { FOR_YOU_ANCHOR, GROWN_UP_PACKS, colorHref, packPages, type Pack } from '@/lib/packs'
 import { cn } from '@/lib/utils'
 
 const artBox = 'flex aspect-square items-center justify-center rounded-2xl border bg-card p-3 transition-colors'
@@ -88,7 +88,7 @@ function PackSection({ pack }: { pack: Pack }) {
         ))}
       </ul>
       {open < pages.length && (
-        <Link href="/parent/billing" className={cn(buttonVariants(), 'h-11 self-start rounded-full px-5 font-bold')}>
+        <Link href={`/parent/billing#${FOR_YOU_ANCHOR}`} className={cn(buttonVariants(), 'h-11 self-start rounded-full px-5 font-bold')}>
           {`Get ${pack.name} for ${formatPrice(PACK_PRICE_CENTS)}`}
         </Link>
       )}

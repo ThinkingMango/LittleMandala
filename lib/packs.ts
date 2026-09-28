@@ -78,6 +78,14 @@ export const SOLD_PACKS: readonly Pack[] = Object.freeze(
   PACKS.filter((p) => p.soldSeparately && p.status === 'published'),
 )
 
+/** Sold packs split for Pricing: kids' packs first, grown-up packs in their own "For you" group. */
+export const SOLD_KIDS_PACKS: readonly Pack[] = Object.freeze(SOLD_PACKS.filter((p) => p.audience === 'children'))
+export const SOLD_GROWN_UP_PACKS: readonly Pack[] = Object.freeze(
+  SOLD_PACKS.filter((p) => p.audience === 'grown-ups'),
+)
+
+export const FOR_YOU_ANCHOR = 'for-you'
+
 export function findKidsPack(id: string): Pack | undefined {
   return KIDS_PACKS.find((p) => p.id === id)
 }

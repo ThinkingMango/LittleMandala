@@ -6,6 +6,9 @@ import {
   KIDS_PACKS,
   PACKS,
   PACK_BY_ID,
+  SOLD_GROWN_UP_PACKS,
+  SOLD_KIDS_PACKS,
+  SOLD_PACKS,
   colorHref,
   findKidsPack,
   packHref,
@@ -27,6 +30,14 @@ describe('grown-up packs', () => {
     const page = colorHref({ id: 'lotus-bloom', pack: zen.id })
     expect(page).toBe('/parent/color/lotus-bloom')
     expect(safeNext(page)).toBe(page)
+  })
+
+  it('sells every published pack in exactly one Pricing group, grown-ups last', () => {
+    expect(SOLD_KIDS_PACKS.every((p) => p.audience === 'children')).toBe(true)
+    expect(SOLD_GROWN_UP_PACKS.every((p) => p.audience === 'grown-ups')).toBe(true)
+    expect([...SOLD_KIDS_PACKS, ...SOLD_GROWN_UP_PACKS].map((p) => p.id).sort()).toEqual(
+      SOLD_PACKS.map((p) => p.id).sort(),
+    )
   })
 
   it('leaves children pages in the kids area', () => {

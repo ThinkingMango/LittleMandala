@@ -9,7 +9,16 @@ import { OrderSummary } from '@/components/parent/pricing/order-summary'
 import { StandardUnlockCard } from '@/components/parent/pricing/standard-unlock-card'
 import { PACK_PRICE_CENTS, formatPrice } from '@/lib/billing/pricing'
 import { useEntitlements } from '@/lib/entitlements'
-import { SOLD_PACKS, packPages, type PackId } from '@/lib/packs'
+import { PackGroup } from '@/components/parent/pricing/pack-group'
+import {
+  FOR_YOU_ANCHOR,
+  SOLD_GROWN_UP_PACKS,
+  SOLD_KIDS_PACKS,
+  SOLD_PACKS,
+  packPages,
+  type Pack,
+  type PackId,
+} from '@/lib/packs'
 
 const FUTURE_FLOW = [
   'Paddle.js opens an overlay checkout for the packs in your order, tagged with the signed-in parent’s id.',
@@ -35,6 +44,18 @@ export function BillingView() {
       if (!next.delete(id)) next.add(id)
       return next
     })
+
+  const hasGrownUpPacks = SOLD_GROWN_UP_PACKS.length > 0
+  const renderPack = (pack: Pack) => (
+    <PackCard
+      key={pack.id}
+      pack={pack}
+      status={statusOf(pack.id)}
+      selected={chosen.has(pack.id) && !statusOf(pack.id)}
+      onToggle={() => toggle(pack.id)}
+      headingLevel={hasGrownUpPacks ? 'h4' : 'h3'}
+    />
+  )
 
   return (
     <div className="flex flex-col gap-10">
@@ -85,21 +106,28 @@ export function BillingView() {
         )}
 
         <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_20rem]">
-          <div className="flex flex-col gap-4">
-            {SOLD_PACKS.map((pack) => (
-              <PackCard
-                key={pack.id}
-                pack={pack}
-                status={statusOf(pack.id)}
-                selected={chosen.has(pack.id) && !statusOf(pack.id)}
-                onToggle={() => toggle(pack.id)}
+          <div className="flex flex-col gap-8">
+            <PackGroup
+              title={hasGrownUpPacks ? 'For your child' : null}
+              description="Big, simple pictures for ages 3 to 7."
+            >
+              {SOLD_KIDS_PACKS.map(renderPack)}
+              <StandardUnlockCard
+                unlocked={standardUnlocked}
+                selected={standardChosen && !standardUnlocked}
+                onToggle={() => setStandardChosen((value) => !value)}
               />
-            ))}
-            <StandardUnlockCard
-              unlocked={standardUnlocked}
-              selected={standardChosen && !standardUnlocked}
-              onToggle={() => setStandardChosen((value) => !value)}
-            />
+            </PackGroup>
+
+            {hasGrownUpPacks && (
+              <PackGroup
+                id={FOR_YOU_ANCHOR}
+                title="For you"
+                description="Detailed mandalas for grown-ups, colored behind the parent gate. Same price, and they count toward bundles."
+              >
+                {SOLD_GROWN_UP_PACKS.map(renderPack)}
+              </PackGroup>
+            )}
           </div>
 
           <OrderSummary packs={inOrder} withStandard={standardChosen && !standardUnlocked} buyable={buyable.length} />
