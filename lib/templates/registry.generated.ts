@@ -141,6 +141,22 @@ import christmasGardenTwoRockingHorse from '@/lib/templates/christmas-garden-two
 import christmasGardenTwoWinterCabin from '@/lib/templates/christmas-garden-two/winter-cabin.json'
 import christmasGardenTwoToyDrum from '@/lib/templates/christmas-garden-two/toy-drum.json'
 import christmasGardenTwoSnowflakeBloom from '@/lib/templates/christmas-garden-two/snowflake-bloom.json'
+import surpriseGardenGiftBoxBloom from '@/lib/templates/surprise-garden/gift-box-bloom.json'
+import surpriseGardenMoleMound from '@/lib/templates/surprise-garden/mole-mound.json'
+import surpriseGardenMushroomHouse from '@/lib/templates/surprise-garden/mushroom-house.json'
+import surpriseGardenPicnicPuppy from '@/lib/templates/surprise-garden/picnic-puppy.json'
+import surpriseGardenBootBird from '@/lib/templates/surprise-garden/boot-bird.json'
+import surpriseGardenPumpkinChipmunk from '@/lib/templates/surprise-garden/pumpkin-chipmunk.json'
+import surpriseGardenStumpRaccoon from '@/lib/templates/surprise-garden/stump-raccoon.json'
+import surpriseGardenAppleWorm from '@/lib/templates/surprise-garden/apple-worm.json'
+import surpriseGardenCabbageGuineaPig from '@/lib/templates/surprise-garden/cabbage-guinea-pig.json'
+import surpriseGardenSunhatHamster from '@/lib/templates/surprise-garden/sunhat-hamster.json'
+import surpriseGardenBucketPiglet from '@/lib/templates/surprise-garden/bucket-piglet.json'
+import surpriseGardenEggDragon from '@/lib/templates/surprise-garden/egg-dragon.json'
+import surpriseGardenCloudFlower from '@/lib/templates/surprise-garden/cloud-flower.json'
+import surpriseGardenLogSkunk from '@/lib/templates/surprise-garden/log-skunk.json'
+import surpriseGardenShedGoat from '@/lib/templates/surprise-garden/shed-goat.json'
+import surpriseGardenTreasureChest from '@/lib/templates/surprise-garden/treasure-chest.json'
 
 const DRAFTS_LISTED = process.env.NODE_ENV === 'development'
 
@@ -367,6 +383,31 @@ export const TRACED_PACK_SOURCES = [
       christmasGardenTwoWinterCabin,
       christmasGardenTwoToyDrum,
       christmasGardenTwoSnowflakeBloom,
+    ],
+  },
+  {
+    id: 'surprise-garden',
+    name: 'Surprise Garden',
+    description: 'Sixteen peek-a-boo pictures where something is always hiding: a flower bursting from a gift box, a mole in a molehill, a mouse in a mushroom house, a puppy in a picnic basket, a baby dragon hatching from an egg, a treasure chest in the grass and more.',
+    icon: 'gift',
+    status: 'published',
+    pages: [
+      surpriseGardenGiftBoxBloom,
+      surpriseGardenMoleMound,
+      surpriseGardenMushroomHouse,
+      surpriseGardenPicnicPuppy,
+      surpriseGardenBootBird,
+      surpriseGardenPumpkinChipmunk,
+      surpriseGardenStumpRaccoon,
+      surpriseGardenAppleWorm,
+      surpriseGardenCabbageGuineaPig,
+      surpriseGardenSunhatHamster,
+      surpriseGardenBucketPiglet,
+      surpriseGardenEggDragon,
+      surpriseGardenCloudFlower,
+      surpriseGardenLogSkunk,
+      surpriseGardenShedGoat,
+      surpriseGardenTreasureChest,
     ],
   },
 ] as const satisfies readonly TracedPackSource[]
