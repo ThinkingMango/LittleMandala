@@ -2,6 +2,7 @@
 
 import { useState, useSyncExternalStore } from 'react'
 import { Trash2 } from 'lucide-react'
+import { DeviceStorageNotice } from '@/components/parent/device-storage-notice'
 import { ParentCard } from '@/components/parent/parent-card'
 import { Button } from '@/components/ui/button'
 import {
@@ -44,6 +45,7 @@ export function DeviceSettingsCard() {
 
   return (
     <ParentCard title="On this device" description="Artwork is kept on this tablet unless you turn on cloud saving.">
+      <DeviceStorageNotice />
       <div className="flex flex-col divide-y">
         {toggles.map((t) => (
           <div key={t.key} className="flex items-center justify-between gap-4 py-3 first:pt-0">

@@ -58,8 +58,19 @@ export const PACK_BY_ID = Object.freeze(
   Object.fromEntries([STANDARD, ...TRACED_PACKS.map(tracedPack)].map((pack) => [pack.id, pack])),
 ) as Readonly<Record<PackId, Pack>>
 
-/** Every listed pack, for both audiences, in shelf order. */
-export const PACKS: readonly Pack[] = Object.freeze([STANDARD, ...LISTED_TRACED_PACKS.map((p) => PACK_BY_ID[p.id])])
+/**
+ * Grown-up packs are shelved: they are not listed, sold or opened anywhere. Their art, pages and
+ * code stay in place, so setting this to true brings back the "Your coloring" tab, the "For you"
+ * groups on Overview and Pricing, and the /parent/grown-ups and /parent/color routes.
+ */
+export const GROWN_UPS_OFFERED = false
+
+/** Every listed pack in shelf order. Grown-up packs are included only while they are offered. */
+export const PACKS: readonly Pack[] = Object.freeze(
+  [STANDARD, ...LISTED_TRACED_PACKS.map((p) => PACK_BY_ID[p.id])].filter(
+    (p) => p.audience === 'children' || GROWN_UPS_OFFERED,
+  ),
+)
 
 /** The packs on the kids' shelf. */
 export const KIDS_PACKS: readonly Pack[] = Object.freeze(PACKS.filter((p) => p.audience === 'children'))

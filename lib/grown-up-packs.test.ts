@@ -3,6 +3,7 @@ import { safeNext } from '@/lib/auth/redirect'
 import {
   GROWN_UP_PACKS,
   GROWN_UPS_HREF,
+  GROWN_UPS_OFFERED,
   KIDS_PACKS,
   PACKS,
   PACK_BY_ID,
@@ -38,6 +39,15 @@ describe('grown-up packs', () => {
     expect([...SOLD_KIDS_PACKS, ...SOLD_GROWN_UP_PACKS].map((p) => p.id).sort()).toEqual(
       SOLD_PACKS.map((p) => p.id).sort(),
     )
+  })
+
+  it('lists and sells no grown-up pack while they are shelved', () => {
+    if (GROWN_UPS_OFFERED) return
+    expect(GROWN_UP_PACKS).toEqual([])
+    expect(SOLD_GROWN_UP_PACKS).toEqual([])
+    expect(PACKS.some((p) => p.audience === 'grown-ups')).toBe(false)
+    expect(SOLD_PACKS.some((p) => p.audience === 'grown-ups')).toBe(false)
+    expect(PACK_BY_ID['zen-mandalas'].name).toBe('Zen Mandalas')
   })
 
   it('leaves children pages in the kids area', () => {

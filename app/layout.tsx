@@ -19,6 +19,11 @@ export const metadata: Metadata = {
     'A calm, tablet-first flower mandala coloring app for children ages 3 to 7, with a separate grown-up area.',
   applicationName: 'Little Mandala',
   generator: 'v0.app',
+  appleWebApp: {
+    capable: true,
+    title: 'Little Mandala',
+    statusBarStyle: 'default',
+  },
   icons: {
     icon: [
       {

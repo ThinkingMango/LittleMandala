@@ -120,6 +120,10 @@ type LibraryOptions = {
 
 type Write = [key: string, value: unknown]
 
+const SPACE_CHECK_KEY = 'lm:space-check'
+/** A kids' page with a full undo history is about 50KB, so this leaves room for one more. */
+const PAGE_ROOM_CHARS = 64 * 1024
+
 export type ArtworkLibrary = ReturnType<typeof createArtworkLibrary>
 
 export function createArtworkLibrary({
@@ -167,12 +171,47 @@ export function createArtworkLibrary({
     }
   }
 
+  /** Set when the device refuses a write (usually full storage) and cleared by the next write that works. */
+  let lastWriteFailed = false
+  /** Cached result of the space check; any write that works may have changed it, so it is re-checked. */
+  let knownFull: boolean | null = null
+
   const commit = (writes: Write[]) => {
     const s = safeStorage()
     if (!s) return false
     const ok = writeRaw(s, writes)
+    lastWriteFailed = !ok
+    if (ok) knownFull = null
     notify()
     return ok
+  }
+
+  const didLastWriteFail = () => lastWriteFailed
+
+  /** Tries a throwaway write the size of one page's draft and undo history, then removes it. */
+  const probeFull = () => {
+    const s = safeStorage()
+    if (!s) return false
+    try {
+      s.setItem(SPACE_CHECK_KEY, 'x'.repeat(PAGE_ROOM_CHARS))
+      s.removeItem(SPACE_CHECK_KEY)
+      return false
+    } catch {
+      try {
+        s.removeItem(SPACE_CHECK_KEY)
+      } catch {}
+      return true
+    }
+  }
+
+  /**
+   * Whether new coloring can't be saved: the last write was refused, or there isn't room for one
+   * more page. Survives reloads, unlike `didLastWriteFail`, so the parent area can warn later.
+   */
+  const isStorageFull = () => {
+    if (lastWriteFailed) return true
+    knownFull ??= probeFull()
+    return knownFull
   }
 
   const toArtwork = (id: string, value: unknown): Artwork | null => {
@@ -613,6 +652,8 @@ export function createArtworkLibrary({
     templates,
     getState,
     subscribe,
+    didLastWriteFail,
+    isStorageFull,
     getDraft,
     fillRegion,
     eraseRegion,
