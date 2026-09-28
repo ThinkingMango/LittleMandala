@@ -35,10 +35,19 @@ describe('pack rights', () => {
     expect(canColor(ocean, expired)).toBe(false)
   })
 
-  it('opens locked Standard pages only with a plan, never with a pack row', () => {
-    const lockedStandard = packPages('standard').find((m) => m.tier === 'family')!
-    expect(canColor(lockedStandard, activeRights([row('pack', 'standard')], NOW))).toBe(false)
-    expect(canColor(lockedStandard, activeRights([row('membership', null)], NOW))).toBe(true)
+  it('opens locked Standard pages with the Standard unlock or a legacy plan, and nothing else', () => {
+    const lockedStandard = packPages('standard').filter((m) => m.tier === 'family')
+    expect(lockedStandard).toHaveLength(6)
+    const unlock = activeRights([row('pack', 'standard')], NOW)
+    for (const page of lockedStandard) {
+      expect(canColor(page, unlock), page.id).toBe(true)
+      expect(canColor(page, activeRights([row('membership', null)], NOW)), page.id).toBe(true)
+      expect(canColor(page, activeRights([row('pack', 'ocean-friends')], NOW)), page.id).toBe(false)
+    }
+    expect(canColor(ocean, unlock)).toBe(false)
+
+    const expiredUnlock = activeRights([row('pack', 'standard', '2026-09-20T00:00:00Z')], NOW)
+    expect(canColor(lockedStandard[0], expiredUnlock)).toBe(false)
   })
 })
 
