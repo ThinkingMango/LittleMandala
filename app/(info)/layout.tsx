@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { BrandMark } from '@/components/brand-mark'
+import { GrownUpAnalytics } from '@/components/grown-up-analytics'
 import { InfoFooter } from '@/components/info/info-footer'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -28,6 +29,7 @@ export default function InfoLayout({ children }: { children: React.ReactNode }) 
       </header>
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-5 py-8 md:px-8 md:py-12">{children}</main>
       <InfoFooter />
+      <GrownUpAnalytics />
     </div>
   )
 }

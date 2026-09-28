@@ -1,12 +1,12 @@
-import { House, Lock } from 'lucide-react'
+import { Lock, Tag } from 'lucide-react'
 import { ToolLink } from '@/components/coloring/tool-button'
 import { MandalaArt } from '@/components/coloring/mandala-art'
 import { EMPTY_FILLS } from '@/lib/artwork/library'
 import { latestVersion, type Mandala } from '@/lib/mandalas'
-import { PACK_BY_ID, packHref } from '@/lib/packs'
+import { PACK_BY_ID } from '@/lib/packs'
 
-/** A locked page on a child's screen. It only points back to the pack, never to pricing. */
-export function AskGrownUp({ mandala }: { mandala: Mandala }) {
+/** A locked grown-up page. Only shown behind the parent gate, so it may point to pricing. */
+export function GrownUpLocked({ mandala }: { mandala: Mandala }) {
   const pack = PACK_BY_ID[mandala.pack]
 
   return (
@@ -17,16 +17,11 @@ export function AskGrownUp({ mandala }: { mandala: Mandala }) {
           <Lock className="size-12" strokeWidth={2.5} aria-hidden="true" />
         </span>
       </div>
-      <h1 className="text-4xl font-black text-balance">Ask a grown-up</h1>
+      <h1 className="text-4xl font-black text-balance">This page is locked</h1>
       <p className="max-w-sm text-lg leading-relaxed text-muted-foreground text-pretty">
-        This picture is still sleeping. A grown-up can wake it up.
+        {`Get ${pack.name} on the Pricing page to color it.`}
       </p>
-      <ToolLink
-        href={packHref(mandala.pack)}
-        label={`Back to ${pack.name}`}
-        icon={<House strokeWidth={2.5} />}
-        variant="primary"
-      />
+      <ToolLink href="/parent/billing" label="See pricing" icon={<Tag strokeWidth={2.5} />} variant="primary" />
     </main>
   )
 }

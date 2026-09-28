@@ -1,4 +1,3 @@
-import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Nunito } from 'next/font/google'
 import { CloudSyncRunner } from '@/components/cloud-sync-runner'
@@ -61,7 +60,6 @@ export default function RootLayout({
       <body className="antialiased">
         {children}
         <CloudSyncRunner />
-        {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
   )

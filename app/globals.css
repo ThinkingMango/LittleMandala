@@ -134,6 +134,17 @@
   }
 }
 
+@page {
+  margin: 14mm;
+}
+
+@media print {
+  html {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
 /* A chunky, toy-like button that presses down when tapped. */
 @utility tactile {
   box-shadow: 0 6px 0 0 var(--tactile-edge, var(--border));

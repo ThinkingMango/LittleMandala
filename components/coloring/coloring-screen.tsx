@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Check, House, Redo2, RotateCcwSquare, Undo2 } from 'lucide-react'
 import { ColorPalette } from '@/components/coloring/color-palette'
 import { TonalPalette } from '@/components/coloring/tonal-palette'
@@ -29,9 +29,11 @@ type ColoringScreenProps = {
   mandala: Mandala
   /** Set when the page was opened from My garden: the visit starts with that picture's colors. */
   gardenArtworkId?: string | null
+  /** What a locked page shows. Children get "Ask a grown-up"; only the parent route passes something else. */
+  lockedView?: ReactNode
 }
 
-export function ColoringScreen({ mandala, gardenArtworkId = null }: ColoringScreenProps) {
+export function ColoringScreen({ mandala, gardenArtworkId = null, lockedView }: ColoringScreenProps) {
   const hydrated = useHydrated()
   const entitlements = useEntitlements()
   const settings = useLocalStore(settingsStore)
@@ -53,7 +55,7 @@ export function ColoringScreen({ mandala, gardenArtworkId = null }: ColoringScre
   }
 
   if (!entitlements.isUnlocked(mandala)) {
-    return <AskGrownUp mandala={mandala} />
+    return lockedView ?? <AskGrownUp mandala={mandala} />
   }
 
   const erasing = tool === ERASER
