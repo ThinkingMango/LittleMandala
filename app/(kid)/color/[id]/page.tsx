@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
-import { ColoringScreen } from '@/components/coloring/coloring-screen'
+import { Suspense } from 'react'
+import { ColoringFallback, ColoringRoute } from '@/components/coloring/coloring-route'
 import { MANDALAS, getMandala } from '@/lib/mandalas'
 import { colorHref, isGrownUpPage } from '@/lib/packs'
 
@@ -21,5 +22,9 @@ export default async function ColorPage({ params }: Params) {
   const mandala = getMandala(id)
   if (!mandala) notFound()
   if (isGrownUpPage(mandala)) redirect(colorHref(mandala))
-  return <ColoringScreen mandala={mandala} />
+  return (
+    <Suspense fallback={<ColoringFallback />}>
+      <ColoringRoute mandala={mandala} />
+    </Suspense>
+  )
 }

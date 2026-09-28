@@ -54,8 +54,7 @@ export function MyGarden() {
             <li key={artwork.id} className="relative">
               {mandala ? (
                 <Link
-                  href={colorHref(mandala)}
-                  onClick={() => library.reopenFromGallery(artwork.id)}
+                  href={`${colorHref(mandala)}?art=${encodeURIComponent(artwork.id)}`}
                   aria-label={`Color ${name} again`}
                   className="tactile flex aspect-square items-center justify-center rounded-3xl border-4 border-border bg-card p-3 outline-none [--tactile-edge:var(--border)] focus-visible:ring-4 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >

@@ -19,14 +19,15 @@ const sunny = getMandala('sunny')!
 
 /**
  * Mounts the real coloring screen against real localStorage with a brand-new library instance.
- * Unmounting and calling this again is leaving the screen or reloading: only what reached storage comes back.
+ * Unmounting and calling this again is leaving the screen and coming back. Pass a garden picture id
+ * to open it from My garden.
  */
-function openColoringPage() {
+function openColoringPage(gardenArtworkId: string | null = null) {
   const library = createArtworkLibrary({ storage: () => window.localStorage, templates })
   const user = userEvent.setup()
   const view = render(
     <ArtworkLibraryProvider value={library}>
-      <ColoringScreen mandala={sunny} />
+      <ColoringScreen mandala={sunny} gardenArtworkId={gardenArtworkId} />
     </ArtworkLibraryProvider>,
   )
   return { user, library, ...view }
@@ -60,16 +61,62 @@ async function startOver(user: User) {
 }
 
 describe('coloring screen', () => {
-  it('restores every color after a reload', async () => {
+  it('opens white again when the child leaves without saving', async () => {
     const first = openColoringPage()
     await colorThreeRegions(first.user)
     first.unmount()
 
-    openColoringPage()
+    const second = openColoringPage()
+    expect(region('Petal 1')).toBeInTheDocument()
+    expect(region('Flower center')).toBeInTheDocument()
+    expect(tool('Undo')).toBeDisabled()
+    expect(second.library.getState().artworks).toEqual({})
+  })
+
+  it('opens white from the pack after saving, and the picture waits in the garden', async () => {
+    const first = openColoringPage()
+    await colorThreeRegions(first.user)
+    await first.user.click(tool("I'm done"))
+    first.unmount()
+
+    const second = openColoringPage()
+    expect(region('Petal 1')).toBeInTheDocument()
+    const [saved] = second.library.getState().gallery
+    expect(saved.fills).toEqual(THREE_COLORS)
+  })
+
+  it('opens a garden picture with its colors, and done updates that same picture', async () => {
+    const first = openColoringPage()
+    await colorThreeRegions(first.user)
+    await first.user.click(tool("I'm done"))
+    const [saved] = first.library.getState().gallery
+    first.unmount()
+
+    const second = openColoringPage(saved.id)
     expect(region('Petal 1, Red')).toBeInTheDocument()
-    expect(region('Petal 2, Blue')).toBeInTheDocument()
-    expect(region('Flower center, Blue')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Back to My garden' })).toBeInTheDocument()
+    await second.user.click(region('Petal 3'))
+    await second.user.click(tool("I'm done"))
+
+    const gallery = second.library.getState().gallery
+    expect(gallery).toHaveLength(1)
+    expect(gallery[0].fills).toEqual({ ...THREE_COLORS, 'l0-p2': 'red' })
+  })
+
+  it('leaves the garden picture unchanged when the child leaves it without saving', async () => {
+    const first = openColoringPage()
+    await colorThreeRegions(first.user)
+    await first.user.click(tool("I'm done"))
+    const [saved] = first.library.getState().gallery
+    first.unmount()
+
+    const second = openColoringPage(saved.id)
+    await second.user.click(region('Petal 3'))
+    second.unmount()
+
+    const third = openColoringPage(saved.id)
     expect(region('Petal 3')).toBeInTheDocument()
+    expect(third.library.getState().gallery.map((a) => a.fills)).toEqual([THREE_COLORS])
   })
 
   it('cannot start over, undo, or redo on a flower that has no color yet', () => {
@@ -113,26 +160,6 @@ describe('coloring screen', () => {
     expect(tool('Redo')).toBeDisabled()
   })
 
-  it('keeps undo and redo after the child leaves the screen and comes back', async () => {
-    const first = openColoringPage()
-    await colorThreeRegions(first.user)
-    await startOver(first.user)
-    first.unmount()
-
-    const second = openColoringPage()
-    expect(region('Petal 1')).toBeInTheDocument()
-    expect(tool('Undo')).toBeEnabled()
-    await second.user.click(tool('Undo'))
-    expect(region('Petal 1, Red')).toBeInTheDocument()
-    expect(region('Petal 2, Blue')).toBeInTheDocument()
-    second.unmount()
-
-    const third = openColoringPage()
-    expect(region('Petal 1, Red')).toBeInTheDocument()
-    await third.user.click(tool('Redo'))
-    expect(region('Petal 1')).toBeInTheDocument()
-  })
-
   it('a new tap after undo drops what could be redone', async () => {
     const { user } = openColoringPage()
     await colorThreeRegions(user)
@@ -156,10 +183,6 @@ describe('coloring screen', () => {
     await first.user.click(tool('Undo'))
     expect(region('Petal 2, Blue')).toBeInTheDocument()
     await first.user.click(tool('Redo'))
-    expect(region('Petal 2')).toBeInTheDocument()
-    first.unmount()
-
-    openColoringPage()
     expect(region('Petal 2')).toBeInTheDocument()
     expect(region('Flower center, Blue')).toBeInTheDocument()
   })

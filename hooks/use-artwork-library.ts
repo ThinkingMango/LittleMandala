@@ -32,6 +32,7 @@ export function useDraftView(mandala: Mandala) {
     (draft && library.templates.version(draft.templateId, draft.templateVersion)) || latestVersion(mandala)
   return {
     library,
+    state,
     draft,
     version,
     fills: draft?.fills ?? EMPTY_FILLS,
