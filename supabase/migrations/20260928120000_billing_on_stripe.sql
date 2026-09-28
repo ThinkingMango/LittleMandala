@@ -105,9 +105,12 @@ begin
   on conflict (stripe_checkout_session_id) do nothing;
 
   insert into public.entitlements (parent_id, scope, pack_id, source_type, source_id)
-  select p_parent_id, 'pack', pack_id, 'transaction', p_session_id
-  from unnest(p_pack_ids) as pack_id
-  on conflict do nothing;
+  select distinct p_parent_id, 'pack', ids.pack_id, 'transaction', p_session_id
+  from unnest(p_pack_ids) as ids(pack_id)
+  where not exists (
+    select 1 from public.entitlements e
+    where e.parent_id = p_parent_id and e.pack_id = ids.pack_id and e.source_id = p_session_id
+  );
 end;
 $$;
 
