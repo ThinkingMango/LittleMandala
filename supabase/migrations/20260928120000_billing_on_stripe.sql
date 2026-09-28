@@ -1,7 +1,8 @@
--- Billing moves from Paddle to Stripe. The three billing tables held no rows when this ran (nothing
--- could be bought yet), so they are rebuilt with Stripe ids rather than renamed. Entitlements are
--- untouched: for a purchase, entitlements.source_id is now the Stripe Checkout Session id.
--- Everything here is still written only by the verified billing server with the service role.
+-- Billing moves from Paddle to Stripe. Nothing could be bought under Paddle: the only row was the
+-- hand-made $0 test purchase txn_v0testocean01, so the three billing tables are rebuilt with Stripe
+-- ids rather than migrated. Entitlements are untouched (the test account keeps its packs): for a
+-- Stripe purchase, entitlements.source_id is the Checkout Session id.
+-- Everything here is written only by the verified Stripe webhook with the service role.
 
 drop table public.transactions;
 drop table public.subscriptions;
@@ -69,3 +70,48 @@ create policy transactions_select_own on public.transactions
             where b.stripe_customer_id = transactions.stripe_customer_id
               and b.parent_id = (select auth.uid()))
   );
+
+-- Records one paid Checkout Session and grants its packs, all or nothing. Safe to call again for
+-- the same session (Stripe retries webhooks): every insert skips rows that already exist.
+create or replace function public.fulfil_checkout_session(
+  p_session_id text,
+  p_payment_intent_id text,
+  p_customer_id text,
+  p_parent_id uuid,
+  p_pack_ids text[],
+  p_amount_minor bigint,
+  p_currency text,
+  p_occurred_at timestamptz
+) returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if p_customer_id is not null then
+    insert into public.billing_customers (parent_id, stripe_customer_id)
+    values (p_parent_id, p_customer_id)
+    on conflict (parent_id) do nothing;
+  end if;
+
+  insert into public.transactions (
+    stripe_checkout_session_id, stripe_payment_intent_id, stripe_customer_id,
+    pack_ids, amount_minor, currency, status, occurred_at
+  ) values (
+    p_session_id, p_payment_intent_id,
+    (select b.stripe_customer_id from public.billing_customers b where b.parent_id = p_parent_id),
+    p_pack_ids, p_amount_minor, upper(p_currency), 'paid', p_occurred_at
+  )
+  on conflict (stripe_checkout_session_id) do nothing;
+
+  insert into public.entitlements (parent_id, scope, pack_id, source_type, source_id)
+  select p_parent_id, 'pack', pack_id, 'transaction', p_session_id
+  from unnest(p_pack_ids) as pack_id
+  on conflict do nothing;
+end;
+$$;
+
+revoke all on function public.fulfil_checkout_session(text, text, text, uuid, text[], bigint, text, timestamptz)
+  from public, anon, authenticated;
+grant execute on function public.fulfil_checkout_session(text, text, text, uuid, text[], bigint, text, timestamptz)
+  to service_role;
