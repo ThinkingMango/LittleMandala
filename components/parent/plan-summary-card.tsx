@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
+import { Check, ChevronRight } from 'lucide-react'
 import { ParentCard } from '@/components/parent/parent-card'
 import { buttonVariants } from '@/components/ui/button'
 import { useEntitlements } from '@/lib/entitlements'
-import { GROWN_UP_PACKS, KIDS_PACKS, packPages, type Pack } from '@/lib/packs'
+import { GROWN_UP_PACKS, KIDS_PACKS, packHref, packPages, type Pack } from '@/lib/packs'
 import { cn } from '@/lib/utils'
 
 type Row = { pack: Pack; total: number; open: number }
@@ -13,21 +14,32 @@ function PackRows({ rows, label }: { rows: Row[]; label: string }) {
   return (
     <ul className="flex flex-col divide-y" aria-label={label}>
       {rows.map(({ pack, total, open }) => {
-        const status = open === total ? 'Open' : open === 0 ? 'Locked' : `${open} of ${total} free`
+        const isOpen = open === total
+        const status = isOpen ? 'Open' : open === 0 ? 'Locked' : `${open} of ${total} free`
         return (
-          <li key={pack.id} className="flex min-h-12 items-center justify-between gap-4 py-2 first:pt-0 last:pb-0">
-            <div className="flex min-w-0 flex-col">
-              <span className="truncate font-bold">{pack.name}</span>
-              <span className="text-sm text-muted-foreground">{`${total} pictures`}</span>
-            </div>
-            <span
-              className={cn(
-                'shrink-0 rounded-full px-3 py-1 text-xs font-bold',
-                open === total ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground',
-              )}
+          <li key={pack.id} className="py-1 first:pt-0 last:pb-0">
+            <Link
+              href={packHref(pack.id)}
+              className="-mx-2 flex min-h-12 items-center justify-between gap-4 rounded-xl px-2 py-1 transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
-              {status}
-            </span>
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate font-bold">{pack.name}</span>
+                <span className="text-sm text-muted-foreground">{`${total} pictures`}</span>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                {isOpen ? (
+                  <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <Check className="size-4" aria-hidden="true" />
+                    {status}
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">
+                    {status}
+                  </span>
+                )}
+                <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
+              </div>
+            </Link>
           </li>
         )
       })}

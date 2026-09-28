@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { Trash2 } from 'lucide-react'
 import { ParentCard } from '@/components/parent/parent-card'
 import { Button } from '@/components/ui/button'
@@ -22,18 +22,30 @@ import { useLocalStore } from '@/lib/local-store'
 
 const TOGGLES: { key: keyof DeviceSettings; label: string; hint: string }[] = [
   { key: 'motion', label: 'Bounce when coloring', hint: 'A small wiggle when a petal is filled.' },
-  { key: 'haptics', label: 'Vibrate on tap', hint: 'On devices that support it.' },
+  { key: 'haptics', label: 'Vibrate on tap', hint: 'A tiny buzz each time a petal is filled.' },
 ]
+
+const noSubscribe = () => () => {}
+/** iPad and iPhone browsers have no vibration API, so the switch would do nothing there. */
+function useCanVibrate() {
+  return useSyncExternalStore(
+    noSubscribe,
+    () => typeof navigator.vibrate === 'function',
+    () => false,
+  )
+}
 
 export function DeviceSettingsCard() {
   const settings = useLocalStore(settingsStore)
   const { library } = useArtworkLibrary()
   const [cleared, setCleared] = useState(false)
+  const canVibrate = useCanVibrate()
+  const toggles = TOGGLES.filter((t) => t.key !== 'haptics' || canVibrate)
 
   return (
     <ParentCard title="On this device" description="Artwork is kept on this tablet unless you turn on cloud saving.">
       <div className="flex flex-col divide-y">
-        {TOGGLES.map((t) => (
+        {toggles.map((t) => (
           <div key={t.key} className="flex items-center justify-between gap-4 py-3 first:pt-0">
             <div className="flex flex-col gap-0.5">
               <Label htmlFor={`setting-${t.key}`} className="font-bold">
