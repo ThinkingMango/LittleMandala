@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { Check, House, Redo2, RotateCcwSquare, Undo2 } from 'lucide-react'
 import { ColorPalette } from '@/components/coloring/color-palette'
+import { TonalPalette } from '@/components/coloring/tonal-palette'
 import { ClearPreview, CrossCheckDialog, DoneDialog } from '@/components/coloring/kid-dialogs'
+import { PACK_BY_ID, packHref } from '@/lib/packs'
 import { MandalaArt } from '@/components/coloring/mandala-art'
 import { ToolButton, ToolLink } from '@/components/coloring/tool-button'
 import { AskGrownUp } from '@/components/kid/ask-grown-up'
@@ -13,7 +15,7 @@ import { settingsStore } from '@/lib/device-stores'
 import { useEntitlements } from '@/lib/entitlements'
 import { useHydrated, useLocalStore } from '@/lib/local-store'
 import type { Mandala, Region } from '@/lib/mandalas'
-import { DEFAULT_COLOR, ERASER, colorLabel, type Tool } from '@/lib/palette'
+import { DEFAULT_COLOR, DEFAULT_GROWN_UP_COLOR, ERASER, colorLabel, type Tool } from '@/lib/palette'
 
 const POP_FRAMES: Keyframe[] = [
   { transform: 'scale(1)' },
@@ -23,20 +25,21 @@ const POP_FRAMES: Keyframe[] = [
 
 export function ColoringScreen({ mandala }: { mandala: Mandala }) {
   const hydrated = useHydrated()
-  const { isUnlocked } = useEntitlements()
+  const entitlements = useEntitlements()
   const settings = useLocalStore(settingsStore)
   const coloring = useColoring(mandala)
-  const [tool, setTool] = useState<Tool>(DEFAULT_COLOR)
+  const grownUps = PACK_BY_ID[mandala.pack].audience === 'grown-ups'
+  const [tool, setTool] = useState<Tool>(grownUps ? DEFAULT_GROWN_UP_COLOR : DEFAULT_COLOR)
   const [clearOpen, setClearOpen] = useState(false)
   const [done, setDone] = useState<{ open: boolean; fills: Fills }>({ open: false, fills: EMPTY_FILLS })
   const [undoHint, setUndoHint] = useState(false)
   const [announcement, setAnnouncement] = useState('')
 
-  if (!hydrated) {
+  if (!hydrated || (mandala.tier !== 'free' && !entitlements.ready)) {
     return <main className="min-h-dvh bg-background" aria-busy="true" />
   }
 
-  if (!isUnlocked(mandala)) {
+  if (!entitlements.isUnlocked(mandala)) {
     return <AskGrownUp mandala={mandala} />
   }
 
@@ -92,7 +95,11 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
         className="flex items-center justify-between gap-4 landscape:order-3 landscape:flex-col"
       >
         <div className="flex items-center gap-4 landscape:flex-col">
-          <ToolLink href="/" label="Back to flowers" icon={<House strokeWidth={2.5} />} />
+          <ToolLink
+            href={packHref(mandala.pack)}
+            label={`Back to ${PACK_BY_ID[mandala.pack].name}`}
+            icon={<House strokeWidth={2.5} />}
+          />
           <ToolButton
             label="Start over"
             icon={<RotateCcwSquare strokeWidth={2.5} />}
@@ -140,11 +147,15 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
         />
       </div>
 
-      <ColorPalette
-        value={tool}
-        onChange={setTool}
-        className="self-center landscape:order-1 landscape:flex-col"
-      />
+      {grownUps ? (
+        <TonalPalette value={tool} onChange={setTool} className="self-center landscape:order-1" />
+      ) : (
+        <ColorPalette
+          value={tool}
+          onChange={setTool}
+          className="self-center landscape:order-1 landscape:flex-col"
+        />
+      )}
 
       <p className="sr-only" aria-live="polite">
         {announcement}
@@ -161,6 +172,7 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
         onConfirm={handleClear}
       />
       <DoneDialog
+        moreHref={packHref(mandala.pack)}
         open={done.open}
         onOpenChange={(open) => setDone((d) => ({ ...d, open }))}
         version={coloring.version}

@@ -1,95 +1,114 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { Info } from 'lucide-react'
-import { MockCheckoutDialog } from '@/components/parent/mock-checkout-dialog'
 import { NotConnectedBadge } from '@/components/parent/not-connected-badge'
-import { PlanCard } from '@/components/parent/plan-card'
-import { Button, buttonVariants } from '@/components/ui/button'
-import { useParentUser } from '@/lib/auth/client'
-import { billingClient, useSubscription } from '@/lib/billing/client'
-import { PLANS } from '@/lib/billing/plans'
-import { cn } from '@/lib/utils'
+import { PackCard } from '@/components/parent/pack-card'
+import { OfferGrid } from '@/components/parent/pricing/offer-grid'
+import { OrderSummary } from '@/components/parent/pricing/order-summary'
+import { StandardUnlockCard } from '@/components/parent/pricing/standard-unlock-card'
+import { PACK_PRICE_CENTS, formatPrice } from '@/lib/billing/pricing'
+import { useEntitlements } from '@/lib/entitlements'
+import { SOLD_PACKS, packPages, type PackId } from '@/lib/packs'
 
 const FUTURE_FLOW = [
-  'Paddle.js opens an overlay checkout, tagged with the signed-in parent’s id.',
+  'Paddle.js opens an overlay checkout for the packs in your order, tagged with the signed-in parent’s id.',
   'Paddle sends a signed webhook to /api/paddle/webhook, which verifies it.',
-  'The subscription is saved in Supabase, and flowers unlock from that record.',
+  'The billing server records each pack in Supabase. Pictures unlock only from that record.',
 ]
 
+const STANDARD_PAID = packPages('standard').filter((page) => page.tier !== 'free')
+
 export function BillingView() {
-  const user = useParentUser()
-  const subscription = useSubscription()
-  const [checkoutOpen, setCheckoutOpen] = useState(false)
-  const [checkoutAttempt, setCheckoutAttempt] = useState(0)
-  const [cancelling, setCancelling] = useState(false)
-  const onFamily = subscription.plan === 'family' && subscription.status === 'active'
+  const { hasFamily, packs: owned, isUnlocked, failed } = useEntitlements()
+  const [chosen, setChosen] = useState<ReadonlySet<PackId>>(() => new Set())
+  const [standardChosen, setStandardChosen] = useState(false)
 
-  const cancelPlan = async () => {
-    setCancelling(true)
-    await billingClient.cancel()
-    setCancelling(false)
-  }
+  const statusOf = (id: PackId) => (owned.has(id) ? 'Yours to keep' : hasFamily ? 'Included with your plan' : null)
+  const buyable = SOLD_PACKS.filter((pack) => !statusOf(pack.id))
+  const inOrder = buyable.filter((pack) => chosen.has(pack.id))
+  const standardUnlocked = STANDARD_PAID.every(isUnlocked)
 
-  const familyAction = !user ? (
-    <Link
-      href="/parent/sign-in?next=/parent/billing"
-      className={cn(buttonVariants(), 'h-12 w-full rounded-full text-base font-bold')}
-    >
-      Sign in to subscribe
-    </Link>
-  ) : onFamily ? (
-    <Button
-      variant="outline"
-      onClick={cancelPlan}
-      disabled={cancelling}
-      className="h-12 w-full rounded-full text-base font-bold"
-    >
-      {cancelling ? 'Cancelling…' : 'Cancel plan (simulated)'}
-    </Button>
-  ) : (
-    <Button
-      onClick={() => {
-        setCheckoutAttempt((n) => n + 1)
-        setCheckoutOpen(true)
-      }}
-      className="h-12 w-full rounded-full text-base font-bold">
-      Subscribe
-    </Button>
-  )
+  const toggle = (id: PackId) =>
+    setChosen((current) => {
+      const next = new Set(current)
+      if (!next.delete(id)) next.add(id)
+      return next
+    })
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-black">Plan & billing</h1>
-        <NotConnectedBadge service="Paddle" />
-      </div>
-
-      <div className="flex items-start gap-3 rounded-2xl bg-warning p-4 text-warning-foreground">
-        <Info className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-        <p className="text-sm leading-relaxed font-semibold">
-          Payments are simulated. Paddle is not connected, so no real checkout opens and no card is charged.
-          Prices are placeholders.
+    <div className="flex flex-col gap-10">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-3xl font-black">Pricing</h1>
+          <NotConnectedBadge service="Paddle" />
+        </div>
+        <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty">
+          Buy picture packs once and keep them for good. There’s no subscription, and bundles bring the price down.
         </p>
+
+        <div className="flex items-start gap-3 rounded-2xl bg-warning p-4 text-warning-foreground">
+          <Info className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+          <p className="text-sm leading-relaxed font-semibold">
+            {'Payments aren’t connected yet, so nothing can be bought and no card is charged. These are the proposed prices.'}
+          </p>
+        </div>
+
+        {failed && (
+          <p role="alert" className="text-sm font-semibold text-destructive">
+            {'We couldn’t check your purchases right now. Paid pictures stay locked until we can.'}
+          </p>
+        )}
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2">
-        <PlanCard plan={PLANS.free} current={!onFamily} />
-        <PlanCard plan={PLANS.family} current={onFamily} highlighted={!onFamily} action={familyAction} />
-      </div>
+      <section aria-labelledby="offers" className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 id="offers" className="text-2xl font-black">
+            Picture packs
+          </h2>
+          <p className="leading-relaxed text-muted-foreground">
+            {`Every pack is ${formatPrice(PACK_PRICE_CENTS)}, however many pictures it has. Mix and match any packs you like.`}
+          </p>
+        </div>
+        <OfferGrid />
+      </section>
 
-      {onFamily && subscription.since && (
-        <p className="text-sm text-muted-foreground">
-          {`Family plan active since ${new Date(subscription.since).toLocaleDateString(undefined, {
-            dateStyle: 'long',
-          })} (simulated).`}
-        </p>
-      )}
+      <section aria-labelledby="choose" className="flex flex-col gap-4">
+        <h2 id="choose" className="text-2xl font-black">
+          Choose your packs
+        </h2>
+
+        {hasFamily && (
+          <p className="rounded-2xl bg-secondary p-4 text-sm leading-relaxed font-semibold">
+            Your earlier plan already includes every picture, so there’s nothing more to buy.
+          </p>
+        )}
+
+        <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="flex flex-col gap-4">
+            {SOLD_PACKS.map((pack) => (
+              <PackCard
+                key={pack.id}
+                pack={pack}
+                status={statusOf(pack.id)}
+                selected={chosen.has(pack.id) && !statusOf(pack.id)}
+                onToggle={() => toggle(pack.id)}
+              />
+            ))}
+            <StandardUnlockCard
+              unlocked={standardUnlocked}
+              selected={standardChosen && !standardUnlocked}
+              onToggle={() => setStandardChosen((value) => !value)}
+            />
+          </div>
+
+          <OrderSummary packs={inOrder} withStandard={standardChosen && !standardUnlocked} buyable={buyable.length} />
+        </div>
+      </section>
 
       <section aria-labelledby="future-flow" className="flex flex-col gap-4 rounded-3xl border border-dashed bg-card p-6">
         <h2 id="future-flow" className="font-extrabold">
-          How real billing will work
+          How buying will work
         </h2>
         <ol className="flex flex-col gap-3">
           {FUTURE_FLOW.map((step, i) => (
@@ -105,12 +124,6 @@ export function BillingView() {
           ))}
         </ol>
       </section>
-
-      {user && (
-        <MockCheckoutDialog
-          key={checkoutAttempt}
-          open={checkoutOpen} onOpenChange={setCheckoutOpen} customerEmail={user.email} />
-      )}
     </div>
   )
 }

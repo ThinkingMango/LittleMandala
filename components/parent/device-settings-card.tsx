@@ -31,7 +31,7 @@ export function DeviceSettingsCard() {
   const [cleared, setCleared] = useState(false)
 
   return (
-    <ParentCard title="On this device" description="Artwork stays on this tablet and is never uploaded.">
+    <ParentCard title="On this device" description="Artwork is kept on this tablet unless you turn on cloud saving.">
       <div className="flex flex-col divide-y">
         {TOGGLES.map((t) => (
           <div key={t.key} className="flex items-center justify-between gap-4 py-3 first:pt-0">
@@ -65,7 +65,7 @@ export function DeviceSettingsCard() {
             <DialogDescription className="leading-relaxed">
               {cleared
                 ? 'Every flower is white again and the garden is empty.'
-                : 'Drafts and every flower in the garden will be removed from this device. This cannot be undone.'}
+                : 'Drafts and every flower in the garden will be removed from this device. This cannot be undone. Copies saved to a parent account with cloud saving stay there.'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="rounded-b-3xl">

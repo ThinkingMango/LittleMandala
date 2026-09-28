@@ -182,6 +182,29 @@ describe('artwork library', () => {
     expect(reloaded.getState().gallery).toEqual([])
   })
 
+  it('takes account pictures off the device at sign-out, keeps unfinished work, and lets them come back', () => {
+    const device = createDevice()
+    const app = openApp(device)
+    const finished = app.fillRegion('rose', 'l0-p0', 'red')!.artworkId
+    app.saveToGallery(finished)
+    app.finishDraft('rose')
+    const stillOpen = app.fillRegion('rose', 'l0-p1', 'green')!.artworkId
+    app.saveToGallery(stillOpen)
+
+    expect(app.forgetOnDevice([finished, stillOpen, 'art_not_here'])).toBe(2)
+
+    const reloaded = openApp(device)
+    expect(reloaded.getState().gallery).toEqual([])
+    expect(reloaded.getState().artworks[finished]).toBeUndefined()
+    expect(reloaded.getDraft('rose')?.fills).toEqual({ 'l0-p1': 'green' })
+    expect(reloaded.getDraft('rose')?.id).not.toBe(stillOpen)
+    expect(reloaded.syncMarks()).toEqual({ removed: [], dismissed: [] })
+
+    const cloudCopy = { id: finished, templateId: 'rose', templateVersion: 1, fills: { 'l0-p0': 'red' }, createdAt: 1 }
+    expect(reloaded.importFromCloud([cloudCopy])).toBe(1)
+    expect(reloaded.getState().gallery.map((artwork) => artwork.id)).toEqual([finished])
+  })
+
   it('erases one region without starting a draft on a blank flower', () => {
     const device = createDevice()
     const app = openApp(device)

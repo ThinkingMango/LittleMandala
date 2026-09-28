@@ -14,8 +14,10 @@ export function GateGuard({ children }: { children: ReactNode }) {
   const blocked = needsGate && (!hydrated || !passed)
 
   useEffect(() => {
-    if (hydrated && needsGate && !passed) router.replace('/parent')
-  }, [hydrated, needsGate, passed, router])
+    if (!hydrated || !needsGate || passed) return
+    const destination = `${pathname}${window.location.search}`
+    router.replace(`/parent?next=${encodeURIComponent(destination)}`)
+  }, [hydrated, needsGate, passed, pathname, router])
 
   if (blocked) return <div className="min-h-[60vh]" aria-busy="true" />
   return children

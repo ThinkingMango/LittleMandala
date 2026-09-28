@@ -110,9 +110,11 @@ type DoneDialogProps = {
   fills: Fills
   /** Called before leaving so the next visit to this flower starts a new artwork. */
   onFinish: () => void
+  /** Where "More pictures" goes: the pack this picture came from. */
+  moreHref: string
 }
 
-export function DoneDialog({ open, onOpenChange, version, fills, onFinish }: DoneDialogProps) {
+export function DoneDialog({ open, onOpenChange, version, fills, onFinish, moreHref }: DoneDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={false} className={dialogShell}>
@@ -136,7 +138,7 @@ export function DoneDialog({ open, onOpenChange, version, fills, onFinish }: Don
         </div>
         <DialogTitle className="text-4xl font-black text-balance">Beautiful!</DialogTitle>
         <DialogDescription className="sr-only">
-          Your flower is saved in your garden. Pick another flower or keep coloring.
+          Your picture is saved in your garden. Pick another picture or keep coloring.
         </DialogDescription>
         <div className="flex w-full flex-col gap-4 sm:flex-row">
           <button
@@ -148,7 +150,7 @@ export function DoneDialog({ open, onOpenChange, version, fills, onFinish }: Don
             Keep going
           </button>
           <Link
-            href="/"
+            href={moreHref}
             onClick={onFinish}
             className={cn(
               bigButton,
@@ -156,7 +158,7 @@ export function DoneDialog({ open, onOpenChange, version, fills, onFinish }: Don
             )}
           >
             <LayoutGrid aria-hidden="true" strokeWidth={2.5} />
-            More flowers
+            More pictures
           </Link>
         </div>
       </DialogContent>

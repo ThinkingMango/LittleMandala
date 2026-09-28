@@ -3,16 +3,14 @@ export type ParentUser = {
   email: string
 }
 
-/**
- * The contract the app codes against. The mock implements it today;
- * a Supabase (@supabase/ssr) implementation will replace it later.
- */
+export type AuthState =
+  | { status: 'loading'; user: null }
+  | { status: 'signed-out'; user: null }
+  | { status: 'signed-in'; user: ParentUser }
+
 export interface AuthClient {
-  readonly provider: 'supabase'
-  readonly connected: boolean
-  getUser: () => ParentUser | null
+  getState: () => AuthState
   subscribe: (listener: () => void) => () => void
-  signInWithPassword: (email: string, password: string) => Promise<ParentUser>
-  sendMagicLink: (email: string) => Promise<void>
+  sendEmailLink: (email: string, next: string) => Promise<void>
   signOut: () => Promise<void>
 }

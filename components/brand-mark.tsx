@@ -1,15 +1,16 @@
 import { MandalaArt } from '@/components/coloring/mandala-art'
 import type { Fills } from '@/lib/artwork/library'
 import { getMandala, latestVersion } from '@/lib/mandalas'
-import { PALETTE } from '@/lib/palette'
+import type { ColorKey } from '@/lib/palette'
 import { cn } from '@/lib/utils'
 
 const logo = latestVersion(getMandala('sunny')!)
+const LOGO_COLORS: readonly ColorKey[] = ['red', 'orange', 'yellow', 'green', 'blue', 'purple']
 
 const logoFills: Fills = Object.fromEntries(
   logo.regions.map((region, i) => [
     region.id,
-    region.id === 'center' ? 'yellow' : PALETTE[i % PALETTE.length].key,
+    region.id === 'center' ? 'yellow' : LOGO_COLORS[i % LOGO_COLORS.length],
   ]),
 )
 

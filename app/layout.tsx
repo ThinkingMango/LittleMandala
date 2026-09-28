@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Nunito } from 'next/font/google'
+import { CloudSyncRunner } from '@/components/cloud-sync-runner'
 import './globals.css'
 
 const nunito = Nunito({
@@ -54,6 +55,7 @@ export default function RootLayout({
     <html lang="en" className={`${nunito.variable} bg-background`}>
       <body className="antialiased">
         {children}
+        <CloudSyncRunner />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

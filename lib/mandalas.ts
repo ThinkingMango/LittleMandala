@@ -1,3 +1,6 @@
+import type { PackId } from '@/lib/packs'
+import { listedTracedPages } from '@/lib/templates/traced'
+
 export type PetalShape = 'round' | 'almond' | 'pointy' | 'heart'
 export type Tier = 'free' | 'family'
 
@@ -14,16 +17,35 @@ type Layer = {
   offset?: number
 }
 
-export type VersionDefinition = {
+export type Region = Readonly<{ id: string; d: string; label: string }>
+
+/** Ink drawn on top of the regions, such as eyes and smiles. It can't be colored or tapped. */
+export type Detail = Readonly<{ d: string; kind: 'dot' | 'line' }>
+
+/** How heavy the outline is drawn: bold for small hands, fine for detailed grown-up pages. */
+export type LineWeight = 'bold' | 'fine'
+
+export type Drawing = { regions: Region[]; details?: Detail[]; line?: LineWeight }
+
+type PetalVersion = {
   version: number
   layers: Layer[]
   centerRadius: number
 }
 
+type DrawnVersion = {
+  version: number
+  drawing: Drawing
+}
+
+export type VersionDefinition = PetalVersion | DrawnVersion
+
 export type TemplateDefinition = {
   id: string
   name: string
   tier: Tier
+  /** The pack this page is shown in. Pages without one belong to the Standard pack. */
+  pack?: PackId
   /**
    * Append-only. Published versions are never edited: saved artwork is pinned to the
    * version it was started on, so changing one would scramble existing drawings.
@@ -31,12 +53,12 @@ export type TemplateDefinition = {
   versions: VersionDefinition[]
 }
 
-export type Region = Readonly<{ id: string; d: string; label: string }>
-
 export type TemplateVersion = Readonly<{
   templateId: string
   version: number
   regions: readonly Region[]
+  details: readonly Detail[]
+  line: LineWeight
   /** The only region ids that may ever hold a color for this version. */
   approvedRegionIds: readonly string[]
 }>
@@ -45,6 +67,7 @@ export type Mandala = Readonly<{
   id: string
   name: string
   tier: Tier
+  pack: PackId
   latestVersion: number
   versions: readonly TemplateVersion[]
 }>
@@ -156,7 +179,7 @@ function layerNames(total: number) {
   return ['Outer petal', 'Middle petal', 'Inner petal']
 }
 
-function buildRegions({ layers, centerRadius }: VersionDefinition): Region[] {
+function buildRegions({ layers, centerRadius }: PetalVersion): Region[] {
   const names = layerNames(layers.length)
   const regions: Region[] = []
 
@@ -183,7 +206,16 @@ function buildRegions({ layers, centerRadius }: VersionDefinition): Region[] {
 }
 
 /** Validates a version's regions and returns a deeply frozen, approved snapshot. */
-export function freezeVersion(templateId: string, version: number, regions: Region[]): TemplateVersion {
+export function freezeVersion(
+  templateId: string,
+  version: number,
+  regions: Region[],
+  details: Detail[] = [],
+  line: LineWeight = 'bold',
+  ): TemplateVersion {
+  if (details.some((detail) => !detail.d.trim())) {
+    throw new Error(`Template ${templateId} v${version}: detail is missing a path`)
+  }
   const ids = new Set<string>()
   for (const region of regions) {
     if (!region.id || !region.d.trim() || !region.label) {
@@ -199,6 +231,8 @@ export function freezeVersion(templateId: string, version: number, regions: Regi
     templateId,
     version,
     regions: Object.freeze(regions.map((r) => Object.freeze({ ...r }))),
+    details: Object.freeze(details.map((d) => Object.freeze({ ...d }))),
+    line,
     approvedRegionIds: Object.freeze([...ids]),
   })
 }
@@ -210,6 +244,7 @@ export function defineTemplate(def: TemplateDefinition): Mandala {
     if (v.version !== index + 1) {
       throw new Error(`Template ${def.id}: versions must be numbered 1, 2, 3… in order`)
     }
+    if ('drawing' in v) return freezeVersion(def.id, v.version, v.drawing.regions, v.drawing.details, v.drawing.line)
     return freezeVersion(def.id, v.version, buildRegions(v))
   })
 
@@ -217,6 +252,7 @@ export function defineTemplate(def: TemplateDefinition): Mandala {
     id: def.id,
     name: def.name,
     tier: def.tier,
+    pack: def.pack ?? 'standard',
     latestVersion: versions.length,
     versions: Object.freeze(versions),
   })
@@ -375,7 +411,9 @@ const DEFINITIONS: TemplateDefinition[] = [
   },
 ]
 
-export const MANDALAS: readonly Mandala[] = Object.freeze(DEFINITIONS.map(defineTemplate))
+export const MANDALAS: readonly Mandala[] = Object.freeze(
+  [...DEFINITIONS, ...listedTracedPages()].map(defineTemplate),
+)
 
 export const templates = createTemplateSource(MANDALAS)
 

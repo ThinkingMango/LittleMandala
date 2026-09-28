@@ -19,6 +19,8 @@ type MandalaArtProps = {
 
 export function MandalaArt({ version, fills, className, label, onRegionTap }: MandalaArtProps) {
   const interactive = Boolean(onRegionTap)
+  const fine = version.line === 'fine'
+  const outline = fine ? (interactive ? 3.5 : 6) : interactive ? 7 : 14
 
   const handleClick = (region: Region) => (e: MouseEvent<SVGPathElement>) => {
     onRegionTap?.(region, e.currentTarget)
@@ -39,6 +41,7 @@ export function MandalaArt({ version, fills, className, label, onRegionTap }: Ma
       aria-label={interactive ? label : undefined}
       aria-hidden={interactive ? undefined : true}
       focusable="false"
+      data-line={fine ? 'fine' : undefined}
     >
       {version.regions.map((region) => {
         const fill = fills[region.id]
@@ -48,7 +51,7 @@ export function MandalaArt({ version, fills, className, label, onRegionTap }: Ma
             d={region.d}
             fill={fill ? colorVar(fill) : 'var(--canvas)'}
             stroke="var(--ink)"
-            strokeWidth={interactive ? 7 : 14}
+            strokeWidth={outline}
             strokeLinejoin="round"
             strokeLinecap="round"
             {...(interactive && {
@@ -62,6 +65,18 @@ export function MandalaArt({ version, fills, className, label, onRegionTap }: Ma
           />
         )
       })}
+      {version.details.map((detail, i) => (
+        <path
+          key={i}
+          d={detail.d}
+          fill={detail.kind === 'dot' ? 'var(--ink)' : 'none'}
+          fillRule={fine ? 'evenodd' : undefined}
+          stroke={detail.kind === 'dot' ? 'none' : 'var(--ink)'}
+          strokeWidth={outline}
+          strokeLinecap="round"
+          pointerEvents="none"
+        />
+      ))}
     </svg>
   )
 }

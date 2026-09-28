@@ -6,19 +6,21 @@ const ROWS = [
   {
     icon: KeyRound,
     title: 'Parent sign-in',
-    detail: 'Uses a mock account on this device until Supabase Auth is connected.',
-    status: <NotConnectedBadge service="Supabase" />,
+    detail: 'Parents sign in with a one-time email link, handled by Supabase Auth.',
+    status: (
+      <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">Live</span>
+    ),
   },
   {
     icon: CreditCard,
     title: 'Payments',
-    detail: 'Checkout is simulated. No card is charged until Paddle Billing is connected.',
+    detail: 'Nothing can be bought until Paddle Billing is connected. Pictures unlock only from purchases the billing server records.',
     status: <NotConnectedBadge service="Paddle" />,
   },
   {
     icon: Tablet,
     title: "Children's artwork",
-    detail: 'Always stored on this device only. It is never uploaded.',
+    detail: 'Kept on this device. Garden pictures are copied to your account only if you turn on cloud saving.',
     status: (
       <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-muted-foreground">
         On device
@@ -31,7 +33,7 @@ export function IntegrationStatusCard() {
   return (
     <ParentCard
       title="Setup status"
-      description="What is real and what is simulated in this preview."
+      description="What is live and what is still being connected."
       className="md:col-span-2"
     >
       <ul className="flex flex-col divide-y">
