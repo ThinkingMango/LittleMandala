@@ -90,7 +90,7 @@ export function ParentGate({ next }: { next: string }) {
       <div className="flex flex-col gap-3">
         <h1 className="text-3xl font-black text-balance">Grown-ups only</h1>
         <p className="leading-relaxed text-muted-foreground text-pretty">
-          Settings and plans live here. Press and hold the button for three seconds to continue.
+          Settings and picture packs live here. Press and hold the button for three seconds to continue.
         </p>
       </div>
 

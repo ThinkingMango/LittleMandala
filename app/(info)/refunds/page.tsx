@@ -54,6 +54,14 @@ export default function RefundsPage() {
         </p>
       </PolicySection>
 
+      <PolicySection id="deleting" title="Deleting your account">
+        <p>
+          Ask for any refund before you delete your account. Deleting it locks every pack you bought straight away, and they can’t be
+          restored afterwards, even if you sign up again with the same email. If you have already deleted it, email us anyway from the
+          same address with the date you bought, and we will look for the payment through Stripe.
+        </p>
+      </PolicySection>
+
       <PolicySection id="after" title={`After ${REFUND_WINDOW_DAYS} days`}>
         <p>Some problems should always be put right, whenever they happen. Tell us if:</p>
         <PolicyList

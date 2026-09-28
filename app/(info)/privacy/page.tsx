@@ -63,7 +63,7 @@ export default function PrivacyPage() {
             <>
               <strong>Your purchases.</strong> Which packs you bought, the price, the date and the payment reference, so your packs open
               on every device you sign in on. Card details go straight to Stripe, our payment provider. We never see or store your card
-              number.
+              number. Stripe also keeps your email address and payment history, under its own privacy policy.
             </>,
             <>
               <strong>Cloud pictures, only if you turn cloud saving on.</strong> For each garden picture: which design was used, the
@@ -117,7 +117,12 @@ export default function PrivacyPage() {
               States.
             </>,
             <>
-              <strong>Stripe</strong>: takes card payments and issues refunds. Stripe also keeps its own payment records.
+              <strong>Stripe</strong>: takes card payments and issues refunds. Stripe also keeps your email address and payment history
+              as its own records, for example to meet financial and anti-fraud laws, under the{' '}
+              <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className={linkClass}>
+                Stripe Privacy Policy
+              </a>
+              . Deleting your Little Mandala account does not delete them. To ask Stripe about them, contact Stripe directly.
             </>,
             <>
               <strong>Vercel</strong>: hosts the app and provides the visit statistics described above.
@@ -135,6 +140,7 @@ export default function PrivacyPage() {
             'Your account and email address: until you delete your account.',
             'Cloud pictures: until you take them out of My garden, turn off cloud saving or delete your account.',
             'Payment records: kept for accounting after you delete your account, but no longer linked to your email or to you.',
+            'Your email address and payment history at Stripe: kept by Stripe under its own privacy policy, including after you delete your account.',
             'Support emails: as long as we need them to help you, then deleted.',
           ]}
         />
@@ -146,7 +152,7 @@ export default function PrivacyPage() {
           items={[
             'Use Little Mandala without an account. Coloring works fully without one.',
             'Turn cloud saving off at any time in the parent area. This deletes every cloud copy of your pictures.',
-            'Delete your account at any time in the parent area. This deletes your sign-in, cloud pictures and account records.',
+            'Delete your account at any time in the parent area. This deletes your sign-in, cloud pictures and account records, and locks every pack you bought. You can also choose to remove the pictures from the device you delete it on.',
             'Ask us for a copy of the information we hold about you or your child, or ask us to correct or delete it.',
           ]}
         />
