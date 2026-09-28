@@ -55,7 +55,7 @@ function Place({
   label: string
   value: string
   detail: string
-  action: ReactNode
+  action?: ReactNode
 }) {
   return (
     <div className="flex flex-1 items-start gap-4 rounded-3xl border bg-card p-5">
@@ -90,12 +90,7 @@ export function SaveStateSummary({ onDevice }: { onDevice: number }) {
           icon={<Tablet className="size-5" />}
           label="On this device"
           value={pictureCount(onDevice)}
-          detail="Kept here until you clear them. Printing and PDFs are made here too, nothing is uploaded."
-          action={
-            <Link href="/parent/home#this-device" className={LINK}>
-              Clear this device
-            </Link>
-          }
+          detail="Printing and PDFs are made here too, nothing is uploaded."
         />
         <Place
           icon={<Cloud className="size-5" />}
