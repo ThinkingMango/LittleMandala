@@ -482,6 +482,76 @@ export function createArtworkLibrary({
     return commit([[STORAGE_KEYS.gallery, [artworkId, ...gallery]]])
   }
 
+  const gardenPicture = (state: LibraryState, templateId: string, artworkId: string | null | undefined) => {
+    const artwork = artworkId ? state.artworks[artworkId] : undefined
+    return artwork && artwork.templateId === templateId && inGallery(state, artwork.id) ? artwork : null
+  }
+
+  /**
+   * Starts a visit to a page. Unsaved coloring from an earlier visit is thrown away, so a page
+   * opened from its pack is always white. Given a garden picture of this page, the visit starts
+   * with its colors: the draft points at it, so the first change goes to a copy and the garden
+   * picture only changes when the child saves.
+   */
+  const startSession = (templateId: string, gardenArtworkId?: string | null) => {
+    const s = safeStorage()
+    if (!s) return false
+    const state = getState()
+    const current = state.drafts[templateId]
+    const source = gardenPicture(state, templateId, gardenArtworkId)
+    if (!current && !source) return true
+    const artworks = readRawMap(s, STORAGE_KEYS.artworks)
+    if (current && !inGallery(state, current)) delete artworks[current]
+    const drafts = readRawMap(s, STORAGE_KEYS.drafts)
+    if (source) drafts[templateId] = source.id
+    else delete drafts[templateId]
+    return commit([
+      [STORAGE_KEYS.drafts, drafts],
+      [STORAGE_KEYS.artworks, artworks],
+      historyWrite(s, templateId, null),
+    ])
+  }
+
+  /**
+   * Saves this page's coloring to the garden and returns the garden picture's id. With
+   * `editingArtworkId` (a garden picture of this page) that picture is updated in place: same spot
+   * in the garden, new id, and the old id is marked removed so cloud sync replaces its copy.
+   * Otherwise the coloring becomes a new garden picture.
+   */
+  const saveSession = (templateId: string, editingArtworkId?: string | null): string | null => {
+    const s = safeStorage()
+    if (!s) return null
+    const state = getState()
+    const draft = selectDraft(state, templateId)
+    if (!draft) return null
+    const target = gardenPicture(state, templateId, editingArtworkId)
+    if (!target) return saveToGallery(draft.id) ? draft.id : null
+    if (draft.id === target.id) return target.id
+
+    const id = newId()
+    const artworks = readRawMap(s, STORAGE_KEYS.artworks)
+    artworks[id] = {
+      id,
+      templateId,
+      templateVersion: draft.templateVersion,
+      fills: draft.fills,
+      createdAt: target.createdAt,
+      updatedAt: now(),
+    }
+    if (!inGallery(state, draft.id)) delete artworks[draft.id]
+    delete artworks[target.id]
+    const gallery = readRawList(s, STORAGE_KEYS.gallery).map((galleryId) => (galleryId === target.id ? id : galleryId))
+    const drafts = readRawMap(s, STORAGE_KEYS.drafts)
+    drafts[templateId] = id
+    const saved = commit([
+      [STORAGE_KEYS.artworks, artworks],
+      [STORAGE_KEYS.gallery, gallery],
+      [STORAGE_KEYS.drafts, drafts],
+      markWrite(s, STORAGE_KEYS.removed, [target.id]),
+    ])
+    return saved ? id : null
+  }
+
   /** Adds ids to a mark list, dropping marks older than the TTL and keeping the newest MAX_SYNC_MARKS. */
   const markWrite = (s: KeyValueStorage, key: string, ids: readonly string[]): Write => {
     const t = now()
@@ -662,6 +732,8 @@ export function createArtworkLibrary({
     redo,
     setFills,
     saveToGallery,
+    startSession,
+    saveSession,
     removeFromGallery,
     finishDraft,
     clearAll,

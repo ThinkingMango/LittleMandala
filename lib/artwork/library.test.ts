@@ -171,6 +171,90 @@ describe('artwork library', () => {
     expect(afterUpdate.getDraft('rose')?.templateVersion).toBe(2)
   })
 
+  it('starts a page white, throwing away unsaved coloring from the last visit', () => {
+    const device = createDevice()
+    const app = openApp(device)
+    const { artworkId } = app.fillRegion('rose', 'l0-p0', 'red')!
+
+    const next = openApp(device)
+    expect(next.startSession('rose')).toBe(true)
+    expect(next.getDraft('rose')).toBeNull()
+    expect(next.undo('rose')).toBeNull()
+    expect(next.getState().artworks[artworkId]).toBeUndefined()
+  })
+
+  it('saving a new picture adds it to the garden, and the next visit from the pack is white', () => {
+    const device = createDevice()
+    const app = openApp(device)
+    app.startSession('rose')
+    app.fillRegion('rose', 'l0-p0', 'red')
+    const savedId = app.saveSession('rose')!
+    app.finishDraft('rose')
+
+    const next = openApp(device)
+    next.startSession('rose')
+    expect(next.getDraft('rose')).toBeNull()
+    expect(next.getState().gallery.map((a) => a.id)).toEqual([savedId])
+    expect(next.getState().gallery[0].fills).toEqual({ 'l0-p0': 'red' })
+  })
+
+  it('opens a garden picture with its colors and leaves it unchanged unless saved', () => {
+    const device = createDevice()
+    const app = openApp(device)
+    app.fillRegion('rose', 'l0-p0', 'red')
+    const savedId = app.saveSession('rose')!
+    app.finishDraft('rose')
+
+    const visit = openApp(device)
+    visit.startSession('rose', savedId)
+    expect(visit.getDraft('rose')?.fills).toEqual({ 'l0-p0': 'red' })
+    visit.fillRegion('rose', 'l0-p1', 'blue')
+    visit.finishDraft('rose')
+
+    const after = openApp(device)
+    expect(after.getState().gallery.map((a) => a.fills)).toEqual([{ 'l0-p0': 'red' }])
+    expect(Object.keys(after.getState().artworks)).toEqual([savedId])
+  })
+
+  it('saving a garden picture updates it in its spot and marks the old copy for cloud removal', () => {
+    const device = createDevice()
+    const app = openApp(device)
+    app.fillRegion('rose', 'l0-p0', 'red')
+    const first = app.saveSession('rose')!
+    app.finishDraft('rose')
+    app.fillRegion('rose', 'l0-p2', 'green')
+    const second = app.saveSession('rose')!
+    app.finishDraft('rose')
+    const firstCreatedAt = app.getState().artworks[first].createdAt
+
+    app.startSession('rose', first)
+    app.fillRegion('rose', 'l0-p1', 'blue')
+    const updated = app.saveSession('rose', first)!
+
+    const state = openApp(device).getState()
+    expect(updated).not.toBe(first)
+    expect(state.gallery.map((a) => a.id)).toEqual([second, updated])
+    expect(state.artworks[updated].fills).toEqual({ 'l0-p0': 'red', 'l0-p1': 'blue' })
+    expect(state.artworks[updated].createdAt).toBe(firstCreatedAt)
+    expect(state.artworks[first]).toBeUndefined()
+    expect(openApp(device).syncMarks().removed).toEqual([first])
+
+    app.fillRegion('rose', 'l0-p3', 'yellow')
+    const again = app.saveSession('rose', updated)!
+    expect(openApp(device).getState().gallery.map((a) => a.id)).toEqual([second, again])
+  })
+
+  it('ignores a garden id from another page and starts white', () => {
+    const device = createDevice()
+    const app = openApp(device)
+    app.fillRegion('rose', 'l0-p0', 'red')
+    const roseId = app.saveSession('rose')!
+    app.finishDraft('rose')
+
+    expect(app.startSession('daisy', roseId)).toBe(true)
+    expect(app.getDraft('daisy')).toBeNull()
+  })
+
   it('never writes gallery membership while autosaving', () => {
     const device = createDevice()
     const app = openApp(device)

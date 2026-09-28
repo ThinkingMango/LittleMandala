@@ -17,21 +17,34 @@ import { useHydrated, useLocalStore } from '@/lib/local-store'
 import type { Mandala, Region } from '@/lib/mandalas'
 import { DEFAULT_COLOR, DEFAULT_GROWN_UP_COLOR, ERASER, colorLabel, type Tool } from '@/lib/palette'
 
+const GARDEN_HREF = '/garden'
+
 const POP_FRAMES: Keyframe[] = [
   { transform: 'scale(1)' },
   { transform: 'scale(1.06)' },
   { transform: 'scale(1)' },
 ]
 
-export function ColoringScreen({ mandala }: { mandala: Mandala }) {
+type ColoringScreenProps = {
+  mandala: Mandala
+  /** Set when the page was opened from My garden: the visit starts with that picture's colors. */
+  gardenArtworkId?: string | null
+}
+
+export function ColoringScreen({ mandala, gardenArtworkId = null }: ColoringScreenProps) {
   const hydrated = useHydrated()
   const entitlements = useEntitlements()
   const settings = useLocalStore(settingsStore)
-  const coloring = useColoring(mandala)
+  const coloring = useColoring(mandala, gardenArtworkId)
+  const fromGarden = gardenArtworkId !== null
   const grownUps = PACK_BY_ID[mandala.pack].audience === 'grown-ups'
   const [tool, setTool] = useState<Tool>(grownUps ? DEFAULT_GROWN_UP_COLOR : DEFAULT_COLOR)
   const [clearOpen, setClearOpen] = useState(false)
-  const [done, setDone] = useState<{ open: boolean; fills: Fills }>({ open: false, fills: EMPTY_FILLS })
+  const [done, setDone] = useState<{ open: boolean; fills: Fills; updated: boolean }>({
+    open: false,
+    fills: EMPTY_FILLS,
+    updated: false,
+  })
   const [undoHint, setUndoHint] = useState(false)
   const [announcement, setAnnouncement] = useState('')
 
@@ -82,8 +95,9 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
   }
 
   const handleDone = () => {
-    coloring.saveToGallery()
-    setDone({ open: true, fills: coloring.fills })
+    const updating = coloring.editingGardenPicture
+    if (!coloring.save()) return
+    setDone({ open: true, fills: coloring.fills, updated: updating })
   }
 
   return (
@@ -96,8 +110,8 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
       >
         <div className="flex items-center gap-4 landscape:flex-col">
           <ToolLink
-            href={packHref(mandala.pack)}
-            label={`Back to ${PACK_BY_ID[mandala.pack].name}`}
+            href={fromGarden ? GARDEN_HREF : packHref(mandala.pack)}
+            label={fromGarden ? 'Back to My garden' : `Back to ${PACK_BY_ID[mandala.pack].name}`}
             icon={<House strokeWidth={2.5} />}
           />
           <ToolButton
@@ -172,8 +186,14 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
         onConfirm={handleClear}
       />
       <DoneDialog
-        moreHref={packHref(mandala.pack)}
-        savedNote={grownUps ? 'Your page is saved. Pick another page or keep coloring.' : undefined}
+        moreHref={fromGarden ? GARDEN_HREF : packHref(mandala.pack)}
+        savedNote={
+          grownUps
+            ? 'Your page is saved. Pick another page or keep coloring.'
+            : done.updated
+              ? 'Your garden picture is updated. Pick another picture or keep coloring.'
+              : undefined
+        }
         open={done.open}
         onOpenChange={(open) => setDone((d) => ({ ...d, open }))}
         version={coloring.version}

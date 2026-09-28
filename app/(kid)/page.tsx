@@ -1,5 +1,5 @@
 import { BrandMark } from '@/components/brand-mark'
-import { MyGarden } from '@/components/kid/my-garden'
+import { GardenCover } from '@/components/kid/garden-cover'
 import { PackShelf } from '@/components/kid/pack-shelf'
 import { ParentEntryButton } from '@/components/kid/parent-entry-button'
 
@@ -12,7 +12,7 @@ export default function PickerPage() {
       </header>
       <h1 className="text-4xl font-black text-balance md:text-5xl">Pick a pack</h1>
       <PackShelf />
-      <MyGarden />
+      <GardenCover />
     </main>
   )
 }
