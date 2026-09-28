@@ -2,36 +2,48 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { House, X } from 'lucide-react'
 import { CrossCheckDialog, RemovePreview } from '@/components/coloring/kid-dialogs'
 import { MandalaArt } from '@/components/coloring/mandala-art'
-import { useArtworkLibrary } from '@/hooks/use-artwork-library'
+import { pictureCount, useGarden } from '@/hooks/use-garden'
 import type { Artwork } from '@/lib/artwork/library'
 import { useHydrated } from '@/lib/local-store'
 import { getMandala } from '@/lib/mandalas'
-import { colorHref, isGrownUpPage } from '@/lib/packs'
+import { colorHref } from '@/lib/packs'
+
+function EmptyGarden() {
+  return (
+    <div className="flex flex-col items-start gap-5 rounded-[2rem] border-4 border-dashed border-border p-6 md:p-8">
+      <p className="text-2xl font-black text-balance md:text-3xl">Nothing growing yet</p>
+      <p className="text-lg font-bold leading-relaxed text-muted-foreground text-pretty">
+        {"Finish a picture and tap \u201CI\u2019m done\u201D. It will grow here."}
+      </p>
+      <Link
+        href="/"
+        className="tactile flex items-center gap-3 rounded-full border-4 border-border bg-primary px-6 py-3 text-xl font-black text-primary-foreground outline-none [--tactile-edge:var(--border)] focus-visible:ring-4 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
+        <House className="size-6" strokeWidth={2.75} aria-hidden="true" />
+        Pick a pack
+      </Link>
+    </div>
+  )
+}
 
 export function MyGarden() {
   const hydrated = useHydrated()
-  const { library, state } = useArtworkLibrary()
+  const { library, artworks } = useGarden()
   const [target, setTarget] = useState<Artwork | null>(null)
   const [open, setOpen] = useState(false)
 
-  const artworks = state.gallery.filter((artwork) => {
-    const mandala = getMandala(artwork.templateId)
-    return !mandala || !isGrownUpPage(mandala)
-  })
-
-  if (!hydrated || artworks.length === 0) return null
+  if (!hydrated) return null
+  if (artworks.length === 0) return <EmptyGarden />
 
   const targetVersion = target && library.templates.version(target.templateId, target.templateVersion)
 
   return (
-    <section aria-labelledby="my-garden-title" className="flex flex-col gap-5">
-      <h2 id="my-garden-title" className="text-3xl font-black text-balance md:text-4xl">
-        My garden
-      </h2>
-      <ul className="grid grid-cols-3 gap-5 sm:grid-cols-4 lg:grid-cols-6">
+    <div className="flex flex-col gap-6">
+      <p className="text-lg font-bold text-muted-foreground">{pictureCount(artworks.length)}</p>
+      <ul aria-label="My pictures" className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:gap-7 lg:grid-cols-4">
         {artworks.map((artwork) => {
           const version = library.templates.version(artwork.templateId, artwork.templateVersion)
           if (!version) return null
@@ -83,6 +95,6 @@ export function MyGarden() {
           onConfirm={() => library.removeFromGallery(target.id)}
         />
       )}
-    </section>
+    </div>
   )
 }
