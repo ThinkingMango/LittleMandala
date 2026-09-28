@@ -482,6 +482,24 @@ export function createArtworkLibrary({
     return commit([[STORAGE_KEYS.gallery, [artworkId, ...gallery]]])
   }
 
+  /**
+   * Opens a garden picture on its page again. The draft points at the garden picture, so the first
+   * new color goes to a copy and the original stays in the garden unchanged. Unsaved work on that
+   * page is never replaced: it stays the draft and this returns false.
+   */
+  const reopenFromGallery = (artworkId: string) => {
+    const s = safeStorage()
+    const state = getState()
+    const artwork = state.artworks[artworkId]
+    if (!s || !artwork || !inGallery(state, artworkId)) return false
+    const current = state.drafts[artwork.templateId]
+    if (current === artworkId) return true
+    if (current && !inGallery(state, current)) return false
+    const drafts = readRawMap(s, STORAGE_KEYS.drafts)
+    drafts[artwork.templateId] = artworkId
+    return commit([[STORAGE_KEYS.drafts, drafts], historyWrite(s, artwork.templateId, null)])
+  }
+
   /** Adds ids to a mark list, dropping marks older than the TTL and keeping the newest MAX_SYNC_MARKS. */
   const markWrite = (s: KeyValueStorage, key: string, ids: readonly string[]): Write => {
     const t = now()
@@ -662,6 +680,7 @@ export function createArtworkLibrary({
     redo,
     setFills,
     saveToGallery,
+    reopenFromGallery,
     removeFromGallery,
     finishDraft,
     clearAll,

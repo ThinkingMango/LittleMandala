@@ -171,6 +171,37 @@ describe('artwork library', () => {
     expect(afterUpdate.getDraft('rose')?.templateVersion).toBe(2)
   })
 
+  it('reopens a garden picture on its page and colors a copy, leaving the original untouched', () => {
+    const device = createDevice()
+    const app = openApp(device)
+    const { artworkId } = app.fillRegion('rose', 'l0-p0', 'red')!
+    app.saveToGallery(artworkId)
+    app.finishDraft('rose')
+    expect(app.getDraft('rose')).toBeNull()
+
+    expect(openApp(device).reopenFromGallery(artworkId)).toBe(true)
+    const reloaded = openApp(device)
+    expect(reloaded.getDraft('rose')?.fills).toEqual({ 'l0-p0': 'red' })
+    expect(reloaded.undo('rose')).toBeNull()
+
+    const copy = reloaded.fillRegion('rose', 'l0-p1', 'blue')!
+    expect(copy.artworkId).not.toBe(artworkId)
+    expect(reloaded.getDraft('rose')?.fills).toEqual({ 'l0-p0': 'red', 'l0-p1': 'blue' })
+    expect(reloaded.getState().artworks[artworkId].fills).toEqual({ 'l0-p0': 'red' })
+  })
+
+  it('keeps unsaved work on the page instead of reopening a garden picture over it', () => {
+    const device = createDevice()
+    const app = openApp(device)
+    const { artworkId } = app.fillRegion('rose', 'l0-p0', 'red')!
+    app.saveToGallery(artworkId)
+    app.finishDraft('rose')
+    app.fillRegion('rose', 'l0-p2', 'green')
+
+    expect(app.reopenFromGallery(artworkId)).toBe(false)
+    expect(app.getDraft('rose')?.fills).toEqual({ 'l0-p2': 'green' })
+  })
+
   it('never writes gallery membership while autosaving', () => {
     const device = createDevice()
     const app = openApp(device)
