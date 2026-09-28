@@ -84,7 +84,7 @@ export function isGrownUpPage(mandala: Pick<Mandala, 'pack'>) {
   return PACK_BY_ID[mandala.pack].audience === 'grown-ups'
 }
 
-/** Published packs a parent can buy once, outside the Family plan. */
+/** Published packs a parent can buy once and keep. */
 export const SOLD_PACKS: readonly Pack[] = Object.freeze(
   PACKS.filter((p) => p.soldSeparately && p.status === 'published'),
 )

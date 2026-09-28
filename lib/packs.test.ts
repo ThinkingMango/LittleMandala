@@ -20,28 +20,33 @@ const row = (scope: 'membership' | 'pack', pack_id: string | null, ends_at: stri
 describe('pack rights', () => {
   const ocean = packPages('ocean-friends')[0]
 
-  it('unlocks a pack page with a Family plan or with that pack, but not with nothing', () => {
+  it('unlocks a pack page with that pack, but not with nothing', () => {
     expect(canColor(ocean, activeRights([], NOW))).toBe(false)
-    expect(canColor(ocean, activeRights([row('membership', null)], NOW))).toBe(true)
     expect(canColor(ocean, activeRights([row('pack', 'ocean-friends')], NOW))).toBe(true)
   })
 
-  it('does not treat a pack as a plan, and ignores expired rows', () => {
-    const packOnly = activeRights([row('pack', 'ocean-friends')], NOW)
-    expect(packOnly.membership).toBeNull()
-    expect(canColor({ tier: 'family', pack: 'standard' }, packOnly)).toBe(false)
-
-    const expired = activeRights([row('pack', 'ocean-friends', '2026-09-20T00:00:00Z')], NOW)
-    expect(canColor(ocean, expired)).toBe(false)
+  it('opens nothing with a membership row, even one that never ends', () => {
+    const membershipOnly = activeRights([row('membership', null)], NOW)
+    expect(membershipOnly.packs.size).toBe(0)
+    for (const page of MANDALAS.filter((m) => m.tier === 'paid')) {
+      expect(canColor(page, membershipOnly), page.id).toBe(false)
+    }
   })
 
-  it('opens locked Standard pages with the Standard unlock or a legacy plan, and nothing else', () => {
-    const lockedStandard = packPages('standard').filter((m) => m.tier === 'family')
+  it('ignores expired and not-yet-started rows', () => {
+    const expired = activeRights([row('pack', 'ocean-friends', '2026-09-20T00:00:00Z')], NOW)
+    expect(canColor(ocean, expired)).toBe(false)
+
+    const future = activeRights([{ ...row('pack', 'ocean-friends'), starts_at: '2026-10-01T00:00:00Z' }], NOW)
+    expect(canColor(ocean, future)).toBe(false)
+  })
+
+  it('opens locked Standard pages with the Standard unlock, and nothing else', () => {
+    const lockedStandard = packPages('standard').filter((m) => m.tier === 'paid')
     expect(lockedStandard).toHaveLength(6)
     const unlock = activeRights([row('pack', 'standard')], NOW)
     for (const page of lockedStandard) {
       expect(canColor(page, unlock), page.id).toBe(true)
-      expect(canColor(page, activeRights([row('membership', null)], NOW)), page.id).toBe(true)
       expect(canColor(page, activeRights([row('pack', 'ocean-friends')], NOW)), page.id).toBe(false)
     }
     expect(canColor(ocean, unlock)).toBe(false)
@@ -66,7 +71,7 @@ describe('pack catalog', () => {
   it('makes Standard 4 free and 6 locked pages, and sells every published picture pack on its own', () => {
     const standard = packPages('standard')
     expect(standard.filter((m) => m.tier === 'free')).toHaveLength(4)
-    expect(standard.filter((m) => m.tier === 'family')).toHaveLength(6)
+    expect(standard.filter((m) => m.tier === 'paid')).toHaveLength(6)
     expect(SOLD_PACKS.map((p) => p.id)).toEqual(published.map((m) => m.pack))
   })
 

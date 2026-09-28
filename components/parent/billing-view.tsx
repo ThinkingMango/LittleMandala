@@ -29,11 +29,11 @@ const FUTURE_FLOW = [
 const STANDARD_PAID = packPages('standard').filter((page) => page.tier !== 'free')
 
 export function BillingView() {
-  const { hasFamily, packs: owned, isUnlocked, failed } = useEntitlements()
+  const { packs: owned, isUnlocked, failed } = useEntitlements()
   const [chosen, setChosen] = useState<ReadonlySet<PackId>>(() => new Set())
   const [standardChosen, setStandardChosen] = useState(false)
 
-  const statusOf = (id: PackId) => (owned.has(id) ? 'Yours to keep' : hasFamily ? 'Included with your plan' : null)
+  const statusOf = (id: PackId) => (owned.has(id) ? 'Yours to keep' : null)
   const buyable = SOLD_PACKS.filter((pack) => !statusOf(pack.id))
   const inOrder = buyable.filter((pack) => chosen.has(pack.id))
   const standardUnlocked = STANDARD_PAID.every(isUnlocked)
@@ -98,12 +98,6 @@ export function BillingView() {
         <h2 id="choose" className="text-2xl font-black">
           Choose your packs
         </h2>
-
-        {hasFamily && (
-          <p className="rounded-2xl bg-secondary p-4 text-sm leading-relaxed font-semibold">
-            Your earlier plan already includes every picture, so there’s nothing more to buy.
-          </p>
-        )}
 
         <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="flex flex-col gap-8">
