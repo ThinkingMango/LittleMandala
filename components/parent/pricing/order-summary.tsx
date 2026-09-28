@@ -14,6 +14,7 @@ import {
   quotePacks,
   type PackOffer,
 } from '@/lib/billing/pricing'
+import { REFUNDS_HREF, REFUND_WINDOW_DAYS } from '@/lib/legal'
 import type { Pack } from '@/lib/packs'
 import { cn } from '@/lib/utils'
 
@@ -136,6 +137,16 @@ export function OrderSummary({ packs, withStandard, buyable, onPurchased }: Orde
           />
         </div>
       )}
+
+      <p className="text-center text-sm leading-relaxed text-muted-foreground">
+        {`Changed your mind? Full refund within ${REFUND_WINDOW_DAYS} days. `}
+        <Link
+          href={REFUNDS_HREF}
+          className="font-bold text-foreground underline underline-offset-4 outline-none focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          Refund policy
+        </Link>
+      </p>
     </aside>
   )
 }
