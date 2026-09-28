@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import useSWR from 'swr'
 import { EmbeddedCheckout, EmbeddedCheckoutProvider } from '@stripe/react-stripe-js'
-import { loadStripe } from '@stripe/stripe-js'
+import { loadStripe, type Stripe } from '@stripe/stripe-js'
 import { Loader2 } from 'lucide-react'
 import {
   confirmPackCheckout,
@@ -13,7 +13,17 @@ import {
 } from '@/app/actions/checkout'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+const stripeByKey = new Map<string, Promise<Stripe | null>>()
+
+/** The server picks the key, so production gets the live key and previews the test key. */
+function stripeFor(publishableKey: string) {
+  let promise = stripeByKey.get(publishableKey)
+  if (!promise) {
+    promise = loadStripe(publishableKey)
+    stripeByKey.set(publishableKey, promise)
+  }
+  return promise
+}
 
 const ERROR_MESSAGES: Record<CheckoutError, string> = {
   empty: 'Choose at least one pack first.',
@@ -60,10 +70,10 @@ function CheckoutForm({ order, onFinished }: Pick<CheckoutDialogProps, 'order' |
     )
   }
 
-  const { clientSecret, sessionId } = data
+  const { clientSecret, sessionId, publishableKey } = data
   return (
     <EmbeddedCheckoutProvider
-      stripe={stripePromise}
+      stripe={stripeFor(publishableKey)}
       options={{ clientSecret, onComplete: () => void confirmPackCheckout(sessionId).then(onFinished) }}
     >
       <EmbeddedCheckout className="overflow-hidden rounded-2xl" />
