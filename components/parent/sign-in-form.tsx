@@ -16,7 +16,7 @@ export type LinkError = 'expired' | 'link'
 
 const LINK_ERROR_MESSAGES: Record<LinkError, string> = {
   expired: 'That sign-in link has expired or was already used. Send yourself a new one below.',
-  link: 'That sign-in link didn’t work. Open it in the same browser where you asked for it, or send a new one below.',
+  link: 'That sign-in link didn’t work. If you asked for more than one, only the newest works. Send yourself a new one below.',
 }
 
 export function SignInForm({ next, linkError }: { next: string; linkError: LinkError | null }) {
@@ -95,7 +95,7 @@ export function SignInForm({ next, linkError }: { next: string; linkError: LinkE
             <p>
               {'We sent a sign-in link to '}
               <span className="font-bold break-all">{sentTo}</span>
-              {'. Open it on this device, in this browser. Each link works once.'}
+              {'. Each link works once, and only the newest one works.'}
             </p>
           </div>
         </div>
