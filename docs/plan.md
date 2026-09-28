@@ -1,27 +1,41 @@
 # Little Mandala — App Plan (tablet-first, ages 3–7, plus a grown-up pack)
 
-Current state: a working coloring app with **real parent accounts on Supabase**, **one-time pack pricing** and **working Stripe checkout in test mode**. Parents can buy packs, bundles and the Standard unlock with Stripe Embedded Checkout. Pictures unlock only from rights rows in the database, which only the server writes after Stripe confirms payment. Stack: Next.js 16 App Router, Tailwind v4, shadcn on Base UI, lucide icons, Supabase (`@supabase/ssr`), Stripe (`stripe`, `@stripe/stripe-js`, `@stripe/react-stripe-js`).
+**Release 1.0, the first production release**, is live at **https://mandala.smartmango.ai** (merge commit `aca3375`, PR #11 on top of PR #10).
+
+A mandala coloring app for young children with **real parent accounts on Supabase**, **one-time pack pricing** and **live Stripe payments in production**. Children color on simple screens with no words to read. Parents buy packs, manage cloud saving, and print or download pictures from a separate area behind a parent gate. Pictures unlock only from rights rows in the database, which only the server writes after Stripe confirms payment. Stack: Next.js 16 App Router, Tailwind v4, shadcn on Base UI, lucide icons, Supabase (`@supabase/ssr`), Stripe (`stripe`, `@stripe/stripe-js`, `@stripe/react-stripe-js`), Vercel Web Analytics (grown-up pages only).
+
+## Release 1.0 at a glance
+
+| Area | What shipped |
+|---|---|
+| Children's app | Pack shelf, coloring screen, **My garden**. No ads, analytics, purchase prompts or links out. |
+| Packs | **10 published packs, 154 pages.** Zen Mandalas (grown-ups) is still a draft and hidden. |
+| Parent area | Gate, email sign-in, Overview, **Pictures** (print and PDF), Pricing and checkout, Cloud saving, Delete account. |
+| Payments | **Stripe live mode in Production.** Preview and Development use test keys and never fall back to live ones. |
+| Privacy | Artwork stays on the device unless a parent opts into cloud saving with recorded consent. Analytics runs only on grown-up pages. |
+| Policy pages | `/privacy`, `/refunds`, `/support`. |
+| Hardening | Security headers on every response. A test fails if trackers or outside links reach the children's pages. |
+| Tests | **187 in 16 files**, all passing. Type check clean. |
 
 ## Changes from the original plan
 
-| Area | Original plan | Now |
+| Area | Original plan | Release 1.0 |
 |---|---|---|
-| Billing platform | **Paddle Billing** (Paddle.js overlay, Paddle webhook, Paddle price ids) | **Stripe.** Embedded Checkout in a dialog on the Pricing page, a signed webhook at `/api/stripe/webhook`, and prices sent inline from our own price table, so there are no Stripe price ids to keep in step. All Paddle code, tables and the "Paddle not connected" badge are gone. Running on **test keys**. |
-| Pricing model | Free vs **Family plan** (subscription), plus packs sold on their own | **No subscription.** Every pack is **$4.99 one time, however many pages it has**. Bundles: any 3 for $12.99, any 5 for $19.99. Standard's 6 locked pages: **$1.99 one time**. Everything bought is kept for good. |
-| Family plan | The main way to unlock everything | **Removed.** A `membership` row opens nothing, and paid pages use `tier: 'paid'`. |
-| Pricing page | Plan cards | Offer cards, a pack picker with a live order summary, the cheapest mix of bundles, a "add N more to reach a bundle" nudge, and a **Buy** button that opens Stripe checkout. |
-| Parent overview | Account, plan status, a grid of every picture, setup status, settings | One column: **Picture packs** (one line per pack: Open / "4 of 10 free" / Locked, plus "Get more packs" only if something is locked), Account, Cloud saving, This device. |
-| Packs | 5 packs, 74 pages, all for children | **10 published packs (154 pages)**: the original 5, second volumes of Ocean Friends, Safari Garden and Christmas Garden, **Flowers Garden** and **Surprise Garden**. One draft: **Zen Mandalas** (grown-ups, 8 detailed pages). |
-| Saved pictures | One draft per page that came back on every visit | **My garden**: finished pictures live on their own page. Every visit to a page from its pack starts white. A garden picture can be opened again and updated (see My garden). |
-| Audience | Children only | Packs have an `audience`: `children` (default) or `grown-ups`. It changes the art rules, line weight and palette. |
-| Palette | 12 colors for every page | Children: the same 12. Grown-up pages: **24 colors**. |
-| Art rules | 10–24 areas, nothing thinner than 40 units | Unchanged for children. Grown-ups: 40–640 areas, as thin as 10 units, fine outline. |
-| Pipeline | `pnpm trace-pack` plus hand steps | Each pack is one `art/<pack>/` folder, run step by step with `pnpm packs <command>` (see `art/README.md`). |
-| Tests | 80 | 162 in 12 files, all passing. |
+| Billing platform | **Paddle Billing** | **Stripe.** Embedded Checkout in a dialog on the Pricing page, a signed webhook at `/api/stripe/webhook`, and prices sent inline from our own price table. **Live in Production**, with test keys in Preview and Development. |
+| Pricing model | Free vs **Family plan** (subscription), plus single packs | **No subscription.** Every pack is **$4.99 one time**. Bundles: any 3 for $12.99, any 5 for $19.99. Standard's 6 locked pages: **$1.99 one time**. Everything bought is kept for good. |
+| Family plan | The main way to unlock everything | **Removed.** A `membership` row opens nothing. |
+| Pricing page | Plan cards | Offer cards, a pack picker with a live order summary, the cheapest mix of bundles, an "add N more to reach a bundle" nudge, and **Buy** with Stripe checkout. |
+| Parent overview | Account, plan, every picture, settings | One column: Picture packs, **Pictures**, Account, Cloud saving, This device. |
+| Printing and export | Not planned | **Pictures page**: per-picture save state, then **Print** or **Download PDF**, made on the device. |
+| Packs | 5 packs, 74 pages | **10 published packs (154 pages)** plus the draft **Zen Mandalas**. |
+| Saved pictures | One draft per page | **My garden**: finished pictures live on their own page, and pack pages always start white. |
+| Audience | Children only | Packs have an `audience`: `children` (default) or `grown-ups`. It sets the art rules, line weight and palette. |
+| Analytics | Site-wide | **Grown-up pages only**, with events from children's pages dropped as well. |
+| Tests | 80 | 187 in 16 files. |
 
 ## Pricing
 
-All prices are in `lib/billing/pricing.ts`, in US cents. Nothing there depends on how many pages a pack has.
+All prices are in `lib/billing/pricing.ts`, in US cents. None depends on how many pages a pack has.
 
 | Offer | Price | Per pack |
 |---|---|---|
@@ -30,91 +44,100 @@ All prices are in `lib/billing/pricing.ts`, in US cents. Nothing there depends o
 | Any five packs (`bundle-5`) | $19.99 | $4.00 |
 | Finish the Standard pack (6 pages) | $1.99 | — |
 
-- `quotePacks(n)` works out the cheapest mix of offers for exactly `n` chosen packs. For example 4 packs = a three-pack bundle plus one single, $17.98.
-- `bundleNudge(selected, available)` suggests adding packs only when that many unowned packs remain and the bundle beats buying them one by one.
-- Packs already owned show "Yours to keep" and can't be chosen again.
-- Only **published** packs are for sale (`SOLD_PACKS`). Drafts like Zen Mandalas aren't sold yet.
+- `quotePacks(n)` works out the cheapest mix for exactly `n` packs. For example, 4 packs = a three-pack bundle plus one single, $17.98.
+- `bundleNudge(selected, available)` suggests more packs only when enough unowned ones remain and the bundle beats buying them singly.
+- Owned packs show "Yours to keep" and can't be chosen again. Only **published** packs are sold (`SOLD_PACKS`).
 - A bundle isn't an entitlement of its own. After payment, each chosen pack gets its own `scope = 'pack'` row.
 
 ## Payments (Stripe)
 
+**Modes** (`lib/stripe.ts`): Production (`VERCEL_ENV=production`) uses `STRIPE_LIVE_SECRET_KEY`, `STRIPE_LIVE_PUBLISHABLE_KEY` and `STRIPE_LIVE_WEBHOOK_SECRET`. Preview and local development use the test keys `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` and `STRIPE_WEBHOOK_SECRET`, and never fall back to live keys. The live account can take charges and receive payouts.
+
 **Checkout** (`app/actions/checkout.ts`, `components/parent/pricing/checkout-dialog.tsx`):
 1. The parent picks packs on `/parent/billing` and taps Buy. The browser sends only pack ids, the Standard flag and a random attempt id.
-2. `startPackCheckout` (server action) checks the signed-in parent, loads the packs they already own, and rebuilds the order on the server with `buildOrder` (`lib/billing/order.ts`). It rejects unknown, draft or already-owned packs, empty orders and more than 40 packs, then prices the order from `lib/billing/pricing.ts`. Nothing the browser sends sets a price.
-3. It creates a Stripe Checkout Session: `mode: 'payment'`, `ui_mode: 'embedded_page'`, inline `price_data` in USD per line, `client_reference_id` and `metadata.parent_id` set to the parent, `metadata.pack_ids` set to the packs being granted. It reuses the parent's Stripe customer or creates one from their email. The idempotency key `pack-checkout:<parent>:<attemptId>` means a double tap or retry never makes a second session.
-4. The dialog shows Stripe's embedded form. Card details go straight to Stripe and never reach our server.
+2. `startPackCheckout` checks the signed-in parent and rebuilds the order on the server with `buildOrder` (`lib/billing/order.ts`). It rejects unknown, draft or owned packs, empty orders and more than 40 packs, then prices the order from `lib/billing/pricing.ts`. Nothing the browser sends sets a price.
+3. It creates a Checkout Session (`mode: 'payment'`, `ui_mode: 'embedded_page'`, inline USD `price_data`, `metadata.parent_id` and `metadata.pack_ids`). It reuses the parent's Stripe customer **for that mode**, or creates one. The idempotency key `pack-checkout:<parent>:<attemptId>` prevents a second session on a double tap or retry.
+4. Card details go straight to Stripe and never reach our server.
 
-**Opening packs right away:**
-- When the embedded form completes, `confirmPackCheckout(sessionId)` fetches the session from Stripe and grants the packs at once. It only works for the parent who started that checkout, so the parent doesn't wait on the webhook.
-- Payment methods that leave the page come back to `/parent/billing?session_id=…`, and `purchase-notice.tsx` does the same confirm step.
-- Rights rows accept a `starts_at` up to 5 minutes ahead of the device's clock, so a pack bought a moment ago opens without a reload on devices whose clock runs slightly behind.
+**Opening packs right away:** `confirmPackCheckout(sessionId)` fetches the finished session and grants the packs at once, only for the parent who started it. Payment methods that leave the page return to `/parent/billing?session_id=…`, which runs the same step. Rights rows accept a `starts_at` up to 5 minutes ahead of the device's clock.
 
 **Webhook** (`app/api/stripe/webhook/route.ts`):
-- The Stripe signature is checked with `STRIPE_WEBHOOK_SECRET`. Unsigned or badly signed requests get a 400.
-- Every event is logged in `webhook_events` with its attempt count and last error. It's handled at most once, and a failed attempt returns 500 so Stripe retries it.
-- `checkout.session.completed` and `checkout.session.async_payment_succeeded` fulfil the order. `checkout.session.async_payment_failed` is handled so nothing is granted. `charge.refunded` for a full refund marks the transaction `refunded` and revokes the packs it opened.
+- The signature is checked with the mode's signing secret. Unsigned or badly signed requests get a 400 (confirmed on production).
+- Events from the other mode are ignored.
+- Every event is logged in `webhook_events` with its attempt count and last error. It's handled at most once, and a failure returns 500 so Stripe retries.
+- `checkout.session.completed` and `checkout.session.async_payment_succeeded` fulfil the order. `checkout.session.async_payment_failed` grants nothing. `charge.refunded` for a full refund marks the transaction `refunded` and revokes its packs.
+- Live endpoint: `https://mandala.smartmango.ai/api/stripe/webhook` with those four events. A second live webhook, going to a Grok connector, wasn't made by this app and is left alone.
 
-**Fulfilment** (`lib/billing/fulfil.ts` → SQL function `fulfil_checkout_session`): records the customer, one `transactions` row per paid session, and one `pack` entitlement per granted pack, all or nothing. It's safe to run twice because the confirm step and the webhook both call it, and Stripe retries.
-
-**Keys** (project env vars): `STRIPE_SECRET_KEY` (server, currently `sk_test_…`), `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (embedded form) and `STRIPE_WEBHOOK_SECRET`. The Stripe client is created lazily in `lib/stripe.ts`.
+**Fulfilment** (`lib/billing/fulfil.ts` → SQL `fulfil_checkout_session`): records the customer for the session's mode, one `transactions` row per paid session and one `pack` entitlement per pack, all or nothing. It's safe to run twice, because the confirm step and the webhook both call it.
 
 ## Routes
 
 | Route | Audience | Purpose |
 |---|---|---|
-| `/` | Kid | Home: the pack shelf, a **My garden** card (three newest pictures and a count, shown after the first save), and a small parent entry in the top corner. |
-| `/packs/[id]` | Kid | One pack's pictures. Locked ones show a lock and an "Ask a grown-up" bubble, never a link to pricing. |
-| `/color/[id]` | Kid | Coloring screen: white canvas, palette plus eraser, Undo, Start over, Done. `?art=<artworkId>` opens a garden picture with its colors. |
-| `/garden` | Kid | My garden: every finished picture, newest first. Tap to keep coloring it, X to take it out (asks first). |
-| `/parent` | Parent | **Parent gate** (hold a button for 3 seconds, or answer a simple sum). On pass it sets `sessionStorage["lm:gate"]` and goes to `/parent/home`. |
+| `/` | Kid | Home: pack shelf, **My garden** card (three newest pictures and a count), small parent entry in the corner. |
+| `/packs/[id]` | Kid | One pack's pictures. Locked ones show a lock and "Ask a grown-up", never a link to pricing. |
+| `/color/[id]` | Kid | Coloring: white canvas, palette and eraser, Undo, Start over, Done. `?art=<artworkId>` reopens a garden picture. |
+| `/garden` | Kid | My garden: every finished picture, newest first. |
+| `/parent` | Parent gate | Hold a button for 3 seconds, or answer a simple sum. Sets `sessionStorage["lm:gate"]`. Counts as a children's screen for analytics. |
 | `/parent/sign-in` | Parent | One-time email link through Supabase Auth. |
-| `/auth/callback`, `/auth/confirm` | Server | Finish the email-link sign-in (branded email templates). |
-| `/parent/home` | Parent | Overview: Picture packs, Account, Cloud saving, This device (settings, "Clear saved coloring", sign out). |
-| `/parent/billing` | Parent | Pricing: offers, the pack picker and order summary, the Standard unlock, and **Buy** with Stripe Embedded Checkout. It also confirms returning checkouts (`?session_id=`). |
-| `/parent/grown-ups`, `/parent/color/[id]` | Parent | Grown-up shelf and coloring behind the parent gate. Returns 404 while `GROWN_UPS_OFFERED` is `false`. |
+| `/auth/callback`, `/auth/confirm` | Server | Finish the email-link sign-in. |
+| `/parent/home` | Parent | Overview: Picture packs, Pictures, Account, Cloud saving, This device ("Clear saved coloring", sign out). |
+| `/parent/pictures` | Parent | **Pictures**: each garden picture's save state (this device only / also in your account / not copied yet), then **Print** or **Download PDF**, one picture per page with its name and date. Made on the device, and nothing is uploaded. |
+| `/parent/billing` | Parent | Pricing, pack picker, order summary, the Standard unlock and **Buy**. Also confirms returning checkouts. |
+| `/parent/grown-ups`, `/parent/color/[id]` | Parent | Grown-up shelf and coloring. 404 while `GROWN_UPS_OFFERED` is `false`. Locked pages here use `GrownUpLocked`, which may link to pricing. |
 | `/parent/cloud-saving` | Parent | Opt in to copying finished pictures to the account (needs recorded consent). |
 | `/parent/delete-account` | Parent | Deletes the account. Payment records are kept as the law requires. |
-| `/api/account` | Server | Account actions that need the service role (for example deletion). |
-| `/api/stripe/webhook` | Server | Verified Stripe events: fulfilment and refunds. |
+| `/privacy`, `/refunds`, `/support` | Grown-ups | Policy and help pages. |
+| `/api/account` | Server | Account actions that need the service role. |
+| `/api/stripe/webhook` | Server | Verified Stripe events. |
 
-Layouts:
-- `app/(kid)/layout.tsx`: full-bleed white. No text navigation, no links out, no purchase prompts.
-- `app/parent/layout.tsx`: calmer adult UI with a header and "Back to coloring". Every parent route except `/parent` checks the gate flag.
+Layouts and child safety:
+- `app/(kid)/layout.tsx`: full-bleed white, with no text navigation, links out, purchase prompts or analytics.
+- `lib/child-routes.test.ts` walks every module the kid routes load. It fails on tracker packages or snippets, outside links, new windows, pricing links or grown-up-only modules.
+- Vercel Web Analytics is mounted only by `app/parent/layout.tsx` and `app/(info)/layout.tsx` (`components/grown-up-analytics.tsx`). Its `beforeSend` drops any event not on a grown-up page (`lib/audience-routes.ts`).
+- `app/parent/layout.tsx` gives the calmer adult UI, and every parent route except `/parent` checks the gate flag. The header and footer are hidden when printing.
+- `next.config.mjs` sends security headers: nosniff, referrer policy, HSTS, `X-Frame-Options: SAMEORIGIN` and a permissions policy (confirmed on production).
 
 ## Data
 
-Supabase tables (5 migrations in `supabase/migrations/`, the last is `20260928120000_billing_on_stripe.sql`), all with owner-only RLS:
-- `profiles`, `consent_notices`, `consent_records`: parent accounts and the consent notice they agreed to.
+One Supabase project serves Production, Preview and Development. It has 8 migrations in `supabase/migrations/`, the last being `20260930120000_stripe_live_mode.sql`, and every table has owner-only RLS.
+- `profiles`, `consent_notices`, `consent_records`: parent accounts and the consent notice they agreed to (notice v2 is approved).
 - `artworks`, `artwork_deletions`: cloud copies of pictures, only after cloud-saving consent (`has_cloud_consent()`).
-- `billing_customers` (`parent_id` → `stripe_customer_id`), `transactions` (one row per paid Checkout Session: session id, payment intent id, pack ids, amount, currency, `paid`/`refunded`), `webhook_events`: written only by the server with the service role. Parents can read their own rows. `subscriptions` uses Stripe ids but is unused, and kept in case a subscription comes back.
-- `entitlements`: what a parent can open. `scope = 'pack'` with a `pack_id` opens one pack for good. For a Stripe purchase, `source_id` is the Checkout Session id. Membership rows are ignored. A row counts only while `revoked_at` is null, `starts_at` has passed (5 minutes of clock skew allowed) and `ends_at` hasn't.
+- `billing_customers`: keyed by `(parent_id, livemode)`, so each parent has separate test and live Stripe customers. Rows from before the live launch are test mode.
+- `transactions`: one row per paid Checkout Session, plus a generated `livemode` column (true for `cs_live_…` sessions).
+- `webhook_events` is written only by the server. `subscriptions` is unused and kept in case a subscription comes back.
+- `entitlements`: what a parent can open. `scope = 'pack'` with a `pack_id` opens one pack for good. For purchases, `source_id` is the Checkout Session id. **Complimentary grants** use `source_type = 'transaction'` with `source_id = 'comp:<pack>:<parent>'`, which never matches a Stripe session, refund or order. A row counts only while `revoked_at` is null and it's inside its `starts_at`/`ends_at` window.
 - Deleting a parent sets `transactions.stripe_customer_id` to null instead of deleting the payment record.
 
-Access check: `lib/entitlements.ts` loads only the parent's `pack` rows, and `canColor(page)` decides each page. Free pages are always open. A pack row opens only its own pack. A `standard` row opens Standard's 6 locked pages. No row opens everything.
+Access check: `lib/entitlements.ts` loads the parent's `pack` rows, and `canColor(page)` decides each page. Free pages are always open. A `standard` row opens Standard's 6 locked pages, and no row opens everything.
 
-On-device storage: artwork is saved on the device and stays there unless the parent turns on cloud saving. No child data goes to the server without that consent.
+On-device storage: artwork stays on the device unless the parent turns on cloud saving.
 
 ## My garden and saving rules
 
 Logic is in `startSession` and `saveSession` in `lib/artwork/library.ts`, used through `hooks/use-coloring.ts`:
-- **From a pack:** a page always opens white. Coloring that wasn't saved is thrown away when the child leaves or reloads.
-- **"I'm done":** the picture is added to My garden, and the pack page is white on the next visit.
-- **From My garden** (`/color/<id>?art=<artworkId>`): the page opens with the saved colors. Leaving without saving changes nothing. Saving updates that picture in its spot in the garden. It gets a new id, and the old id is marked removed so cloud sync replaces the cloud copy instead of keeping both. Back and "More pictures" return to My garden.
-- A garden id for a different page is ignored, and the page opens white.
-- The home page shows only the garden card (`components/kid/garden-cover.tsx`). The full grid is on `/garden` (`components/kid/my-garden.tsx`), so 20–30 pictures never crowd the home page.
+- **From a pack:** a page always opens white, and unsaved coloring is dropped when the child leaves.
+- **"I'm done":** the picture goes to My garden.
+- **From My garden:** the page opens with its colors, and saving updates it in place. It gets a new id, and the old id is marked removed so cloud sync replaces the cloud copy.
+- Per-picture save state for the Pictures page comes from `lib/cloud-sync/picture-state.ts`.
+
+## Printing and PDF
+
+- `lib/export/pictures-pdf.ts` builds the PDF, one picture per page with its name and date, and `lib/export/rasterize.ts` draws each picture in the browser. Nothing is uploaded.
+- Print uses `components/parent/pictures/print-sheet.tsx`, with the parent header and footer hidden on paper and a 14mm `@page` margin.
+- Saved picture files and PDFs use the fine outline for grown-up pages (`lib/cloud-sync/artwork-svg.ts`).
 
 ## Palette
 
-- **Children: 12 colors** in six pairs of a bold color and its softer partner: Red/Pink, Orange/Peach, Yellow/Lime, Green/Sky blue, Blue/Purple, Brown/Gray (`PALETTE`). A 2-row grid in portrait and a 2-column grid in landscape, with the eraser set apart. Swatches are 64px on tablets and 44px on phones.
-- **Grown-ups: 24 colors**: six families of four shades, pale to deep (`GROWN_UP_FAMILIES`, `components/coloring/tonal-palette.tsx`): Rose, Sun, Leaf, Sea, Violet, Earth. Families are columns in portrait and rows in landscape. Chips are 56px on tablets and 40px on phones. Default color: Rose.
-- The coloring screen picks the palette from the page's pack `audience`. Both palettes share the radio keyboard logic (`use-palette-radios.ts`).
-- Color keys never change once shipped, because saved artwork stores them. `ALL_COLORS` holds all 36 keys. Tokens are `--swatch-*` in `app/globals.css`, and downloaded pictures use matching hex values (`lib/cloud-sync/artwork-svg.ts`).
+- **Children: 12 colors** in six bold/soft pairs (`PALETTE`), with swatches of 64px on tablets and 44px on phones.
+- **Grown-ups: 24 colors** in six families of four shades (`GROWN_UP_FAMILIES`), with chips of 56px on tablets and 40px on phones.
+- Color keys never change once shipped, because saved artwork stores them. `ALL_COLORS` holds all 36 keys.
 
 ## Picture packs
 
 | Pack | Audience | Status | Pages | How it unlocks |
 |---|---|---|---|---|
-| Standard | Children | Published | 10 (4 free, 6 locked) | Locked pages: the $1.99 Standard unlock |
+| Standard | Children | Published | 10 (4 free, 6 locked) | The $1.99 Standard unlock |
 | Ocean Friends | Children | Published | 16 | $4.99, or part of a bundle |
 | Safari Garden | Children | Published | 16 | $4.99, or part of a bundle |
 | Easter Garden | Children | Published | 16 | $4.99, or part of a bundle |
@@ -124,82 +147,74 @@ Logic is in `startSession` and `saveSession` in `lib/artwork/library.ts`, used t
 | Christmas Garden 2 (`christmas-garden-two`) | Children | Published | 16 | $4.99, or part of a bundle |
 | Flowers Garden | Children | Published | 16 | $4.99, or part of a bundle |
 | Surprise Garden | Children | Published | 16 | $4.99, or part of a bundle |
-| Zen Mandalas | Grown-ups | **Draft** | 8 | Not sold until published. Then $4.99 like any pack. |
+| Zen Mandalas | Grown-ups | **Draft** | 8 | Not sold until published |
 
-- 154 published pages, 162 with the draft. Nine packs are sold separately.
-- Flowers Garden has 292 named areas and Surprise Garden 226 (peek-a-boo scenes such as Mushroom House and Treasure Chest).
-- Pack ids can't contain digits, so second volumes use `-two` ids but show "2" in their names.
-- Draft packs appear only in development and the v0 preview (`SHOW_DRAFT_PACKS`).
-- Each pack's name, description, icon, status, audience and page list live in `art/<pack>/pages.json`. `pnpm packs sync` generates `lib/templates/registry.generated.ts`, and `lib/packs.ts` builds `PACKS`, `PACK_BY_ID` and `SOLD_PACKS`.
-- Known quirks: Christmas `fox-lantern` is named "Snowy Fox". Safari Garden 2's first page shipped as `bear-cub`. Flowers Garden's Pot Trio and Frog Lily are a little loose but meet the rules.
-
-### Art rules (`AUDIENCE_RULES` in `scripts/trace-pack/segment.ts`)
-
-| Rule | Children | Grown-ups |
-|---|---|---|
-| Areas per page | 10–24 | 40–640 |
-| Thinnest area | 40 units | 10 units |
-| Smallest area | 0.4% of the page | 0.025% of the page |
-| Outline | Bold | Fine, and the drawing's own lines stay visible inside merged areas |
-| Thin slivers | Fail the page | Merged into their neighbor |
-
-Every page is square with a pure white background and one uniform black outline, and every shape is closed. There's no shading, text or frame. On children's pages, eyes and smiles are small ink details, and shapes are soft and friendly.
-
-### Pipeline (`pnpm packs <command>`, full guide in `art/README.md`)
-
-1. **Plan:** `pnpm packs new` creates `art/<pack>/pages.json` as a draft.
-2. **Draw:** `pnpm packs prompts` prints the style prompt and a line per page. Art is saved in `art/<pack>/source/<id>.png`.
-3. **Trace:** `pnpm packs trace <pack>` writes `lib/templates/<pack>/<id>.json` under the audience rules. `pnpm packs sheet` makes review sheets in `.pack-review/`. Failed pages are redrawn, not patched.
-4. **Name:** `pnpm packs labels` gives every area a spoken name (`--by-position` for grown-up pages).
-5. **Publish:** `pnpm packs status`, then `pnpm packs publish`.
+- 154 published pages, and nine packs are sold separately. Draft packs appear only in development and the v0 preview.
+- Each pack lives in `art/<pack>/pages.json`. `pnpm packs sync` generates `lib/templates/registry.generated.ts`.
+- The art rules (`AUDIENCE_RULES` in `scripts/trace-pack/segment.ts`) and the pipeline (`pnpm packs new | prompts | trace | sheet | labels | status | publish`) are unchanged. See `art/README.md`.
 
 ## UI and accessibility
 
-- Canvas is pure white with soft charcoal outlines (bold for children, fine for grown-ups).
-- Landscape tablet (default): palette on one side, tools on the other, canvas centered. Portrait: palette along the bottom, tools along the top.
-- Controls have an icon, an `aria-label` and a visible focus ring, at least 44px on phones and 64px on tablets. The exceptions are grown-up chips (40px on phones) and grown-up areas.
-- Start over and taking a picture out of My garden both ask with a big Yes/No dialog.
-- A small bounce on fill and a gentle sparkle on Done, both off under `prefers-reduced-motion`.
-- Nunito via `next/font`. Light mode only.
+- Pure white canvas with charcoal outlines (bold for children, fine for grown-ups). The palette and tools sit on the sides in landscape, and along the bottom and top in portrait.
+- Controls have an icon, an `aria-label` and a focus ring, and are at least 44px on phones and 64px on tablets.
+- Start over and removing a garden picture both ask first with a big Yes/No dialog.
+- Motion respects `prefers-reduced-motion`. Nunito, light mode only.
 
 ## Tests
 
-`pnpm test`: 162 tests in 12 files, all passing.
-- Pack manifests match traced files, every page meets its audience's rules, and page ids are unique. `SOLD_PACKS` is exactly the published packs sold separately.
-- Pricing: offer table, cheapest quote for any count, bundle nudge, flat $4.99.
-- **Checkout orders** (`lib/billing/order.test.ts`): server-side order building, rejecting unknown, draft or owned packs, empty orders and oversized orders.
-- Palettes, unlock rules (guests, pack owners, Standard unlock, membership rows, expired or future rows), pack tools, tracer, coloring screen, cloud consent, cloud-sync engine.
-- **Saving rules:** pages start white, unsaved work is dropped, a save goes to the garden, garden pictures reopen with colors, and a save updates them in place and marks the old id for cloud removal.
-- Live Supabase tests (`.v0-live/`) cover cloud sync and isolation between two accounts. They run separately.
+`pnpm test`: **187 tests in 16 files**, all passing, and `pnpm exec tsc --noEmit` is clean.
+- Pack manifests, art rules, unique ids and `SOLD_PACKS`.
+- Pricing, checkout order building and rejections, and unlock rules.
+- Saving rules, palettes, tracer, coloring screen, cloud consent and the cloud-sync engine.
+- **New in 1.0:** child routes stay free of trackers, outside links and pricing, and analytics only counts grown-up pages (`lib/child-routes.test.ts`). Per-picture save state (`lib/cloud-sync/picture-state.test.ts`) and the pictures PDF (`lib/export/pictures-pdf.test.ts`) are covered too.
+- Live Supabase tests (`.v0-live/`) cover cloud sync and account isolation, and run separately.
 
 ## Test account
 
-`lawrence.law@hotmail.com` now holds only rights from **real Stripe test-mode checkouts**. The old hand-made rows and the membership row are gone.
-- $4.99 single: Ocean Friends.
-- $12.99 three-pack bundle: Christmas Garden, Easter Garden, Safari Garden.
+`lawrence.law@hotmail.com` (user `b8986e6c-…`) holds:
+- Ocean Friends ($4.99 single, Stripe **test mode**).
+- Christmas Garden, Easter Garden and Safari Garden ($12.99 bundle, **test mode**).
+- **Standard**: a complimentary grant (`comp:standard:…`), permanent, with no charge or order.
 
-It can't open Standard's 6 locked pages, Ocean Friends 2, Safari Garden 2, Christmas Garden 2, Flowers Garden or Surprise Garden. Those are good for testing another purchase. Use Stripe's test card `4242 4242 4242 4242`, any future date and any CVC.
+Still locked for this account: Ocean Friends 2, Safari Garden 2, Christmas Garden 2, Flowers Garden and Surprise Garden. In Preview, test purchases use card `4242 4242 4242 4242`. On production, any purchase charges a real card.
 
 ## Open gaps
 
-1. **Stripe is in test mode.** No real money can be taken yet. Going live needs live keys and a live webhook endpoint (next steps 1–2).
-2. **Partial refunds don't revoke anything.** Only a full refund (`charge.refunded` with `refunded: true`) closes the packs. That's deliberate for now, since a partial refund can't say which pack it covers. Handle partial refunds by hand in the Stripe dashboard.
-3. **Grown-up packs are hidden.** The grown-ups shelf behind the parent gate exists, but `GROWN_UPS_OFFERED = false` and Zen Mandalas is still a draft.
-4. **`components/parent/not-connected-badge.tsx` is unused** since Stripe went in, and can be deleted.
+1. **Test-mode rights open packs in Production.** The database is shared and `entitlements` has no mode, so packs bought with the test card in Preview also open on the live site. This is fine for internal accounts, but anyone with Preview access could get packs free. Fix: filter entitlements by the mode of their source transaction in Production (complimentary grants still count), or split the database.
+2. **Preview checkout is broken.** The test Stripe keys are empty since the sandbox integration was disconnected, so Buy shows an error in Preview. Add `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` and `STRIPE_WEBHOOK_SECRET` from Stripe test mode, scoped to Preview and Development.
+3. **No live purchase has been tested end to end.** The keys, account status, webhook endpoint and signature rejection are confirmed, but the first real charge and refund haven't been run.
+4. **Partial refunds revoke nothing.** Only a full refund closes packs. Partial refunds are handled by hand in the Stripe dashboard.
+5. **Complimentary grants are hand-written SQL.** There's no admin screen or audit trail beyond the `comp:` source id.
+6. **Grown-up packs are hidden.** `GROWN_UPS_OFFERED = false`, and Zen Mandalas is a draft.
+7. **`components/parent/not-connected-badge.tsx` is unused** and can be deleted.
+8. **Print dialog not checked in a browser.** The print styles are compiled and the PDF was tested, but the browser print preview hasn't been checked.
 
-## Next steps
+## Next steps (after 1.0)
 
-1. **Go live with Stripe:** claim or activate the Stripe account, then set the live `STRIPE_SECRET_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` for Production only, keeping test keys in Preview and Development.
-2. **Register the production webhook** at `https://mandala.smartmango.ai/api/stripe/webhook` for `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed` and `charge.refunded`. Put its signing secret in Production's `STRIPE_WEBHOOK_SECRET`.
-3. **Make one small live purchase** (the $1.99 Standard unlock) and refund it, to check fulfilment, the webhook log and refund revocation end to end.
-4. **Delete the unused `NotConnectedBadge`.**
-5. **Publish Zen Mandalas:** check the remaining review sheets, publish the pack and set `GROWN_UPS_OFFERED = true`.
+1. **Smoke test live payments:** buy the $1.99 Standard unlock on production with a real card on an account that doesn't own it, check it opens without a reload and appears in `transactions` with `livemode = true`, then refund it in full and check it locks again.
+2. **Close gap 1:** scope entitlements by mode in Production, with a test for it.
+3. **Restore Preview checkout** with the Stripe test keys.
+4. **Delete `NotConnectedBadge`.**
+5. **Publish Zen Mandalas:** finish the review sheets, publish and set `GROWN_UPS_OFFERED = true`.
+6. **Optional:** a small admin action for complimentary grants and revocations, so they don't need SQL.
+
+## Release checklist (1.0)
+
+- [x] Live Stripe keys in Production only, with previews on test keys and no fallback.
+- [x] Live webhook registered with 4 events, and signature rejection confirmed on production.
+- [x] `stripe_live_mode` migration applied (per-mode customers, `transactions.livemode`).
+- [x] Children's pages free of analytics, trackers and outside links, with a guard test.
+- [x] Pictures page with print and PDF export, and clear save states.
+- [x] Security headers live.
+- [x] 187 tests and the type check passing, with PR #11 merged and deployed.
+- [ ] First live purchase and full refund (next step 1).
+- [ ] Test-mode rights no longer open packs in Production (gap 1).
 
 ## Verification
 
 - Click through every route at tablet landscape (1180×820), portrait (820×1180) and phone (390×844).
-- Buy a pack with the Stripe test card. It should open straight after payment without a reload, and appear once in `transactions` and once per pack in `entitlements`. Replay the webhook in the Stripe dashboard and check nothing is duplicated.
-- Refund that payment in full. The pack should lock again.
-- Locked tiles never link to pricing. The order summary always shows the cheapest total, and the charged amount matches it.
-- My garden: a pack page starts white, "I'm done" adds to the garden, and a garden picture reopens with colors and updates in place.
+- In Preview (once test keys are back), buy a pack with the test card. It should open without a reload, and appear once in `transactions` and once per pack in `entitlements`. Replaying the webhook must not duplicate anything, and a full refund must lock it again.
+- On production, run the smoke test in next step 1.
+- Locked tiles on children's pages never link to pricing, and the charged amount matches the order summary.
+- Pictures page: the save states are right, Print shows one picture per page with no site chrome, and the PDF has one page per chosen picture.
 - `pnpm exec tsc --noEmit` and `pnpm test` both pass.
