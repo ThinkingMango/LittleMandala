@@ -63,7 +63,7 @@ export function renderArtworkSvg(version: TemplateVersion, fills: Fills) {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-24 -24 1048 1048" width="1048" height="1048">` +
     `<rect x="-24" y="-24" width="1048" height="1048" fill="${CANVAS}"/>` +
-    `<g stroke="${INK}" stroke-width="14" stroke-linejoin="round" stroke-linecap="round">${paths}${details}</g>` +
+    `<g stroke="${INK}" stroke-width="${version.line === 'fine' ? 6 : 14}" stroke-linejoin="round" stroke-linecap="round">${paths}${details}</g>` +
     `</svg>`
   )
 }

@@ -18,6 +18,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { useArtworkLibrary } from '@/hooks/use-artwork-library'
+import { useCloudSync } from '@/lib/cloud-sync/client'
 import { settingsStore, type DeviceSettings } from '@/lib/device-stores'
 import { useLocalStore } from '@/lib/local-store'
 
@@ -42,9 +43,20 @@ export function DeviceSettingsCard() {
   const [cleared, setCleared] = useState(false)
   const canVibrate = useCanVibrate()
   const toggles = TOGGLES.filter((t) => t.key !== 'haptics' || canVibrate)
+  const { summary } = useCloudSync()
+  const cloudLine =
+    summary.state === 'signed-out' || summary.state === 'off'
+      ? 'Cloud saving is off, so there are no other copies. They will be gone for good.'
+      : summary.saved > 0
+        ? `The ${summary.saved === 1 ? 'copy' : `${summary.saved} copies`} in your account will stay there. To delete ${summary.saved === 1 ? 'it' : 'those'}, turn off cloud saving.`
+        : 'Any copies already in your account will stay there. To delete those, turn off cloud saving.'
 
   return (
-    <ParentCard title="On this device" description="Artwork is kept on this tablet unless you turn on cloud saving.">
+    <ParentCard
+      id="this-device"
+      title="On this device"
+      description="Artwork is kept on this tablet unless you turn on cloud saving."
+    >
       <DeviceStorageNotice />
       <div className="flex flex-col divide-y">
         {toggles.map((t) => (
@@ -79,7 +91,7 @@ export function DeviceSettingsCard() {
             <DialogDescription className="leading-relaxed">
               {cleared
                 ? 'Every flower is white again and the garden is empty.'
-                : 'Drafts and every flower in the garden will be removed from this device. This cannot be undone. Copies saved to a parent account with cloud saving stay there.'}
+                : `Drafts and every picture in the garden will be removed from this device. This cannot be undone. ${cloudLine}`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="rounded-b-3xl">

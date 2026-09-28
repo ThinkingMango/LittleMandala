@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ColoringScreen } from '@/components/coloring/coloring-screen'
+import { GrownUpLocked } from '@/components/parent/grown-up-locked'
 import { MANDALAS, getMandala } from '@/lib/mandalas'
 import { GROWN_UPS_OFFERED, isGrownUpPage } from '@/lib/packs'
 
@@ -24,7 +25,7 @@ export default async function GrownUpColorPage({ params }: Params) {
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <ColoringScreen mandala={mandala} />
+      <ColoringScreen mandala={mandala} lockedView={<GrownUpLocked mandala={mandala} />} />
     </div>
   )
 }

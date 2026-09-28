@@ -88,8 +88,9 @@ export default function PrivacyPage() {
       <PolicySection id="cookies" title="Cookies and visit statistics">
         <p>
           When a parent signs in, we set cookies that keep you signed in. They are not used for anything else. We use Vercel Web Analytics to
-          count page visits, so we know which parts of the app are used. It does not use cookies and does not follow anyone across other
-          websites. We do not use advertising or tracking cookies.
+          count page visits in the parent area and on these policy pages, so we know which parts are used. It never runs on the
+          screens your child uses. It does not use cookies and does not follow anyone across other websites. We do not use
+          advertising or tracking cookies, and the children&apos;s screens have no links that leave the app.
         </p>
       </PolicySection>
 

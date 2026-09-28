@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 
 const NAV = [
   { href: '/parent/home', label: 'Overview' },
+  { href: '/parent/pictures', label: 'Pictures' },
   ...(GROWN_UP_PACKS.length > 0 ? [{ href: GROWN_UPS_HREF, label: 'Your coloring' }] : []),
   { href: '/parent/billing', label: 'Pricing' },
   { href: '/parent/cloud-saving', label: 'Cloud saving' },
@@ -26,7 +27,7 @@ export function ParentHeader() {
   const nav = auth.status === 'signed-out' ? [...NAV, { href: '/parent/sign-in', label: 'Sign in' }] : NAV
 
   return (
-    <header className="sticky top-0 z-20 border-b bg-background">
+    <header className="sticky top-0 z-20 border-b bg-background print:hidden">
       <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4 md:px-8">
         <div className="flex items-center gap-3">
           <BrandMark compact />
