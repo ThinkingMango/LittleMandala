@@ -3,7 +3,7 @@
 import { headers } from 'next/headers'
 import { MAX_ORDER_PACKS, buildOrder, type OrderError } from '@/lib/billing/order'
 import { fulfilCheckoutSession } from '@/lib/billing/fulfil'
-import { stripe } from '@/lib/stripe'
+import { STRIPE_LIVE, stripe, stripePublishableKey } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 
 const INTEGRATION_ID = 'little-mandala-packs-rqvhmtwk'
@@ -13,7 +13,7 @@ const SESSION_ID = /^cs_(test|live)_[A-Za-z0-9]+$/
 export type CheckoutError = OrderError | 'not_signed_in' | 'invalid' | 'unavailable'
 
 export type CheckoutStart =
-  | { ok: true; clientSecret: string; sessionId: string }
+  | { ok: true; clientSecret: string; sessionId: string; publishableKey: string }
   | { ok: false; error: CheckoutError }
 
 export type CheckoutOutcome = 'granted' | 'pending' | 'failed'
@@ -54,7 +54,12 @@ export async function startPackCheckout(input: CheckoutInput): Promise<CheckoutS
       .eq('parent_id', parent.id)
       .eq('scope', 'pack')
       .is('revoked_at', null),
-    parent.supabase.from('billing_customers').select('stripe_customer_id').eq('parent_id', parent.id).maybeSingle(),
+    parent.supabase
+      .from('billing_customers')
+      .select('stripe_customer_id')
+      .eq('parent_id', parent.id)
+      .eq('livemode', STRIPE_LIVE)
+      .maybeSingle(),
   ])
   if (rights.error || customer.error) {
     console.error('Loading purchases before checkout failed', rights.error?.code ?? customer.error?.code)
@@ -77,6 +82,7 @@ export async function startPackCheckout(input: CheckoutInput): Promise<CheckoutS
   if (!origin) return { ok: false, error: 'unavailable' }
 
   try {
+    const publishableKey = stripePublishableKey()
     const session = await stripe().checkout.sessions.create(
       {
         mode: 'payment',
@@ -101,7 +107,7 @@ export async function startPackCheckout(input: CheckoutInput): Promise<CheckoutS
       { idempotencyKey: `pack-checkout:${parent.id}:${input.attemptId}` },
     )
     if (!session.client_secret) throw new Error('checkout session has no client secret')
-    return { ok: true, clientSecret: session.client_secret, sessionId: session.id }
+    return { ok: true, clientSecret: session.client_secret, sessionId: session.id, publishableKey }
   } catch (err) {
     console.error('Starting checkout failed', err instanceof Error ? err.message : err)
     return { ok: false, error: 'unavailable' }

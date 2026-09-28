@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import type Stripe from 'stripe'
 import { fulfilCheckoutSession, revokeRefundedPayment } from '@/lib/billing/fulfil'
-import { stripe } from '@/lib/stripe'
+import { STRIPE_LIVE, stripe, stripeWebhookSecret } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 async function handle(event: Stripe.Event) {
@@ -24,9 +24,11 @@ async function handle(event: Stripe.Event) {
 
 /** Stripe calls this after checkout and refunds. Every event is verified, then handled at most once. */
 export async function POST(request: NextRequest) {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET
-  if (!secret) {
-    console.error('STRIPE_WEBHOOK_SECRET is not set; ignoring Stripe webhook')
+  let secret: string
+  try {
+    secret = stripeWebhookSecret()
+  } catch (err) {
+    console.error('Stripe webhook is not configured:', err instanceof Error ? err.message : err)
     return NextResponse.json({ error: 'not_configured' }, { status: 500 })
   }
 
@@ -38,6 +40,10 @@ export async function POST(request: NextRequest) {
     event = stripe().webhooks.constructEvent(await request.text(), signature, secret)
   } catch {
     return NextResponse.json({ error: 'invalid_signature' }, { status: 400 })
+  }
+  if (event.livemode !== STRIPE_LIVE) {
+    console.warn('Ignoring Stripe event from the other mode', event.id, event.type)
+    return NextResponse.json({ received: true, ignored: 'wrong_mode' })
   }
 
   const admin = createAdminClient()
