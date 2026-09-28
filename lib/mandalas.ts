@@ -2,7 +2,7 @@ import type { PackId } from '@/lib/packs'
 import { listedTracedPages } from '@/lib/templates/traced'
 
 export type PetalShape = 'round' | 'almond' | 'pointy' | 'heart'
-export type Tier = 'free' | 'family'
+export type Tier = 'free' | 'paid'
 
 type Layer = {
   count: number
@@ -319,7 +319,7 @@ const DEFINITIONS: TemplateDefinition[] = [
   {
     id: 'starburst',
     name: 'Starburst',
-    tier: 'family',
+    tier: 'paid',
     versions: [
       {
         version: 1,
@@ -334,7 +334,7 @@ const DEFINITIONS: TemplateDefinition[] = [
   {
     id: 'clover',
     name: 'Clover',
-    tier: 'family',
+    tier: 'paid',
     versions: [
       {
         version: 1,
@@ -349,7 +349,7 @@ const DEFINITIONS: TemplateDefinition[] = [
   {
     id: 'dahlia',
     name: 'Dahlia',
-    tier: 'family',
+    tier: 'paid',
     versions: [
       {
         version: 1,
@@ -365,7 +365,7 @@ const DEFINITIONS: TemplateDefinition[] = [
   {
     id: 'snowbloom',
     name: 'Snowbloom',
-    tier: 'family',
+    tier: 'paid',
     versions: [
       {
         version: 1,
@@ -381,7 +381,7 @@ const DEFINITIONS: TemplateDefinition[] = [
   {
     id: 'poppy',
     name: 'Poppy',
-    tier: 'family',
+    tier: 'paid',
     versions: [
       {
         version: 1,
@@ -396,7 +396,7 @@ const DEFINITIONS: TemplateDefinition[] = [
   {
     id: 'garden',
     name: 'Garden',
-    tier: 'family',
+    tier: 'paid',
     versions: [
       {
         version: 1,

@@ -18,7 +18,7 @@ A calm, tablet-first coloring app for young children. Kids pick a flower mandala
 
 - **Parent gate** — a grown-up check guards every parent page for the current browser session.
 - **Sign in** — email and password or magic link (currently mocked).
-- **Plans and billing** — Free and Family plans with a mock checkout.
+- **Pricing** — picture packs bought once and kept, with bundles and a Standard unlock. There's no subscription. Payments run through Stripe Embedded Checkout; `/api/stripe/webhook` records each paid order and opens its packs (needs `STRIPE_WEBHOOK_SECRET`).
 - **Device settings** — motion and haptics toggles.
 - **Integration status** — shows which backend services are connected.
 
@@ -115,12 +115,10 @@ Settings (`lm:settings`) also live in `localStorage`. The parent gate (`lm:gate`
 
 ## Auth and billing
 
-Both services sit behind small client interfaces, currently backed by local mocks:
+- `lib/auth/client.ts` — parent sign-in with Supabase Auth (`useAuthState()`, `useParentUser()`).
+- `lib/entitlements.ts` — `useEntitlements()` reads the parent's `pack` rows from the `entitlements` table. Only the billing server writes them, so nothing on the device can unlock a picture.
 
-- `lib/auth/client.ts` — swap `mockAuthClient` for a Supabase implementation.
-- `lib/billing/client.ts` — swap `mockBillingClient` for a Paddle implementation.
-
-The rest of the app only uses `useParentUser()`, `useSubscription()`, and `useEntitlements()`, so replacing a mock doesn't touch the UI.
+Each purchase is a `pack` row. The table also accepts `membership` rows so a subscription could come back later, but the app ignores them today.
 
 ## Testing
 

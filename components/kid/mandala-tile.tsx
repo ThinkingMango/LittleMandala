@@ -7,6 +7,7 @@ import { MandalaArt } from '@/components/coloring/mandala-art'
 import { useDraftView } from '@/hooks/use-artwork-library'
 import { EMPTY_FILLS } from '@/lib/artwork/library'
 import { latestVersion, type Mandala } from '@/lib/mandalas'
+import { colorHref } from '@/lib/packs'
 import { cn } from '@/lib/utils'
 
 const tileClass =
@@ -24,7 +25,7 @@ export function MandalaTile({ mandala, locked }: { mandala: Mandala; locked: boo
 
   if (!locked) {
     return (
-      <Link href={`/color/${mandala.id}`} aria-label={`Color ${mandala.name}`} className={tileClass}>
+      <Link href={colorHref(mandala)} aria-label={`Color ${mandala.name}`} className={tileClass}>
         <MandalaArt version={version} fills={fills} className="size-full" />
       </Link>
     )

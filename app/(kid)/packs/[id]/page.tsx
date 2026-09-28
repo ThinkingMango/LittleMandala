@@ -6,23 +6,23 @@ import { DraftBadge } from '@/components/kid/draft-badge'
 import { PackIcon } from '@/components/kid/pack-icon'
 import { PackPictures } from '@/components/kid/pack-pictures'
 import { ParentEntryButton } from '@/components/kid/parent-entry-button'
-import { PACKS, findPack } from '@/lib/packs'
+import { KIDS_PACKS, findKidsPack } from '@/lib/packs'
 
 type Params = { params: Promise<{ id: string }> }
 
 export function generateStaticParams() {
-  return PACKS.map((pack) => ({ id: pack.id }))
+  return KIDS_PACKS.map((pack) => ({ id: pack.id }))
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params
-  const pack = findPack(id)
+  const pack = findKidsPack(id)
   return { title: pack ? pack.name : 'Pack not found' }
 }
 
 export default async function PackPage({ params }: Params) {
   const { id } = await params
-  const pack = findPack(id)
+  const pack = findKidsPack(id)
   if (!pack) notFound()
 
   return (

@@ -5,7 +5,7 @@ export function NotConnectedBadge({
   service,
   className,
 }: {
-  service: 'Supabase' | 'Paddle'
+  service: 'Supabase' | 'Stripe'
   className?: string
 }) {
   return (

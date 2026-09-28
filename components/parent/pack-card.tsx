@@ -15,9 +15,11 @@ type PackCardProps = {
   status: string | null
   selected: boolean
   onToggle: () => void
+  /** h4 when the card sits under a group heading such as "For you". */
+  headingLevel?: 'h3' | 'h4'
 }
 
-export function PackCard({ pack, status, selected, onToggle }: PackCardProps) {
+export function PackCard({ pack, status, selected, onToggle, headingLevel: Heading = 'h3' }: PackCardProps) {
   const pages = packPages(pack.id)
 
   return (
@@ -33,9 +35,9 @@ export function PackCard({ pack, status, selected, onToggle }: PackCardProps) {
         <PackIcon id={pack.id} className="size-12 shrink-0" />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-            <h3 id={`pack-${pack.id}`} className="text-xl font-black">
+            <Heading id={`pack-${pack.id}`} className="text-xl font-black">
               {pack.name}
-            </h3>
+            </Heading>
             {status ? (
               <span className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-bold text-foreground">
                 <Check className="size-3.5" strokeWidth={3} aria-hidden="true" />

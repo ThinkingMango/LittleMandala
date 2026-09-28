@@ -37,12 +37,12 @@ describe.each(published.map((m) => [m.pack, m] as const))('%s pack', (id, manife
     expect(unfinished.map((step) => `${step.title}: ${step.detail}`)).toEqual([])
   })
 
-  it('publishes the manifest pages, in order, as sold-separately Family pages', () => {
+  it('publishes the manifest pages, in order, as sold-separately paid pages', () => {
     const pack = PACK_BY_ID[id as PackId]
     expect(pages.map((p) => p.id)).toEqual(manifest.pages.map((p) => p.id))
     expect(pack).toMatchObject({ name: manifest.name, description: manifest.description, icon: manifest.icon, soldSeparately: true })
     expect(pack.artSource).toContain(`art/${id}/source`)
-    for (const page of pages) expect(page.tier, page.id).toBe('family')
+    for (const page of pages) expect(page.tier, page.id).toBe('paid')
   })
 
   it('shows each traced drawing as the latest version, with its source image and spoken names', () => {

@@ -173,6 +173,7 @@ export function ColoringScreen({ mandala }: { mandala: Mandala }) {
       />
       <DoneDialog
         moreHref={packHref(mandala.pack)}
+        savedNote={grownUps ? 'Your page is saved. Pick another page or keep coloring.' : undefined}
         open={done.open}
         onOpenChange={(open) => setDone((d) => ({ ...d, open }))}
         version={coloring.version}

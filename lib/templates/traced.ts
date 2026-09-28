@@ -53,14 +53,14 @@ export function traced(art: TracedArt): Drawing {
 }
 
 /**
- * A Family page in a traced pack. Earlier drawings for pages that shipped before their traced art stay
+ * A paid page in a traced pack. Earlier drawings for pages that shipped before their traced art stay
  * as the first versions, so saved artwork keeps opening on the version it was started on.
  */
 export function tracedPage(pack: PackId, art: TracedArt, earlier: readonly Drawing[] = []): TemplateDefinition {
   return {
     id: art.id,
     name: art.name,
-    tier: 'family',
+    tier: 'paid',
     pack,
     versions: [...earlier, traced(art)].map((drawing, index) => ({ version: index + 1, drawing })),
   }

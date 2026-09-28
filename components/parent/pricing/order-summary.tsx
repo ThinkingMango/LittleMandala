@@ -1,7 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { Sparkles } from 'lucide-react'
+import { Lock, Sparkles } from 'lucide-react'
+import type { CheckoutOutcome } from '@/app/actions/checkout'
+import { CheckoutDialog } from '@/components/parent/pricing/checkout-dialog'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { useParentUser } from '@/lib/auth/client'
 import {
@@ -19,6 +22,7 @@ type OrderSummaryProps = {
   withStandard: boolean
   /** How many packs the parent could still add, including those already chosen. */
   buyable: number
+  onPurchased: (outcome: CheckoutOutcome) => void
 }
 
 function groupOffers(offers: readonly PackOffer[]) {
@@ -31,8 +35,9 @@ function groupOffers(offers: readonly PackOffer[]) {
   return [...groups.values()]
 }
 
-export function OrderSummary({ packs, withStandard, buyable }: OrderSummaryProps) {
+export function OrderSummary({ packs, withStandard, buyable, onPurchased }: OrderSummaryProps) {
   const user = useParentUser()
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
   const quote = quotePacks(packs.length)
   const totalCents = quote.totalCents + (withStandard ? STANDARD_UNLOCK_CENTS : 0)
   const empty = packs.length === 0 && !withStandard
@@ -108,10 +113,27 @@ export function OrderSummary({ packs, withStandard, buyable }: OrderSummaryProps
         </Link>
       ) : (
         <div className="flex flex-col gap-2">
-          <Button disabled className="h-12 w-full rounded-full text-base font-bold">
+          <Button
+            disabled={empty}
+            onClick={() => setCheckoutOpen(true)}
+            className="h-12 w-full rounded-full text-base font-bold"
+          >
             {empty ? 'Buy' : `Buy for ${formatPrice(totalCents)}`}
           </Button>
-          <p className="text-center text-sm text-muted-foreground">Available once Paddle is connected.</p>
+          <p className="flex items-center justify-center gap-1.5 text-center text-sm text-muted-foreground">
+            <Lock className="size-3.5" aria-hidden="true" />
+            Secure one-time payment with Stripe
+          </p>
+          <CheckoutDialog
+            open={checkoutOpen}
+            onOpenChange={setCheckoutOpen}
+            order={{ packIds: packs.map((pack) => pack.id), withStandard }}
+            totalLabel={formatPrice(totalCents)}
+            onFinished={(outcome) => {
+              setCheckoutOpen(false)
+              onPurchased(outcome)
+            }}
+          />
         </div>
       )}
     </aside>

@@ -8,6 +8,7 @@ import { useArtworkLibrary } from '@/hooks/use-artwork-library'
 import type { Artwork } from '@/lib/artwork/library'
 import { useHydrated } from '@/lib/local-store'
 import { getMandala } from '@/lib/mandalas'
+import { isGrownUpPage } from '@/lib/packs'
 
 export function MyGarden() {
   const hydrated = useHydrated()
@@ -15,7 +16,12 @@ export function MyGarden() {
   const [target, setTarget] = useState<Artwork | null>(null)
   const [open, setOpen] = useState(false)
 
-  if (!hydrated || state.gallery.length === 0) return null
+  const artworks = state.gallery.filter((artwork) => {
+    const mandala = getMandala(artwork.templateId)
+    return !mandala || !isGrownUpPage(mandala)
+  })
+
+  if (!hydrated || artworks.length === 0) return null
 
   const targetVersion = target && library.templates.version(target.templateId, target.templateVersion)
 
@@ -25,7 +31,7 @@ export function MyGarden() {
         My garden
       </h2>
       <ul className="grid grid-cols-3 gap-5 sm:grid-cols-4 lg:grid-cols-6">
-        {state.gallery.map((artwork) => {
+        {artworks.map((artwork) => {
           const version = library.templates.version(artwork.templateId, artwork.templateVersion)
           if (!version) return null
           const name = getMandala(artwork.templateId)?.name ?? 'Flower'

@@ -92,6 +92,36 @@ describe('artwork library', () => {
     expect(app.getState().gallery.map((a) => a.id)).toEqual([...ids].reverse())
   })
 
+  it('reports a refused write until the next write succeeds', () => {
+    const device = createDevice()
+    const app = openApp(device)
+    expect(app.didLastWriteFail()).toBe(false)
+
+    const setItem = device.storage.setItem
+    device.storage.setItem = () => {
+      throw new DOMException('Storage is full', 'QuotaExceededError')
+    }
+    expect(app.fillRegion('rose', 'center', 'red')).toBeNull()
+    expect(app.didLastWriteFail()).toBe(true)
+
+    device.storage.setItem = setItem
+    expect(app.fillRegion('rose', 'center', 'red')).not.toBeNull()
+    expect(app.didLastWriteFail()).toBe(false)
+  })
+
+  it('finds full storage after a reload, when no write has failed yet', () => {
+    const device = createDevice()
+    expect(openApp(device).isStorageFull()).toBe(false)
+
+    device.storage.setItem = () => {
+      throw new DOMException('Storage is full', 'QuotaExceededError')
+    }
+    const reopened = openApp(device)
+    expect(reopened.didLastWriteFail()).toBe(false)
+    expect(reopened.isStorageFull()).toBe(true)
+    expect(device.data.has('lm:space-check')).toBe(false)
+  })
+
   it('does not create an artwork just by opening a flower', () => {
     const device = createDevice()
     const app = openApp(device)

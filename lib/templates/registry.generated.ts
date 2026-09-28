@@ -73,6 +73,74 @@ import zenMandalasPeonyMedallion from '@/lib/templates/zen-mandalas/peony-medall
 import zenMandalasRoseWindow from '@/lib/templates/zen-mandalas/rose-window.json'
 import zenMandalasTropicalLeaves from '@/lib/templates/zen-mandalas/tropical-leaves.json'
 import zenMandalasWildflowerRing from '@/lib/templates/zen-mandalas/wildflower-ring.json'
+import zenMandalasDahliaBurst from '@/lib/templates/zen-mandalas/dahlia-burst.json'
+import zenMandalasIrisCrown from '@/lib/templates/zen-mandalas/iris-crown.json'
+import zenMandalasPoppyCircle from '@/lib/templates/zen-mandalas/poppy-circle.json'
+import zenMandalasLavenderOlive from '@/lib/templates/zen-mandalas/lavender-olive.json'
+import flowersGardenSunflowerSmile from '@/lib/templates/flowers-garden/sunflower-smile.json'
+import flowersGardenDaisyTrio from '@/lib/templates/flowers-garden/daisy-trio.json'
+import flowersGardenRoseFriend from '@/lib/templates/flowers-garden/rose-friend.json'
+import flowersGardenWateringCan from '@/lib/templates/flowers-garden/watering-can.json'
+import flowersGardenLadybugLeaf from '@/lib/templates/flowers-garden/ladybug-leaf.json'
+import flowersGardenPotTrio from '@/lib/templates/flowers-garden/pot-trio.json'
+import flowersGardenFrogLily from '@/lib/templates/flowers-garden/frog-lily.json'
+import flowersGardenGardenGate from '@/lib/templates/flowers-garden/garden-gate.json'
+import flowersGardenHummingbirdSip from '@/lib/templates/flowers-garden/hummingbird-sip.json'
+import flowersGardenBirdhouseBloom from '@/lib/templates/flowers-garden/birdhouse-bloom.json'
+import flowersGardenBouquetBow from '@/lib/templates/flowers-garden/bouquet-bow.json'
+import flowersGardenDandelionPuff from '@/lib/templates/flowers-garden/dandelion-puff.json'
+import flowersGardenCaterpillarClimb from '@/lib/templates/flowers-garden/caterpillar-climb.json'
+import flowersGardenFlowerWheelbarrow from '@/lib/templates/flowers-garden/flower-wheelbarrow.json'
+import flowersGardenPansyFace from '@/lib/templates/flowers-garden/pansy-face.json'
+import flowersGardenRainbowFlowers from '@/lib/templates/flowers-garden/rainbow-flowers.json'
+import oceanFriendsTwoWalrusWave from '@/lib/templates/ocean-friends-two/walrus-wave.json'
+import oceanFriendsTwoNarwhalSwirl from '@/lib/templates/ocean-friends-two/narwhal-swirl.json'
+import oceanFriendsTwoManateeMunch from '@/lib/templates/ocean-friends-two/manatee-munch.json'
+import oceanFriendsTwoLobsterHello from '@/lib/templates/ocean-friends-two/lobster-hello.json'
+import oceanFriendsTwoPuffinRock from '@/lib/templates/ocean-friends-two/puffin-rock.json'
+import oceanFriendsTwoHermitCrabShell from '@/lib/templates/ocean-friends-two/hermit-crab-shell.json'
+import oceanFriendsTwoAngelfishReef from '@/lib/templates/ocean-friends-two/angelfish-reef.json'
+import oceanFriendsTwoNautilusSpiral from '@/lib/templates/ocean-friends-two/nautilus-spiral.json'
+import oceanFriendsTwoSunfishDrift from '@/lib/templates/ocean-friends-two/sunfish-drift.json'
+import oceanFriendsTwoSubmarinePeek from '@/lib/templates/ocean-friends-two/submarine-peek.json'
+import oceanFriendsTwoBelugaBubbles from '@/lib/templates/ocean-friends-two/beluga-bubbles.json'
+import oceanFriendsTwoOrcaSplash from '@/lib/templates/ocean-friends-two/orca-splash.json'
+import oceanFriendsTwoSeagullSandcastle from '@/lib/templates/ocean-friends-two/seagull-sandcastle.json'
+import oceanFriendsTwoShrimpCurl from '@/lib/templates/ocean-friends-two/shrimp-curl.json'
+import oceanFriendsTwoFlyingFish from '@/lib/templates/ocean-friends-two/flying-fish.json'
+import oceanFriendsTwoPelicanPost from '@/lib/templates/ocean-friends-two/pelican-post.json'
+import safariGardenTwoBearCub from '@/lib/templates/safari-garden-two/bear-cub.json'
+import safariGardenTwoPandaBamboo from '@/lib/templates/safari-garden-two/panda-bamboo.json'
+import safariGardenTwoKoalaHug from '@/lib/templates/safari-garden-two/koala-hug.json'
+import safariGardenTwoKangarooPouch from '@/lib/templates/safari-garden-two/kangaroo-pouch.json'
+import safariGardenTwoCamelDunes from '@/lib/templates/safari-garden-two/camel-dunes.json'
+import safariGardenTwoCrocodileGrin from '@/lib/templates/safari-garden-two/crocodile-grin.json'
+import safariGardenTwoSlothHang from '@/lib/templates/safari-garden-two/sloth-hang.json'
+import safariGardenTwoLemurTail from '@/lib/templates/safari-garden-two/lemur-tail.json'
+import safariGardenTwoPeacockFan from '@/lib/templates/safari-garden-two/peacock-fan.json'
+import safariGardenTwoRedPandaNap from '@/lib/templates/safari-garden-two/red-panda-nap.json'
+import safariGardenTwoTreeFrogLeaf from '@/lib/templates/safari-garden-two/tree-frog-leaf.json'
+import safariGardenTwoOkapiStripes from '@/lib/templates/safari-garden-two/okapi-stripes.json'
+import safariGardenTwoArmadilloRoll from '@/lib/templates/safari-garden-two/armadillo-roll.json'
+import safariGardenTwoButterflyBloom from '@/lib/templates/safari-garden-two/butterfly-bloom.json'
+import safariGardenTwoFennecFox from '@/lib/templates/safari-garden-two/fennec-fox.json'
+import safariGardenTwoWarthogPuddle from '@/lib/templates/safari-garden-two/warthog-puddle.json'
+import christmasGardenTwoSantaWave from '@/lib/templates/christmas-garden-two/santa-wave.json'
+import christmasGardenTwoElfWrapping from '@/lib/templates/christmas-garden-two/elf-wrapping.json'
+import christmasGardenTwoCandyCaneBow from '@/lib/templates/christmas-garden-two/candy-cane-bow.json'
+import christmasGardenTwoCandleTrio from '@/lib/templates/christmas-garden-two/candle-trio.json'
+import christmasGardenTwoMittenPair from '@/lib/templates/christmas-garden-two/mitten-pair.json'
+import christmasGardenTwoOwlHat from '@/lib/templates/christmas-garden-two/owl-hat.json'
+import christmasGardenTwoTeddyGift from '@/lib/templates/christmas-garden-two/teddy-gift.json'
+import christmasGardenTwoNutcrackerFriend from '@/lib/templates/christmas-garden-two/nutcracker-friend.json'
+import christmasGardenTwoCookiesMilk from '@/lib/templates/christmas-garden-two/cookies-milk.json'
+import christmasGardenTwoSnowBunny from '@/lib/templates/christmas-garden-two/snow-bunny.json'
+import christmasGardenTwoKittenBauble from '@/lib/templates/christmas-garden-two/kitten-bauble.json'
+import christmasGardenTwoToyTrain from '@/lib/templates/christmas-garden-two/toy-train.json'
+import christmasGardenTwoRockingHorse from '@/lib/templates/christmas-garden-two/rocking-horse.json'
+import christmasGardenTwoWinterCabin from '@/lib/templates/christmas-garden-two/winter-cabin.json'
+import christmasGardenTwoToyDrum from '@/lib/templates/christmas-garden-two/toy-drum.json'
+import christmasGardenTwoSnowflakeBloom from '@/lib/templates/christmas-garden-two/snowflake-bloom.json'
 
 const DRAFTS_LISTED = process.env.NODE_ENV === 'development'
 
@@ -180,7 +248,7 @@ export const TRACED_PACK_SOURCES = [
   {
     id: 'zen-mandalas',
     name: 'Zen Mandalas',
-    description: 'Eight detailed mandalas for grown-ups to color: rings of lotus petals, ferns, cherry blossom, ginkgo, peonies, roses, tropical leaves and wildflowers, with finer areas and lighter outlines than the children\'s packs.',
+    description: 'Twelve detailed mandalas for grown-ups to color: rings of lotus petals, ferns, cherry blossom, ginkgo, peonies, roses, tropical leaves, wildflowers, dahlias, irises, poppies, and lavender with olive, with finer areas and lighter outlines than the children\'s packs.',
     icon: 'leaf',
     status: 'draft',
     audience: 'grown-ups',
@@ -194,7 +262,111 @@ export const TRACED_PACK_SOURCES = [
         zenMandalasRoseWindow,
         zenMandalasTropicalLeaves,
         zenMandalasWildflowerRing,
+        zenMandalasDahliaBurst,
+        zenMandalasIrisCrown,
+        zenMandalasPoppyCircle,
+        zenMandalasLavenderOlive,
       ]
       : [],
+  },
+  {
+    id: 'flowers-garden',
+    name: 'Flowers Garden',
+    description: 'Sixteen blooming pictures: a smiling sunflower, three daisies, a rose, a watering can, a ladybug, flower pots, a frog on a lily pad, a garden gate, a hummingbird, a birdhouse, a bouquet, a dandelion, a caterpillar, a wheelbarrow, a pansy and a rainbow.',
+    icon: 'sprout',
+    status: 'published',
+    pages: [
+      flowersGardenSunflowerSmile,
+      flowersGardenDaisyTrio,
+      flowersGardenRoseFriend,
+      flowersGardenWateringCan,
+      flowersGardenLadybugLeaf,
+      flowersGardenPotTrio,
+      flowersGardenFrogLily,
+      flowersGardenGardenGate,
+      flowersGardenHummingbirdSip,
+      flowersGardenBirdhouseBloom,
+      flowersGardenBouquetBow,
+      flowersGardenDandelionPuff,
+      flowersGardenCaterpillarClimb,
+      flowersGardenFlowerWheelbarrow,
+      flowersGardenPansyFace,
+      flowersGardenRainbowFlowers,
+    ],
+  },
+  {
+    id: 'ocean-friends-two',
+    name: 'Ocean Friends 2',
+    description: 'Sixteen more sea friends: a walrus, a narwhal, a manatee, a lobster, a puffin, a hermit crab, an angelfish, a nautilus, a sunfish, a little submarine, a beluga, an orca, a seagull with a sandcastle, a shrimp, a flying fish and a pelican.',
+    icon: 'shell',
+    status: 'published',
+    pages: [
+      oceanFriendsTwoWalrusWave,
+      oceanFriendsTwoNarwhalSwirl,
+      oceanFriendsTwoManateeMunch,
+      oceanFriendsTwoLobsterHello,
+      oceanFriendsTwoPuffinRock,
+      oceanFriendsTwoHermitCrabShell,
+      oceanFriendsTwoAngelfishReef,
+      oceanFriendsTwoNautilusSpiral,
+      oceanFriendsTwoSunfishDrift,
+      oceanFriendsTwoSubmarinePeek,
+      oceanFriendsTwoBelugaBubbles,
+      oceanFriendsTwoOrcaSplash,
+      oceanFriendsTwoSeagullSandcastle,
+      oceanFriendsTwoShrimpCurl,
+      oceanFriendsTwoFlyingFish,
+      oceanFriendsTwoPelicanPost,
+    ],
+  },
+  {
+    id: 'safari-garden-two',
+    name: 'Safari Garden 2',
+    description: 'Sixteen more wild friends among big flowers: a bear cub, a panda, a koala, a kangaroo, a camel, a crocodile, a sloth, a lemur, a peacock, a red panda, a tree frog, an okapi, an armadillo, a butterfly, a fennec fox and a warthog.',
+    icon: 'bird',
+    status: 'published',
+    pages: [
+      safariGardenTwoBearCub,
+      safariGardenTwoPandaBamboo,
+      safariGardenTwoKoalaHug,
+      safariGardenTwoKangarooPouch,
+      safariGardenTwoCamelDunes,
+      safariGardenTwoCrocodileGrin,
+      safariGardenTwoSlothHang,
+      safariGardenTwoLemurTail,
+      safariGardenTwoPeacockFan,
+      safariGardenTwoRedPandaNap,
+      safariGardenTwoTreeFrogLeaf,
+      safariGardenTwoOkapiStripes,
+      safariGardenTwoArmadilloRoll,
+      safariGardenTwoButterflyBloom,
+      safariGardenTwoFennecFox,
+      safariGardenTwoWarthogPuddle,
+    ],
+  },
+  {
+    id: 'christmas-garden-two',
+    name: 'Christmas Garden 2',
+    description: 'Sixteen more Christmas pictures: Santa, an elf, candy canes, candles, mittens, an owl in a hat, a teddy in a gift box, a nutcracker, cookies and milk, a snow bunny, a kitten with a bauble, a toy train, a rocking horse, a snowy cabin, a toy drum and a big snowflake.',
+    icon: 'snowflake',
+    status: 'published',
+    pages: [
+      christmasGardenTwoSantaWave,
+      christmasGardenTwoElfWrapping,
+      christmasGardenTwoCandyCaneBow,
+      christmasGardenTwoCandleTrio,
+      christmasGardenTwoMittenPair,
+      christmasGardenTwoOwlHat,
+      christmasGardenTwoTeddyGift,
+      christmasGardenTwoNutcrackerFriend,
+      christmasGardenTwoCookiesMilk,
+      christmasGardenTwoSnowBunny,
+      christmasGardenTwoKittenBauble,
+      christmasGardenTwoToyTrain,
+      christmasGardenTwoRockingHorse,
+      christmasGardenTwoWinterCabin,
+      christmasGardenTwoToyDrum,
+      christmasGardenTwoSnowflakeBloom,
+    ],
   },
 ] as const satisfies readonly TracedPackSource[]
