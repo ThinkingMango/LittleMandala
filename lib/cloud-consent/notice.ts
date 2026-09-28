@@ -6,6 +6,11 @@ const SAFETY_MARGIN_MS = 30 * 1000
 
 export type NoticeSection = { heading: string | null; paragraphs: string[] }
 
+/** The exact sentence the parent ticks. The permission record PDF quotes it word for word. */
+export function agreementStatement(noticeVersion: number) {
+  return `I am this child’s parent or legal guardian. I have read notice version ${noticeVersion} above and I agree to cloud saving as it describes.`
+}
+
 /** The approved notice is stored as "## Heading" lines followed by one paragraph per line. */
 export function parseNoticeSections(body: string): NoticeSection[] {
   const sections: NoticeSection[] = []

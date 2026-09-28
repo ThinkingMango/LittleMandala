@@ -75,7 +75,8 @@ export default function PrivacyPage() {
             </>,
             <>
               <strong>Your permission record.</strong> When you turn on cloud saving, we record the date, the version of the notice you
-              agreed to, and that you confirmed with a recent sign-in.
+              agreed to, and that you confirmed with a recent sign-in. You can download this record as a PDF, with the notice
+              you agreed to, from the cloud saving page in the parent area.
             </>,
             <>
               <strong>Messages you send us.</strong> If you email support, we keep the conversation so we can help you.

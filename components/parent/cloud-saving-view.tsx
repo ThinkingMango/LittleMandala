@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Cloud, CloudOff, LogIn, RotateCw } from 'lucide-react'
 import { CloudSyncStatus } from '@/components/parent/cloud-sync-status'
 import { ConsentNoticeArticle, NoticeSections, formatConsentDate } from '@/components/parent/consent-notice'
+import { ConsentReceiptButton } from '@/components/parent/consent-receipt-button'
 import { FreshSignInPrompt } from '@/components/parent/fresh-sign-in-prompt'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
@@ -27,7 +28,7 @@ import {
   type ActiveConsent,
   type ConsentNotice,
 } from '@/lib/cloud-consent/client'
-import { freshSignInRemainingMs } from '@/lib/cloud-consent/notice'
+import { agreementStatement, freshSignInRemainingMs } from '@/lib/cloud-consent/notice'
 import { cloudSync } from '@/lib/cloud-sync/client'
 import { cn } from '@/lib/utils'
 
@@ -253,9 +254,7 @@ function ConsentStep({ email, notice, outdatedConsent, remainingMs, signedInMinu
             onChange={(e) => setAgreed(e.target.checked)}
             className="mt-0.5 size-5 shrink-0 cursor-pointer accent-primary"
           />
-          <span className="leading-relaxed">
-            {`I am this child’s parent or legal guardian. I have read notice version ${notice.version} above and I agree to cloud saving as it describes.`}
-          </span>
+          <span className="leading-relaxed">{agreementStatement(notice.version)}</span>
         </label>
 
         {fresh ? (
@@ -355,14 +354,13 @@ function CloudSavingOn({ userId, email, notice, consent, remainingMs, now, onCha
           </div>
         </div>
         <CloudSyncStatus now={now} />
-        <Button
-          variant="outline"
-          onClick={requestTurnOff}
-          className="h-11 self-start rounded-full px-5 font-bold"
-        >
-          <CloudOff data-icon="inline-start" />
-          Turn off cloud saving
-        </Button>
+        <div className="flex flex-wrap items-start gap-3">
+          <ConsentReceiptButton />
+          <Button variant="outline" onClick={requestTurnOff} className="h-11 rounded-full px-5 font-bold">
+            <CloudOff data-icon="inline-start" />
+            Turn off cloud saving
+          </Button>
+        </div>
         {needsFreshLink && (
           <FreshSignInPrompt email={email} action="turn off cloud saving" returnPath={RETURN_PATH} />
         )}
