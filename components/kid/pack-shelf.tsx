@@ -8,7 +8,7 @@ import { PackIcon } from '@/components/kid/pack-icon'
 import { EMPTY_FILLS } from '@/lib/artwork/library'
 import { useEntitlements } from '@/lib/entitlements'
 import { latestVersion, type Mandala } from '@/lib/mandalas'
-import { PACKS, packHref, packPages, type Pack } from '@/lib/packs'
+import { KIDS_PACKS, packHref, packPages, type Pack } from '@/lib/packs'
 import { cn } from '@/lib/utils'
 
 /** A few pages from across the pack, so the cover shows its range rather than only the first pictures. */
@@ -70,7 +70,7 @@ function PackCover({ pack }: { pack: Pack }) {
 export function PackShelf() {
   return (
     <ul className="grid gap-6 md:grid-cols-2 md:gap-8" aria-label="Picture packs">
-      {PACKS.map((pack) => (
+      {KIDS_PACKS.map((pack) => (
         <li key={pack.id}>
           <PackCover pack={pack} />
         </li>

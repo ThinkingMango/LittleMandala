@@ -112,9 +112,19 @@ type DoneDialogProps = {
   onFinish: () => void
   /** Where "More pictures" goes: the pack this picture came from. */
   moreHref: string
+  /** Read to screen readers when the dialog opens. */
+  savedNote?: string
 }
 
-export function DoneDialog({ open, onOpenChange, version, fills, onFinish, moreHref }: DoneDialogProps) {
+export function DoneDialog({
+  open,
+  onOpenChange,
+  version,
+  fills,
+  onFinish,
+  moreHref,
+  savedNote = 'Your picture is saved in your garden. Pick another picture or keep coloring.',
+}: DoneDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={false} className={dialogShell}>
@@ -137,9 +147,7 @@ export function DoneDialog({ open, onOpenChange, version, fills, onFinish, moreH
           />
         </div>
         <DialogTitle className="text-4xl font-black text-balance">Beautiful!</DialogTitle>
-        <DialogDescription className="sr-only">
-          Your picture is saved in your garden. Pick another picture or keep coloring.
-        </DialogDescription>
+        <DialogDescription className="sr-only">{savedNote}</DialogDescription>
         <div className="flex w-full flex-col gap-4 sm:flex-row">
           <button
             type="button"

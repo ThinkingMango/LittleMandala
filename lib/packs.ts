@@ -58,20 +58,37 @@ export const PACK_BY_ID = Object.freeze(
   Object.fromEntries([STANDARD, ...TRACED_PACKS.map(tracedPack)].map((pack) => [pack.id, pack])),
 ) as Readonly<Record<PackId, Pack>>
 
-/** The packs children see, in shelf order. */
+/** Every listed pack, for both audiences, in shelf order. */
 export const PACKS: readonly Pack[] = Object.freeze([STANDARD, ...LISTED_TRACED_PACKS.map((p) => PACK_BY_ID[p.id])])
+
+/** The packs on the kids' shelf. */
+export const KIDS_PACKS: readonly Pack[] = Object.freeze(PACKS.filter((p) => p.audience === 'children'))
+
+/** Packs made for adults. They are listed and colored only behind the parent gate. */
+export const GROWN_UP_PACKS: readonly Pack[] = Object.freeze(PACKS.filter((p) => p.audience === 'grown-ups'))
+
+export const GROWN_UPS_HREF = '/parent/grown-ups'
+
+export function isGrownUpPage(mandala: Pick<Mandala, 'pack'>) {
+  return PACK_BY_ID[mandala.pack].audience === 'grown-ups'
+}
 
 /** Published packs a parent can buy once, outside the Family plan. */
 export const SOLD_PACKS: readonly Pack[] = Object.freeze(
   PACKS.filter((p) => p.soldSeparately && p.status === 'published'),
 )
 
-export function findPack(id: string): Pack | undefined {
-  return PACKS.find((p) => p.id === id)
+export function findKidsPack(id: string): Pack | undefined {
+  return KIDS_PACKS.find((p) => p.id === id)
 }
 
 export function packHref(id: PackId) {
-  return `/packs/${id}`
+  return PACK_BY_ID[id].audience === 'grown-ups' ? GROWN_UPS_HREF : `/packs/${id}`
+}
+
+/** Grown-up pages open under /parent so the gate guards them; the kids' area never links there. */
+export function colorHref(mandala: Pick<Mandala, 'id' | 'pack'>) {
+  return isGrownUpPage(mandala) ? `/parent/color/${mandala.id}` : `/color/${mandala.id}`
 }
 
 /** The published pages in a pack. Counts shown to parents always come from here. */

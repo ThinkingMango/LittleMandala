@@ -1,17 +1,12 @@
 import type { Metadata } from 'next'
 import { GateGuard } from '@/components/parent/gate-guard'
-import { ParentHeader } from '@/components/parent/parent-header'
 
 export const metadata: Metadata = {
   title: 'Grown-ups',
   robots: { index: false },
 }
 
+/** Everything under /parent is behind the gate. The header lives in (area), so grown-up coloring can be full screen. */
 export default function ParentLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex min-h-dvh flex-col bg-secondary">
-      <ParentHeader />
-      <GateGuard>{children}</GateGuard>
-    </div>
-  )
+  return <GateGuard>{children}</GateGuard>
 }
