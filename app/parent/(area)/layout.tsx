@@ -1,3 +1,4 @@
+import { InfoFooter } from '@/components/info/info-footer'
 import { ParentHeader } from '@/components/parent/parent-header'
 
 export default function ParentAreaLayout({ children }: { children: React.ReactNode }) {
@@ -5,6 +6,7 @@ export default function ParentAreaLayout({ children }: { children: React.ReactNo
     <div className="flex min-h-dvh flex-col bg-secondary">
       <ParentHeader />
       {children}
+      <InfoFooter />
     </div>
   )
 }

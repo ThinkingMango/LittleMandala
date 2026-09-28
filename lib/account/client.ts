@@ -13,7 +13,7 @@ const MESSAGES: Record<DeletionErrorCode, string> = {
   recent_sign_in_required: 'For your child’s safety, please confirm with a fresh email link first.',
   not_signed_in: 'Please sign in again to delete your account.',
   confirmation_mismatch: 'The email address you typed doesn’t match this account.',
-  active_plan: 'Your Family plan is still active. Cancel it first, then delete your account.',
+  active_plan: 'A subscription on this account is still active. Email support@smartmango.ai and we’ll cancel it first.',
   forbidden: 'That request was blocked. Please reload the page and try again.',
   unknown: 'Your account wasn’t deleted. Please check your connection and try again.',
 }

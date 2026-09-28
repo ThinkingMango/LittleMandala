@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Cloud, CloudOff, LogIn, RotateCw } from 'lucide-react'
 import { CloudSyncStatus } from '@/components/parent/cloud-sync-status'
 import { ConsentNoticeArticle, NoticeSections, formatConsentDate } from '@/components/parent/consent-notice'
+import { ConsentReceiptButton } from '@/components/parent/consent-receipt-button'
 import { FreshSignInPrompt } from '@/components/parent/fresh-sign-in-prompt'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
@@ -27,7 +28,7 @@ import {
   type ActiveConsent,
   type ConsentNotice,
 } from '@/lib/cloud-consent/client'
-import { freshSignInRemainingMs } from '@/lib/cloud-consent/notice'
+import { NOTICE_CHANGES, agreementStatement, freshSignInRemainingMs } from '@/lib/cloud-consent/notice'
 import { cloudSync } from '@/lib/cloud-sync/client'
 import { cn } from '@/lib/utils'
 
@@ -158,11 +159,12 @@ function SignedInCloudSaving({ userId, email }: { userId: string; email: string 
         </div>
       )}
 
-      {data.consent?.noticeVersion === data.notice.version ? (
+      {data.consent && data.agreedNotice ? (
         <CloudSavingOn
           userId={userId}
           email={email}
-          notice={data.notice}
+          notice={data.agreedNotice}
+          latestNotice={data.notice}
           consent={data.consent}
           remainingMs={remainingMs}
           now={now}
@@ -232,7 +234,7 @@ function ConsentStep({ email, notice, outdatedConsent, remainingMs, signedInMinu
             </h2>
             <p className="leading-relaxed text-muted-foreground text-pretty">
               {outdatedConsent
-                ? `You agreed to version ${outdatedConsent.noticeVersion}. Please read version ${notice.version} below and confirm to keep cloud saving on.`
+                ? `You agreed to version ${outdatedConsent.noticeVersion}, which has been replaced. Cloud saving is paused until you read version ${notice.version} below and agree to it.`
                 : 'Pictures your child colors stay on this device only. Read the notice below to decide.'}
             </p>
           </div>
@@ -253,9 +255,7 @@ function ConsentStep({ email, notice, outdatedConsent, remainingMs, signedInMinu
             onChange={(e) => setAgreed(e.target.checked)}
             className="mt-0.5 size-5 shrink-0 cursor-pointer accent-primary"
           />
-          <span className="leading-relaxed">
-            {`I am this child’s parent or legal guardian. I have read notice version ${notice.version} above and I agree to cloud saving as it describes.`}
-          </span>
+          <span className="leading-relaxed">{agreementStatement(notice.version)}</span>
         </label>
 
         {fresh ? (
@@ -290,13 +290,15 @@ type CloudSavingOnProps = {
   userId: string
   email: string
   notice: ConsentNotice
+  latestNotice: ConsentNotice
   consent: ActiveConsent
   remainingMs: number
   now: number
   onChanged: (flash: Flash | null) => Promise<void>
 }
 
-function CloudSavingOn({ userId, email, notice, consent, remainingMs, now, onChanged }: CloudSavingOnProps) {
+function CloudSavingOn({ userId, email, notice, latestNotice, consent, remainingMs, now, onChanged }: CloudSavingOnProps) {
+  const newerNotice = latestNotice.version > notice.version ? latestNotice : null
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [needsFreshLink, setNeedsFreshLink] = useState(false)
   const [pending, setPending] = useState(false)
@@ -355,14 +357,13 @@ function CloudSavingOn({ userId, email, notice, consent, remainingMs, now, onCha
           </div>
         </div>
         <CloudSyncStatus now={now} />
-        <Button
-          variant="outline"
-          onClick={requestTurnOff}
-          className="h-11 self-start rounded-full px-5 font-bold"
-        >
-          <CloudOff data-icon="inline-start" />
-          Turn off cloud saving
-        </Button>
+        <div className="flex flex-wrap items-start gap-3">
+          <ConsentReceiptButton />
+          <Button variant="outline" onClick={requestTurnOff} className="h-11 rounded-full px-5 font-bold">
+            <CloudOff data-icon="inline-start" />
+            Turn off cloud saving
+          </Button>
+        </div>
         {needsFreshLink && (
           <FreshSignInPrompt email={email} action="turn off cloud saving" returnPath={RETURN_PATH} />
         )}
@@ -372,6 +373,25 @@ function CloudSavingOn({ userId, email, notice, consent, remainingMs, now, onCha
           </p>
         )}
       </section>
+
+      {newerNotice && (
+        <section className={PANEL} aria-labelledby="notice-updated-heading">
+          <div className="flex flex-col gap-2">
+            <h2 id="notice-updated-heading" className="text-xl font-extrabold">
+              {`We updated the notice to version ${newerNotice.version}`}
+            </h2>
+            <p className="leading-relaxed text-muted-foreground text-pretty">
+              {`${NOTICE_CHANGES[newerNotice.version] ?? 'The wording has changed.'} Your permission under version ${notice.version} stays in place, so there’s nothing you need to do.`}
+            </p>
+          </div>
+          <details className="rounded-2xl bg-secondary p-5">
+            <summary className="cursor-pointer font-bold">{`Read version ${newerNotice.version}`}</summary>
+            <div className="mt-5">
+              <NoticeSections body={newerNotice.body} />
+            </div>
+          </details>
+        </section>
+      )}
 
       <details className="group rounded-3xl border bg-card p-6 md:p-8">
         <summary className="cursor-pointer font-extrabold">
