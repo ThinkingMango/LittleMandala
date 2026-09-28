@@ -43,11 +43,21 @@ function rememberDestination(next: string) {
   document.cookie = `${AFTER_SIGN_IN_COOKIE}=${encodeURIComponent(safeNext(next))}; Path=/; Max-Age=3600; SameSite=Lax${secure}`
 }
 
+const TOO_MANY_EMAILS =
+  'We’ve sent too many sign-in emails for now. Check your inbox for an earlier link, or try again in about an hour.'
+
+function describeRateLimit(error: AuthError) {
+  // Supabase's per-address cooldown says "only request this after 42 seconds"; the project-wide cap doesn't.
+  const seconds = /after (\d+) seconds?/i.exec(error.message)?.[1]
+  if (seconds) return `Please wait ${seconds} seconds before asking for another sign-in email.`
+  return TOO_MANY_EMAILS
+}
+
 function describeEmailLinkError(error: AuthError) {
   switch (error.code) {
     case 'over_email_send_rate_limit':
     case 'over_request_rate_limit':
-      return 'Too many sign-in emails were requested. Please wait a few minutes, then try again.'
+      return describeRateLimit(error)
     case 'email_address_invalid':
       return 'That email address can’t receive sign-in links. Please use a different one.'
     case 'email_address_not_authorized':
@@ -56,9 +66,7 @@ function describeEmailLinkError(error: AuthError) {
     case 'otp_disabled':
       return 'New parent accounts aren’t being accepted right now.'
     default:
-      if (error.status === 429) {
-        return 'Too many sign-in emails were requested. Please wait a few minutes, then try again.'
-      }
+      if (error.status === 429) return describeRateLimit(error)
       console.error('Email link request failed', error.code ?? error.status)
       return 'We couldn’t send the sign-in email. Please try again in a moment.'
   }
