@@ -2,7 +2,6 @@
 
 A calm, tablet-first coloring app for young children. Kids pick a flower mandala, tap petals to fill them with color, and keep finished pictures in their own garden. A separate, gated area lets grown-ups manage the account, plan, and device settings.
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_itfQ1kESX1znDOX3l3RfhJqAsQ1q)
 
 ## Features
 
