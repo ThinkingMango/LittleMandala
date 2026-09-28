@@ -17,6 +17,13 @@ type EntitlementRow = {
 const NO_PACKS: ReadonlySet<string> = new Set()
 
 /**
+ * `starts_at` is stamped by the database clock and `now` comes from the device. A device running a
+ * second behind would treat a pack bought a moment ago as not started yet, and keep it locked until
+ * the next reload.
+ */
+export const CLOCK_SKEW_MS = 5 * 60_000
+
+/**
  * Folds the parent's entitlement rows into the packs that are open at `now`. Only `pack` rows count:
  * the database still accepts `membership` rows so a subscription could return later, but none opens
  * anything today.
@@ -26,7 +33,7 @@ export function activeRights(rows: readonly EntitlementRow[], now: number): Righ
     rows.flatMap((row) =>
       row.scope === 'pack' &&
       row.pack_id &&
-      Date.parse(row.starts_at) <= now &&
+      Date.parse(row.starts_at) <= now + CLOCK_SKEW_MS &&
       (!row.ends_at || Date.parse(row.ends_at) > now)
         ? [row.pack_id]
         : [],

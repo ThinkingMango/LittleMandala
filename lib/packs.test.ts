@@ -41,6 +41,11 @@ describe('pack rights', () => {
     expect(canColor(ocean, future)).toBe(false)
   })
 
+  it('opens a pack bought a moment ago on a device whose clock runs a little behind', () => {
+    const justBought = { ...row('pack', 'ocean-friends'), starts_at: new Date(NOW + 2_000).toISOString() }
+    expect(canColor(ocean, activeRights([justBought], NOW))).toBe(true)
+  })
+
   it('opens locked Standard pages with the Standard unlock, and nothing else', () => {
     const lockedStandard = packPages('standard').filter((m) => m.tier === 'paid')
     expect(lockedStandard).toHaveLength(6)
