@@ -73,6 +73,22 @@ import zenMandalasPeonyMedallion from '@/lib/templates/zen-mandalas/peony-medall
 import zenMandalasRoseWindow from '@/lib/templates/zen-mandalas/rose-window.json'
 import zenMandalasTropicalLeaves from '@/lib/templates/zen-mandalas/tropical-leaves.json'
 import zenMandalasWildflowerRing from '@/lib/templates/zen-mandalas/wildflower-ring.json'
+import flowersGardenSunflowerSmile from '@/lib/templates/flowers-garden/sunflower-smile.json'
+import flowersGardenDaisyTrio from '@/lib/templates/flowers-garden/daisy-trio.json'
+import flowersGardenRoseFriend from '@/lib/templates/flowers-garden/rose-friend.json'
+import flowersGardenWateringCan from '@/lib/templates/flowers-garden/watering-can.json'
+import flowersGardenLadybugLeaf from '@/lib/templates/flowers-garden/ladybug-leaf.json'
+import flowersGardenPotTrio from '@/lib/templates/flowers-garden/pot-trio.json'
+import flowersGardenFrogLily from '@/lib/templates/flowers-garden/frog-lily.json'
+import flowersGardenGardenGate from '@/lib/templates/flowers-garden/garden-gate.json'
+import flowersGardenHummingbirdSip from '@/lib/templates/flowers-garden/hummingbird-sip.json'
+import flowersGardenBirdhouseBloom from '@/lib/templates/flowers-garden/birdhouse-bloom.json'
+import flowersGardenBouquetBow from '@/lib/templates/flowers-garden/bouquet-bow.json'
+import flowersGardenDandelionPuff from '@/lib/templates/flowers-garden/dandelion-puff.json'
+import flowersGardenCaterpillarClimb from '@/lib/templates/flowers-garden/caterpillar-climb.json'
+import flowersGardenFlowerWheelbarrow from '@/lib/templates/flowers-garden/flower-wheelbarrow.json'
+import flowersGardenPansyFace from '@/lib/templates/flowers-garden/pansy-face.json'
+import flowersGardenRainbowFlowers from '@/lib/templates/flowers-garden/rainbow-flowers.json'
 
 const DRAFTS_LISTED = process.env.NODE_ENV === 'development'
 
@@ -194,6 +210,33 @@ export const TRACED_PACK_SOURCES = [
         zenMandalasRoseWindow,
         zenMandalasTropicalLeaves,
         zenMandalasWildflowerRing,
+      ]
+      : [],
+  },
+  {
+    id: 'flowers-garden',
+    name: 'Flowers Garden',
+    description: 'Sixteen blooming pictures: a smiling sunflower, three daisies, a rose, a watering can, a ladybug, flower pots, a frog on a lily pad, a garden gate, a hummingbird, a birdhouse, a bouquet, a dandelion, a caterpillar, a wheelbarrow, a pansy and a rainbow.',
+    icon: 'sprout',
+    status: 'draft',
+    pages: DRAFTS_LISTED
+      ? [
+        flowersGardenSunflowerSmile,
+        flowersGardenDaisyTrio,
+        flowersGardenRoseFriend,
+        flowersGardenWateringCan,
+        flowersGardenLadybugLeaf,
+        flowersGardenPotTrio,
+        flowersGardenFrogLily,
+        flowersGardenGardenGate,
+        flowersGardenHummingbirdSip,
+        flowersGardenBirdhouseBloom,
+        flowersGardenBouquetBow,
+        flowersGardenDandelionPuff,
+        flowersGardenCaterpillarClimb,
+        flowersGardenFlowerWheelbarrow,
+        flowersGardenPansyFace,
+        flowersGardenRainbowFlowers,
       ]
       : [],
   },
