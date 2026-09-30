@@ -10,8 +10,9 @@ import { latestVersion, type Mandala } from '@/lib/mandalas'
 import { colorHref } from '@/lib/packs'
 import { cn } from '@/lib/utils'
 
+/** Wears the page's crayon when a `pack-theme` parent sets one, and plain gray otherwise. */
 const tileClass =
-  'tactile group relative flex aspect-square items-center justify-center rounded-[2rem] border-4 border-border bg-card p-5 outline-none [--tactile-edge:var(--border)] focus-visible:ring-4 focus-visible:ring-ring focus-visible:ring-offset-4 md:p-6'
+  'tactile group relative flex aspect-square items-center justify-center rounded-[2rem] border-4 border-[var(--pack,var(--border))] bg-card p-5 outline-none [--tactile-edge:var(--pack-edge,var(--border))] focus-visible:ring-4 focus-visible:ring-ring focus-visible:ring-offset-4 md:p-6'
 
 export function MandalaTile({ mandala, locked }: { mandala: Mandala; locked: boolean }) {
   const { version, fills } = useDraftView(mandala)
@@ -36,9 +37,9 @@ export function MandalaTile({ mandala, locked }: { mandala: Mandala; locked: boo
       type="button"
       aria-label={`${mandala.name}, locked. Ask a grown-up.`}
       onClick={() => setAsking(true)}
-      className={cn(tileClass, 'bg-secondary')}
+      className={cn(tileClass, 'bg-[var(--pack-tint,var(--secondary))]')}
     >
-      <MandalaArt version={latestVersion(mandala)} fills={EMPTY_FILLS} className="size-full opacity-35" />
+      <MandalaArt version={latestVersion(mandala)} fills={EMPTY_FILLS} className="size-full opacity-40" />
       <span className="absolute top-3 right-3 flex size-12 items-center justify-center rounded-full bg-ink text-background">
         <Lock className="size-6" strokeWidth={2.75} aria-hidden="true" />
       </span>

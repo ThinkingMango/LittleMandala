@@ -1,27 +1,28 @@
 import type { Metadata } from 'next'
-import { House, Heart } from 'lucide-react'
-import { ToolLink } from '@/components/coloring/tool-button'
+import { Sprout } from 'lucide-react'
+import { KidPageHeader } from '@/components/kid/kid-page-header'
 import { MyGarden } from '@/components/kid/my-garden'
-import { ParentEntryButton } from '@/components/kid/parent-entry-button'
+import { GARDEN_CRAYON, crayonStyle } from '@/lib/pack-theme'
 
 export const metadata: Metadata = { title: 'My garden' }
 
 export default function GardenPage() {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-8 px-5 pt-6 pb-12 md:px-10 md:pt-8">
-      <header className="flex items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-4">
-          <ToolLink href="/" label="All packs" icon={<House strokeWidth={2.5} />} />
+    <main
+      style={crayonStyle(GARDEN_CRAYON)}
+      className="pack-theme mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-8 px-5 pt-6 pb-16 md:px-10 md:pt-8"
+    >
+      <KidPageHeader
+        title="My garden"
+        icon={
           <span
-            className="hidden size-14 shrink-0 items-center justify-center rounded-full bg-secondary sm:flex"
+            className="flex size-14 shrink-0 items-center justify-center rounded-full bg-(--pack)"
             aria-hidden="true"
           >
-            <Heart className="size-8" strokeWidth={2.5} />
+            <Sprout className="size-8" strokeWidth={2.5} />
           </span>
-          <h1 className="text-3xl font-black text-balance md:text-5xl">My garden</h1>
-        </div>
-        <ParentEntryButton />
-      </header>
+        }
+      />
       <MyGarden />
     </main>
   )

@@ -43,6 +43,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { PackIconName } from '@/lib/pack-icons'
+import { packThemeStyle } from '@/lib/pack-theme'
 import { PACK_BY_ID, type PackId } from '@/lib/packs'
 import { cn } from '@/lib/utils'
 
@@ -90,11 +91,16 @@ export const PACK_ICONS: Record<PackIconName, LucideIcon> = {
   tent: Tent,
 }
 
+/** The pack's icon on its own crayon, so the same color means the same pack on every screen. */
 export function PackIcon({ id, className }: { id: PackId; className?: string }) {
   const Icon = PACK_ICONS[PACK_BY_ID[id].icon]
   return (
     <span
-      className={cn('flex size-14 shrink-0 items-center justify-center rounded-full bg-secondary', className)}
+      style={packThemeStyle(id)}
+      className={cn(
+        'flex size-14 shrink-0 items-center justify-center rounded-full bg-(--pack) text-ink',
+        className,
+      )}
       aria-hidden="true"
     >
       <Icon className="size-8" strokeWidth={2.5} />
