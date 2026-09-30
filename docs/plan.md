@@ -51,7 +51,7 @@ All prices are in `lib/billing/pricing.ts`, in US cents. None depends on how man
 
 ## Payments (Stripe)
 
-**Modes** (`lib/stripe.ts`): Production (`VERCEL_ENV=production`) uses `STRIPE_LIVE_SECRET_KEY`, `STRIPE_LIVE_PUBLISHABLE_KEY` and `STRIPE_LIVE_WEBHOOK_SECRET`. Preview and local development use the test keys `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` and `STRIPE_WEBHOOK_SECRET`, and never fall back to live keys. The live account can take charges and receive payouts.
+**Modes** (`lib/stripe.ts`): Every environment reads `STRIPE_SECRET_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`. Production (`VERCEL_ENV=production`) requires live keys and uses `STRIPE_LIVE_WEBHOOK_SECRET`. Preview and local development require test keys and use `STRIPE_WEBHOOK_SECRET`; a live key there is rejected. The live account can take charges and receive payouts.
 
 **Checkout** (`app/actions/checkout.ts`, `components/parent/pricing/checkout-dialog.tsx`):
 1. The parent picks packs on `/parent/billing` and taps Buy. The browser sends only pack ids, the Standard flag and a random attempt id.

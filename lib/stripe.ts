@@ -2,22 +2,18 @@ import 'server-only'
 import Stripe from 'stripe'
 
 /**
- * Production takes real payments. Previews and local development share production's database and
- * env vars, so they always stay on the test keys and can never charge a real card.
+ * Production takes real payments. Previews and local development share production's database, so
+ * the mode check in key() rejects a live key outside production and they can never charge a real card.
  */
 export const STRIPE_LIVE = process.env.VERCEL_ENV === 'production'
 
-const KEYS = STRIPE_LIVE
-  ? {
-      secret: ['STRIPE_LIVE_SECRET_KEY', process.env.STRIPE_LIVE_SECRET_KEY],
-      publishable: ['STRIPE_LIVE_PUBLISHABLE_KEY', process.env.STRIPE_LIVE_PUBLISHABLE_KEY],
-      webhook: ['STRIPE_LIVE_WEBHOOK_SECRET', process.env.STRIPE_LIVE_WEBHOOK_SECRET],
-    }
-  : {
-      secret: ['STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY],
-      publishable: ['NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY],
-      webhook: ['STRIPE_WEBHOOK_SECRET', process.env.STRIPE_WEBHOOK_SECRET],
-    }
+const KEYS = {
+  secret: ['STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY],
+  publishable: ['NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY],
+  webhook: STRIPE_LIVE
+    ? ['STRIPE_LIVE_WEBHOOK_SECRET', process.env.STRIPE_LIVE_WEBHOOK_SECRET]
+    : ['STRIPE_WEBHOOK_SECRET', process.env.STRIPE_WEBHOOK_SECRET],
+} as const
 
 const KEY_MODE = /^(sk|rk|pk)_(live|test)_/
 

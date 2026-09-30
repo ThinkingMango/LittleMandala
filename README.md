@@ -17,7 +17,7 @@ A calm, tablet-first coloring app for young children. Kids pick a flower mandala
 
 - **Parent gate** — a grown-up check guards every parent page for the current browser session.
 - **Sign in** — email and password or magic link (currently mocked).
-- **Pricing** — picture packs bought once and kept, with bundles and a Standard unlock. There's no subscription. Payments run through Stripe Embedded Checkout; `/api/stripe/webhook` records each paid order and opens its packs. Production (`VERCEL_ENV=production`) takes real payments with `STRIPE_LIVE_SECRET_KEY`, `STRIPE_LIVE_PUBLISHABLE_KEY` and `STRIPE_LIVE_WEBHOOK_SECRET`; previews and local development use the test keys `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` and `STRIPE_WEBHOOK_SECRET`, and never fall back to live keys.
+- **Pricing** — picture packs bought once and kept, with bundles and a Standard unlock. There's no subscription. Payments run through Stripe Embedded Checkout; `/api/stripe/webhook` records each paid order and opens its packs. Every environment reads `STRIPE_SECRET_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`. Production (`VERCEL_ENV=production`) requires live keys and verifies webhooks with `STRIPE_LIVE_WEBHOOK_SECRET`. Previews and local development require test keys and use `STRIPE_WEBHOOK_SECRET`; a live key there is rejected.
 - **Device settings** — motion and haptics toggles.
 - **Integration status** — shows which backend services are connected.
 
