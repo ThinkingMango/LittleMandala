@@ -14,7 +14,13 @@ const manifests = readManifests(root)
 const published = manifests.filter((m) => m.status === 'published')
 
 const NOW = Date.parse('2026-09-27T12:00:00Z')
-const packRow = (pack_id: string) => ({ scope: 'pack' as const, pack_id, starts_at: '2026-09-01T00:00:00Z', ends_at: null })
+const packRow = (pack_id: string) => ({
+  scope: 'pack' as const,
+  pack_id,
+  source_id: 'cs_live_a1',
+  starts_at: '2026-09-01T00:00:00Z',
+  ends_at: null,
+})
 
 describe('pack registry', () => {
   it('matches art/*/pages.json and the traced pages (run pnpm packs sync if not)', () => {

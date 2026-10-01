@@ -62,13 +62,14 @@ export function ParentHeader() {
           </nav>
         )}
 
-        <Link
+        {/* A plain link, so the children's screens start a fresh page without grown-up scripts. */}
+        <a
           href="/"
           className={cn(buttonVariants({ variant: 'outline' }), 'h-11 rounded-full px-4 text-sm font-bold')}
         >
           <ArrowLeft data-icon="inline-start" />
           Back to coloring
-        </Link>
+        </a>
       </div>
     </header>
   )

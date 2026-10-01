@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import useSWR, { mutate } from 'swr'
 import { useAuthState } from '@/lib/auth/client'
+import { LIVE_PAYMENTS, countsInThisMode } from '@/lib/billing/mode'
 import type { Mandala } from '@/lib/mandalas'
 import { PACK_BY_ID, type PackId } from '@/lib/packs'
 import { createClient } from '@/lib/supabase/client'
@@ -10,6 +11,8 @@ export type Rights = Readonly<{ packs: ReadonlySet<string> }>
 type EntitlementRow = {
   scope: string
   pack_id: string | null
+  /** The Checkout Session that paid for it (`cs_live_…`, `cs_test_…`) or `comp:…` for a gift. */
+  source_id: string
   starts_at: string
   ends_at: string | null
 }
@@ -26,13 +29,14 @@ export const CLOCK_SKEW_MS = 5 * 60_000
 /**
  * Folds the parent's entitlement rows into the packs that are open at `now`. Only `pack` rows count:
  * the database still accepts `membership` rows so a subscription could return later, but none opens
- * anything today.
+ * anything today. With `live` (production), packs bought with a Stripe test card don't count.
  */
-export function activeRights(rows: readonly EntitlementRow[], now: number): Rights {
+export function activeRights(rows: readonly EntitlementRow[], now: number, live: boolean = LIVE_PAYMENTS): Rights {
   const packs = new Set(
     rows.flatMap((row) =>
       row.scope === 'pack' &&
       row.pack_id &&
+      countsInThisMode(row.source_id, live) &&
       Date.parse(row.starts_at) <= now + CLOCK_SKEW_MS &&
       (!row.ends_at || Date.parse(row.ends_at) > now)
         ? [row.pack_id]
@@ -59,7 +63,7 @@ export function canColor(mandala: Pick<Mandala, 'tier' | 'pack'>, rights: Rights
 async function fetchRights([, parentId]: readonly [string, string]): Promise<Rights> {
   const { data, error } = await createClient()
     .from('entitlements')
-    .select('scope, pack_id, starts_at, ends_at')
+    .select('scope, pack_id, source_id, starts_at, ends_at')
     .eq('parent_id', parentId)
     .eq('scope', 'pack')
     .is('revoked_at', null)

@@ -60,7 +60,12 @@ export async function POST(request: NextRequest) {
 
   const attempts = (seen?.attempts ?? 0) + 1
   const record = { event_id: event.id, event_type: event.type, occurred_at: new Date(event.created * 1000).toISOString() }
-  await admin.from('webhook_events').upsert({ ...record, attempts, last_error: null })
+  const { error: logError } = await admin.from('webhook_events').upsert({ ...record, attempts, last_error: null })
+  if (logError) {
+    // Without the log row, the event couldn't be marked done; let Stripe send it again.
+    console.error('Writing webhook log failed', logError.message)
+    return NextResponse.json({ error: 'unavailable' }, { status: 500 })
+  }
 
   try {
     await handle(event)

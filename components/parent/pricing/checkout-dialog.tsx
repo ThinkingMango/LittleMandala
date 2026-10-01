@@ -3,7 +3,10 @@
 import { useState } from 'react'
 import useSWR from 'swr'
 import { EmbeddedCheckout, EmbeddedCheckoutProvider } from '@stripe/react-stripe-js'
-import { loadStripe, type Stripe } from '@stripe/stripe-js'
+// The `pure` entry only adds Stripe.js when loadStripe() runs, i.e. once a checkout opens. The main
+// entry adds it as soon as the Pricing page loads.
+import { loadStripe } from '@stripe/stripe-js/pure'
+import type { Stripe } from '@stripe/stripe-js'
 import { Loader2 } from 'lucide-react'
 import {
   confirmPackCheckout,
@@ -12,6 +15,7 @@ import {
   type CheckoutOutcome,
 } from '@/app/actions/checkout'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { markGrownUpDocument } from '@/lib/grown-up-scripts'
 
 const stripeByKey = new Map<string, Promise<Stripe | null>>()
 
@@ -19,6 +23,7 @@ const stripeByKey = new Map<string, Promise<Stripe | null>>()
 function stripeFor(publishableKey: string) {
   let promise = stripeByKey.get(publishableKey)
   if (!promise) {
+    markGrownUpDocument()
     promise = loadStripe(publishableKey)
     stripeByKey.set(publishableKey, promise)
   }

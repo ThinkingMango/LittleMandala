@@ -86,9 +86,9 @@ function DeletedPanel({ outcome }: { outcome: Outcome }) {
           {`Your sign-in, cloud pictures, packs and records are gone. ${devicePart}`}
         </p>
       </div>
-      <Link href="/" className={cn(buttonVariants(), 'h-11 self-start rounded-full px-5 font-bold')}>
+      <a href="/" className={cn(buttonVariants(), 'h-11 self-start rounded-full px-5 font-bold')}>
         Back to coloring
-      </Link>
+      </a>
     </section>
   )
 }

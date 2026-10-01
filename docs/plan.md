@@ -180,21 +180,21 @@ Still locked for this account: Ocean Friends 2, Safari Garden 2, Christmas Garde
 
 ## Open gaps
 
-1. **Test-mode rights open packs in Production.** The database is shared and `entitlements` has no mode, so packs bought with the test card in Preview also open on the live site. This is fine for internal accounts, but anyone with Preview access could get packs free. Fix: filter entitlements by the mode of their source transaction in Production (complimentary grants still count), or split the database.
+1. **Fixed: test-mode rights no longer open packs in Production.** `lib/billing/mode.ts` ignores rows whose `source_id` starts with `cs_test_` when `VERCEL_ENV=production`, both on the device and in checkout's "already owned" check. Complimentary grants still count. Packs the test account bought with the test card now stay locked on the live site; give it `comp:` grants if it should keep them.
 2. **Preview checkout is broken.** The test Stripe keys are empty since the sandbox integration was disconnected, so Buy shows an error in Preview. Add `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` and `STRIPE_WEBHOOK_SECRET` from Stripe test mode, scoped to Preview and Development.
 3. **No live purchase has been tested end to end.** The keys, account status, webhook endpoint and signature rejection are confirmed, but the first real charge and refund haven't been run.
 4. **Partial refunds revoke nothing.** Only a full refund closes packs. Partial refunds are handled by hand in the Stripe dashboard.
 5. **Complimentary grants are hand-written SQL.** There's no admin screen or audit trail beyond the `comp:` source id.
 6. **Grown-up packs are hidden.** `GROWN_UPS_OFFERED = false`, and Zen Mandalas is a draft.
-7. **`components/parent/not-connected-badge.tsx` is unused** and can be deleted.
+7. **Fixed: the unused `NotConnectedBadge` is deleted**, along with the unused `cn` package.
 8. **Print dialog not checked in a browser.** The print styles are compiled and the PDF was tested, but the browser print preview hasn't been checked.
 
 ## Next steps (after 1.0)
 
 1. **Smoke test live payments:** buy the $1.99 Standard unlock on production with a real card on an account that doesn't own it, check it opens without a reload and appears in `transactions` with `livemode = true`, then refund it in full and check it locks again.
-2. **Close gap 1:** scope entitlements by mode in Production, with a test for it.
-3. **Restore Preview checkout** with the Stripe test keys.
-4. **Delete `NotConnectedBadge`.**
+2. **Apply `20261001120000_fulfil_checkout_race.sql`**, so the confirm step and the webhook can record the same checkout at once without an error.
+3. **Restore Preview checkout** with the Stripe test keys, only after the gap 1 fix is live.
+4. **Keep CI green:** every pull request runs typecheck, tests and build, and builds now fail on type errors.
 5. **Publish Zen Mandalas:** finish the review sheets, publish and set `GROWN_UPS_OFFERED = true`.
 6. **Optional:** a small admin action for complimentary grants and revocations, so they don't need SQL.
 
@@ -208,7 +208,8 @@ Still locked for this account: Ocean Friends 2, Safari Garden 2, Christmas Garde
 - [x] Security headers live.
 - [x] 187 tests and the type check passing, with PR #11 merged and deployed.
 - [ ] First live purchase and full refund (next step 1).
-- [ ] Test-mode rights no longer open packs in Production (gap 1).
+- [x] Test-mode rights no longer open packs in Production (gap 1).
+- [x] Stripe.js loads only when checkout opens, and children's screens reload before running if a grown-up page loaded outside scripts.
 
 ## Verification
 

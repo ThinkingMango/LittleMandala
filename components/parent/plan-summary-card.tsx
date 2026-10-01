@@ -18,7 +18,8 @@ function PackRows({ rows, label }: { rows: Row[]; label: string }) {
         const status = isOpen ? 'Open' : open === 0 ? 'Locked' : `${open} of ${total} free`
         return (
           <li key={pack.id} className="py-1 first:pt-0 last:pb-0">
-            <Link
+            {/* A plain link: most packs open on the children's screens, which need a fresh page. */}
+            <a
               href={packHref(pack.id)}
               className="-mx-2 flex min-h-12 items-center justify-between gap-4 rounded-xl px-2 py-1 transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
@@ -39,7 +40,7 @@ function PackRows({ rows, label }: { rows: Row[]; label: string }) {
                 )}
                 <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
               </div>
-            </Link>
+            </a>
           </li>
         )
       })}
