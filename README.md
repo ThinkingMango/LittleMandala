@@ -83,6 +83,18 @@ Artwork lives in the browser's `localStorage` (`lm:v2:*` keys) and works without
 - **Garden pictures never change.** Editing one creates a copy that replaces it when saved.
 - **Stored data is checked on read.** Unknown areas, colors and broken history are dropped.
 
+## Offline coloring
+
+The children's screens keep working without the internet once the app has been opened online. `public/sw.js` (a service worker, turned on by `components/kid/offline-support.tsx` in production only) does three things:
+
+- **Children's pages:** fetched fresh online and kept, then served from the kept copy offline.
+- **Build files:** content-hashed, so they're kept for good.
+- **Grown-up area, sign-in, payments and the API:** never kept. Offline they show `public/offline.html`.
+
+Once per deployment, after a page has loaded, the app asks the service worker to keep every children's screen (`lib/offline/pages.ts`) and every build file they lead to, including each picture's outline. That's about 2 MB to download, or about 7 MB once stored. A complete pass then drops files from earlier deployments.
+
+Paid packs stay open offline from the last list the server confirmed (`lib/billing/saved-rights.ts`). That list is used only when the server can't be reached, trusted for 30 days, and wiped at sign-out. To test offline locally, run `pnpm build && pnpm start`, open the app once, then stop the server.
+
 ## How pictures load
 
 A page's outline (its drawn paths) is nearly all of its size, so the app doesn't ship them all to every screen. `lib/mandalas.ts` holds each page's areas and spoken names, which is enough to save, check and announce coloring. The outline comes from `lib/templates/outlines.ts`: code-drawn pages (Standard and earlier drawings) ship with the app, and each traced page's outline is fetched the first time it's drawn, then kept for the visit. `MandalaArt` draws a blank placeholder until it arrives (`useOutline`). Anything that draws outside React, such as cloud backup, PDFs and printing, awaits `loadOutline` first. `pnpm packs sync` writes the registry in this form, so new packs need nothing extra.

@@ -153,6 +153,24 @@ Logic is in `startSession` and `saveSession` in `lib/artwork/library.ts`, used t
 - Each pack lives in `art/<pack>/pages.json`. `pnpm packs sync` generates `lib/templates/registry.generated.ts`.
 - The art rules (`AUDIENCE_RULES` in `scripts/trace-pack/segment.ts`) and the pipeline (`pnpm packs new | prompts | trace | sheet | labels | status | publish`) are unchanged. See `art/README.md`.
 
+## Offline
+
+The children's area works without the internet after one online visit.
+
+- **Service worker:** `public/sw.js`, registered by `components/kid/offline-support.tsx` in production.
+- **What it keeps:** all 166 children's screens and every build file they lead to. That's about 2 MB to download (about 7 MB once stored), refreshed once per deployment.
+- **What it never keeps:** the grown-up area, sign-in and payments. Offline they show `public/offline.html`.
+- **Paid packs offline:** they open from the last list the server confirmed, for 30 days, wiped at sign-out (`lib/billing/saved-rights.ts`). That list also shows straight away online while the server is asked again.
+
+Checked in a real browser with the server shut down:
+
+- browsing, coloring, "I'm done", My garden and traced packs
+- paid packs while signed in, and after the sign-in lapsed
+- the grown-up area showing the offline page
+- a refund locking a remembered pack again
+
+Fixed along the way: SWR's default comparison (`dequal/lite`) can't see inside the `Set` of packs, so a pack bought or refunded during a visit didn't show until a reload. `useEntitlements` now passes `compare: sameRights`.
+
 ## Loading
 
 Each page downloads only the outlines it draws (`lib/templates/outlines.ts`). Before this, every screen shipped all 154 outlines, about 800 KB compressed. Up front, each screen now downloads about 290–330 KB of code. With the outlines it then fetches, that comes to about 455 KB for Home (27 pack-cover pictures), 362 KB for a pack page and 323 KB for one picture, against about 1,050 KB for every page before. A new pack adds only its three cover pictures to Home, and nothing to other pages. A test fails if the registry bundles an outline again.

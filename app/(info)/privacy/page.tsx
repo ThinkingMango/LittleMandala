@@ -49,7 +49,9 @@ export default function PrivacyPage() {
         <p>
           Pictures your child colors, the pictures in My garden, the settings you choose and whether the grown-up check was passed are kept in
           the browser’s storage on the device you use. We cannot see this information. It is not sent to us unless you turn on cloud
-          saving. Clearing the browser’s data for Little Mandala removes it.
+          saving. So coloring works without the internet, the device also keeps a copy of the children’s screens and, while you’re
+          signed in, a list of the packs your account owns. That list is trusted offline for up to 30 days and removed when you sign
+          out. Clearing the browser’s data for Little Mandala removes all of it.
         </p>
       </PolicySection>
 
