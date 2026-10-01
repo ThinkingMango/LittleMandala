@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { STORAGE_KEYS, createArtworkLibrary, type KeyValueStorage } from '@/lib/artwork/library'
 import { renderArtworkSvg } from '@/lib/cloud-sync/artwork-svg'
+import { peekOutline } from '@/lib/templates/outlines'
 import { createCloudSync, summarizeSync, type CloudSync } from '@/lib/cloud-sync/engine'
 import { templates } from '@/lib/mandalas'
 
@@ -170,7 +171,8 @@ describe('cloud sync', () => {
     await signIn(connect(device, cloud))
 
     const artwork = device.library.getState().artworks[id]
-    const expected = renderArtworkSvg(templates.version('sunny', 1)!, artwork.fills)
+    const version = templates.version('sunny', 1)!
+    const expected = renderArtworkSvg(version, peekOutline(version)!, artwork.fills)
     expect(cloud.db.files.get(id)?.body).toBe(expected)
     expect(expected).toContain('fill="#f54748"')
     expect(expected).not.toContain('var(')

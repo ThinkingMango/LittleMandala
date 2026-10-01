@@ -14,7 +14,7 @@ import { EMPTY_FILLS, type Fills } from '@/lib/artwork/library'
 import { settingsStore } from '@/lib/device-stores'
 import { useEntitlements } from '@/lib/entitlements'
 import { useHydrated, useLocalStore } from '@/lib/local-store'
-import type { Mandala, Region } from '@/lib/mandalas'
+import type { Mandala, RegionInfo } from '@/lib/mandalas'
 import { DEFAULT_COLOR, DEFAULT_GROWN_UP_COLOR, ERASER, colorLabel, type Tool } from '@/lib/palette'
 
 const GARDEN_HREF = '/garden'
@@ -60,7 +60,7 @@ export function ColoringScreen({ mandala, gardenArtworkId = null, lockedView }: 
 
   const erasing = tool === ERASER
 
-  const handleRegionTap = (region: Region, element: SVGPathElement) => {
+  const handleRegionTap = (region: RegionInfo, element: SVGPathElement) => {
     const changed = erasing ? coloring.erase(region.id) : coloring.fill(region.id, tool)
     if (!changed) return
     setUndoHint(false)

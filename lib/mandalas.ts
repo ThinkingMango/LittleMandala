@@ -1,4 +1,5 @@
 import type { PackId } from '@/lib/packs'
+import { registerInlineOutline, registerOutlineLoader } from '@/lib/templates/outlines'
 import { listedTracedPages } from '@/lib/templates/traced'
 
 export type PetalShape = 'round' | 'almond' | 'pointy' | 'heart'
@@ -17,7 +18,11 @@ type Layer = {
   offset?: number
 }
 
+/** One tappable area as drawn: its id, outline path and spoken name. */
 export type Region = Readonly<{ id: string; d: string; label: string }>
+
+/** What the app knows about an area without its outline: enough to check, save and announce it. */
+export type RegionInfo = Readonly<{ id: string; label: string }>
 
 /** Ink drawn on top of the regions, such as eyes and smiles. It can't be colored or tapped. */
 export type Detail = Readonly<{ d: string; kind: 'dot' | 'line' }>
@@ -38,7 +43,21 @@ type DrawnVersion = {
   drawing: Drawing
 }
 
-export type VersionDefinition = PetalVersion | DrawnVersion
+/** An outline as stored: areas in drawing order, then ink details. */
+export type RawOutline = {
+  regions: readonly { id: string; d: string }[]
+  details?: readonly { kind: string; d: string }[]
+}
+
+/** A traced page: its areas are listed here, and its outline is fetched the first time it's drawn. */
+type LoadedVersion = {
+  version: number
+  regions: readonly RegionInfo[]
+  line?: LineWeight
+  load: () => Promise<RawOutline>
+}
+
+export type VersionDefinition = PetalVersion | DrawnVersion | LoadedVersion
 
 export type TemplateDefinition = {
   id: string
@@ -53,14 +72,23 @@ export type TemplateDefinition = {
   versions: VersionDefinition[]
 }
 
+/**
+ * One immutable version of a page, without its outline. The outline is the bulk of a page, so it
+ * comes from lib/templates/outlines.ts (`useOutline`, `loadOutline`) only where the page is drawn.
+ */
 export type TemplateVersion = Readonly<{
   templateId: string
   version: number
-  regions: readonly Region[]
-  details: readonly Detail[]
+  regions: readonly RegionInfo[]
   line: LineWeight
   /** The only region ids that may ever hold a color for this version. */
   approvedRegionIds: readonly string[]
+}>
+
+/** The paths that draw a version, in the same order as its regions. */
+export type Outline = Readonly<{
+  regions: readonly Readonly<{ id: string; d: string }>[]
+  details: readonly Detail[]
 }>
 
 export type Mandala = Readonly<{
@@ -205,21 +233,17 @@ function buildRegions({ layers, centerRadius }: PetalVersion): Region[] {
   return regions
 }
 
-/** Validates a version's regions and returns a deeply frozen, approved snapshot. */
+/** Validates a version's areas and returns a deeply frozen, approved snapshot. */
 export function freezeVersion(
   templateId: string,
   version: number,
-  regions: Region[],
-  details: Detail[] = [],
+  regions: readonly RegionInfo[],
   line: LineWeight = 'bold',
-  ): TemplateVersion {
-  if (details.some((detail) => !detail.d.trim())) {
-    throw new Error(`Template ${templateId} v${version}: detail is missing a path`)
-  }
+): TemplateVersion {
   const ids = new Set<string>()
   for (const region of regions) {
-    if (!region.id || !region.d.trim() || !region.label) {
-      throw new Error(`Template ${templateId} v${version}: region is missing an id, path, or label`)
+    if (!region.id || !region.label) {
+      throw new Error(`Template ${templateId} v${version}: region is missing an id or label`)
     }
     if (ids.has(region.id)) {
       throw new Error(`Template ${templateId} v${version}: duplicate region id "${region.id}"`)
@@ -230,10 +254,37 @@ export function freezeVersion(
   return Object.freeze({
     templateId,
     version,
-    regions: Object.freeze(regions.map((r) => Object.freeze({ ...r }))),
-    details: Object.freeze(details.map((d) => Object.freeze({ ...d }))),
+    regions: Object.freeze(regions.map(({ id, label }) => Object.freeze({ id, label }))),
     line,
     approvedRegionIds: Object.freeze([...ids]),
+  })
+}
+
+/**
+ * Validates an outline against its version: every area has a path, in the same order as the
+ * version's regions, so a saved color can never land on a different area.
+ */
+export function freezeOutline(
+  templateId: string,
+  version: number,
+  regions: RawOutline['regions'],
+  details: RawOutline['details'] = [],
+  expectedIds: readonly string[],
+): Outline {
+  if (regions.length !== expectedIds.length || regions.some((region, i) => region.id !== expectedIds[i])) {
+    throw new Error(`Template ${templateId} v${version}: outline areas don't match the page`)
+  }
+  if (regions.some((region) => !region.d.trim())) {
+    throw new Error(`Template ${templateId} v${version}: region is missing a path`)
+  }
+  if (details.some((detail) => !detail.d.trim())) {
+    throw new Error(`Template ${templateId} v${version}: detail is missing a path`)
+  }
+  return Object.freeze({
+    regions: Object.freeze(regions.map(({ id, d }) => Object.freeze({ id, d }))),
+    details: Object.freeze(
+      details.map(({ kind, d }) => Object.freeze({ kind: kind === 'line' ? ('line' as const) : ('dot' as const), d })),
+    ),
   })
 }
 
@@ -244,8 +295,21 @@ export function defineTemplate(def: TemplateDefinition): Mandala {
     if (v.version !== index + 1) {
       throw new Error(`Template ${def.id}: versions must be numbered 1, 2, 3… in order`)
     }
-    if ('drawing' in v) return freezeVersion(def.id, v.version, v.drawing.regions, v.drawing.details, v.drawing.line)
-    return freezeVersion(def.id, v.version, buildRegions(v))
+    if ('load' in v) {
+      const frozen = freezeVersion(def.id, v.version, v.regions, v.line)
+      registerOutlineLoader(frozen, async () => {
+        const raw = await v.load()
+        return freezeOutline(def.id, v.version, raw.regions, raw.details, frozen.approvedRegionIds)
+      })
+      return frozen
+    }
+    const drawing: Drawing = 'drawing' in v ? v.drawing : { regions: buildRegions(v) }
+    const frozen = freezeVersion(def.id, v.version, drawing.regions, drawing.line)
+    registerInlineOutline(
+      frozen,
+      freezeOutline(def.id, v.version, drawing.regions, drawing.details, frozen.approvedRegionIds),
+    )
+    return frozen
   })
 
   return Object.freeze({
