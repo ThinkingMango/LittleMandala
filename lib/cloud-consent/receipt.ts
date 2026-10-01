@@ -302,9 +302,9 @@ export async function buildConsentReceiptPdf(receipt: ConsentReceipt): Promise<U
     { text: `Approved ${formatReceiptDate(notice.approvedAt, timeZone)}`, style: muted(9) },
   ])
   pdf.row('How it was confirmed', [
-    { text: 'Signed in with a fresh email link, then ticked the agreement box.' },
+    { text: 'Signed in with a fresh sign-in email (its link or code), then ticked the agreement box.' },
     ...(record.signedInAt
-      ? [{ text: `Email-link sign-in used: ${formatReceiptTime(record.signedInAt, timeZone)}`, style: muted(9) }]
+      ? [{ text: `Email sign-in used: ${formatReceiptTime(record.signedInAt, timeZone)}`, style: muted(9) }]
       : []),
   ])
   pdf.row('Status', [

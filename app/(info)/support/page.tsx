@@ -70,8 +70,10 @@ export default function SupportPage() {
 
         <PolicySection id="sign-in" title="I can’t sign in">
           <p>
-            There is no password. Enter your email in the parent area and we send you a sign-in link. If it doesn’t arrive within a few
-            minutes, check your spam or promotions folder. You can ask for a new link after a minute.
+            There is no password. Enter your email in the parent area and we send you an email with a sign-in link and a code. Tap the
+            link on the device you want to sign in, or type the code on it, for example when the email is on your phone and you’re
+            signing in on your child’s tablet. If it doesn’t arrive within a few minutes, check your spam or promotions folder. You can
+            ask for a new one after a minute.
           </p>
         </PolicySection>
 

@@ -2,7 +2,9 @@
 
 import { useEffect, useState, type FormEvent } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Mail, MailCheck } from 'lucide-react'
+import { EmailCodeForm } from '@/components/parent/email-code-form'
 import { SignOutButton } from '@/components/parent/sign-out-button'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +23,7 @@ const LINK_ERROR_MESSAGES: Record<LinkError, string> = {
 
 export function SignInForm({ next, linkError }: { next: string; linkError: LinkError | null }) {
   const auth = useAuthState()
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [pending, setPending] = useState(false)
   const [sentTo, setSentTo] = useState<string | null>(null)
@@ -93,12 +96,13 @@ export function SignInForm({ next, linkError }: { next: string; linkError: LinkE
           <div className="flex flex-col gap-1 text-sm leading-relaxed">
             <p className="font-bold">Check your email</p>
             <p>
-              {'We sent a sign-in link to '}
+              {'We sent a sign-in link and code to '}
               <span className="font-bold break-all">{sentTo}</span>
-              {'. Each link works once, and only the newest one works.'}
+              {'. Tap the link on this device, or type the code below. Each works once, and only the newest email works.'}
             </p>
           </div>
         </div>
+        <EmailCodeForm email={sentTo} submitLabel="Sign in" onVerified={() => router.replace(next)} />
         {errorMessage}
         <div className="flex flex-wrap gap-3">
           <Button
@@ -147,7 +151,7 @@ export function SignInForm({ next, linkError }: { next: string; linkError: LinkE
 
       <Button type="submit" disabled={pending} className="h-12 rounded-full text-base font-bold">
         <Mail data-icon="inline-start" />
-        {pending ? 'Sending…' : 'Email me a sign-in link'}
+        {pending ? 'Sending…' : 'Email me a sign-in link and code'}
       </Button>
 
       <p className="text-sm leading-relaxed text-muted-foreground">

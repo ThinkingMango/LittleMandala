@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 
 const DESCRIPTIONS = {
   loading: 'Checking sign-in…',
-  'signed-in': 'Signed in on this device with an email link.',
+  'signed-in': 'Signed in on this device with an email link or code.',
   'signed-out': 'Sign in to buy packs and open them on every device.',
 } as const
 

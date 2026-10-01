@@ -32,7 +32,7 @@ export function isCloudSavingOn(status: CloudConsentStatus | undefined) {
 type ErrorCode = 'recent_sign_in_required' | 'not_signed_in' | 'notice_not_available' | 'files_remaining' | 'unknown'
 
 const MESSAGES: Record<ErrorCode, string> = {
-  recent_sign_in_required: 'For your child’s safety, please confirm with a fresh email link first.',
+  recent_sign_in_required: 'For your child’s safety, please confirm with a fresh sign-in email first.',
   not_signed_in: 'Please sign in again to change cloud saving.',
   notice_not_available: 'This notice was just replaced. Reload the page to read the current version.',
   files_remaining:
