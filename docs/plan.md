@@ -78,7 +78,7 @@ All prices are in `lib/billing/pricing.ts`, in US cents. None depends on how man
 | `/packs/[id]` | Kid | One pack's pictures. Locked ones show a lock and "Ask a grown-up", never a link to pricing. |
 | `/color/[id]` | Kid | Coloring: white canvas, palette and eraser, Undo, Start over, Done. `?art=<artworkId>` reopens a garden picture. |
 | `/garden` | Kid | My garden: every finished picture, newest first. |
-| `/parent` | Parent gate | Hold a button for 3 seconds, or answer a simple sum. Sets `sessionStorage["lm:gate"]`. Counts as a children's screen for analytics. |
+| `/parent` | Parent gate | Answer a multiplication (12–19 × 3–5). There's no press-and-hold, which a child can pass alone. Sets `sessionStorage["lm:gate"]`. Counts as a children's screen for analytics. "Clear saved coloring" behind it also needs CLEAR typed. |
 | `/parent/sign-in` | Parent | One-time email link through Supabase Auth. |
 | `/auth/callback`, `/auth/confirm` | Server | Finish the email-link sign-in. |
 | `/parent/home` | Parent | Overview: Picture packs, Pictures, Account, Cloud saving, This device ("Clear saved coloring", sign out). |

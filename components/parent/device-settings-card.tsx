@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { useArtworkLibrary } from '@/hooks/use-artwork-library'
@@ -26,6 +27,9 @@ const TOGGLES: { key: keyof DeviceSettings; label: string; hint: string }[] = [
   { key: 'motion', label: 'Bounce when coloring', hint: 'A small wiggle when a petal is filled.' },
   { key: 'haptics', label: 'Vibrate on tap', hint: 'A tiny buzz each time a petal is filled.' },
 ]
+
+/** Clearing can't be undone, so it takes a typed word rather than one tap a child might make. */
+const CLEAR_WORD = 'CLEAR'
 
 const noSubscribe = () => () => {}
 /** iPad and iPhone browsers have no vibration API, so the switch would do nothing there. */
@@ -41,6 +45,8 @@ export function DeviceSettingsCard() {
   const settings = useLocalStore(settingsStore)
   const { library } = useArtworkLibrary()
   const [cleared, setCleared] = useState(false)
+  const [typed, setTyped] = useState('')
+  const confirmed = typed.trim().toUpperCase() === CLEAR_WORD
   const canVibrate = useCanVibrate()
   const toggles = TOGGLES.filter((t) => t.key !== 'haptics' || canVibrate)
   const { summary } = useCloudSync()
@@ -76,7 +82,13 @@ export function DeviceSettingsCard() {
         ))}
       </div>
 
-      <Dialog onOpenChange={(open) => open && setCleared(false)}>
+      <Dialog
+        onOpenChange={(open) => {
+          if (!open) return
+          setCleared(false)
+          setTyped('')
+        }}
+      >
         <DialogTrigger
           render={<Button variant="destructive" className="h-11 self-start rounded-full px-4 font-bold" />}
         >
@@ -94,6 +106,22 @@ export function DeviceSettingsCard() {
                 : `Drafts and every picture in the garden will be removed from this device. This cannot be undone. ${cloudLine}`}
             </DialogDescription>
           </DialogHeader>
+          {!cleared && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="clear-confirm" className="font-bold">
+                {`Type ${CLEAR_WORD} to confirm`}
+              </Label>
+              <Input
+                id="clear-confirm"
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                value={typed}
+                onChange={(e) => setTyped(e.target.value)}
+                className="h-11 rounded-xl"
+              />
+            </div>
+          )}
           <DialogFooter className="rounded-b-3xl">
             <DialogClose render={<Button variant="outline" className="h-10 rounded-full px-4" />}>
               {cleared ? 'Done' : 'Cancel'}
@@ -102,6 +130,7 @@ export function DeviceSettingsCard() {
               <Button
                 variant="destructive"
                 className="h-10 rounded-full px-4 font-bold"
+                disabled={!confirmed}
                 onClick={() => {
                   library.clearAll()
                   setCleared(true)

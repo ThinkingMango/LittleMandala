@@ -15,7 +15,7 @@ The full product plan, pricing, data model and open gaps are in [docs/plan.md](d
 
 ### For grown-ups (`/parent`)
 
-- **Grown-up check**: hold a button for 3 seconds or answer a sum.
+- **Grown-up check**: a multiplication question (such as 14 × 3) that young children can't answer. Clearing all saved coloring also needs CLEAR typed.
 - **Sign in** with a one-time email link (Supabase Auth). No passwords.
 - **Pricing**: one-time packs ($4.99 each, any 3 for $12.99, any 5 for $19.99, Standard unlock $1.99), paid with Stripe Embedded Checkout. Prices are worked out on the server.
 - **Cloud saving**: optional, only after a parent agrees to the notice with a fresh sign-in.
