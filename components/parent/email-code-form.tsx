@@ -16,7 +16,7 @@ type Props = {
 
 /**
  * The emailed link signs in the device that opens it. A parent reading email on their phone types
- * the code from the same email here instead, so the family tablet signs in.
+ * the code from the same email here instead, so the family device signs in.
  */
 export function EmailCodeForm({ email, submitLabel, onVerified }: Props) {
   const id = useId()
