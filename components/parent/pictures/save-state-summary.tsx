@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { Cloud, Tablet } from 'lucide-react'
+import { Cloud, MonitorSmartphone } from 'lucide-react'
 import { pictureCount } from '@/hooks/use-garden'
 import { useCloudSync } from '@/lib/cloud-sync/client'
 import type { SyncSummary } from '@/lib/cloud-sync/engine'
@@ -87,7 +87,7 @@ export function SaveStateSummary({ onDevice }: { onDevice: number }) {
       </h2>
       <div className="flex flex-col gap-3 md:flex-row">
         <Place
-          icon={<Tablet className="size-5" />}
+          icon={<MonitorSmartphone className="size-5" />}
           label="On this device"
           value={pictureCount(onDevice)}
           detail="Printing and PDFs are made here too, nothing is uploaded."

@@ -1,10 +1,10 @@
-import { Cloud, CloudUpload, LoaderCircle, Tablet } from 'lucide-react'
+import { Cloud, CloudUpload, LoaderCircle, MonitorSmartphone } from 'lucide-react'
 import { SAVE_STATE_LABEL, type PictureSaveState } from '@/lib/cloud-sync/picture-state'
 import { cn } from '@/lib/utils'
 
 const ICONS = {
-  'device-only': Tablet,
-  'removed-elsewhere': Tablet,
+  'device-only': MonitorSmartphone,
+  'removed-elsewhere': MonitorSmartphone,
   'in-cloud': Cloud,
   waiting: CloudUpload,
   checking: LoaderCircle,

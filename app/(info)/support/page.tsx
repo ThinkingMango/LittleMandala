@@ -39,7 +39,7 @@ export default function SupportPage() {
           </a>
         </div>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          To help us answer quickly, include the email address you sign in with and the device you use, for example iPad or Android tablet.
+          To help us answer quickly, include the email address you sign in with and the device you use, for example iPad, Android tablet or Mac.
           Please don’t send card numbers.
         </p>
       </section>
@@ -59,8 +59,9 @@ export default function SupportPage() {
 
         <PolicySection id="pictures-gone" title="My child’s pictures disappeared">
           <p>
-            Pictures are kept on the device, so they can be lost if the browser’s data is cleared. On iPhone and iPad, Safari clears sites
-            that have not been opened for 7 days. Add Little Mandala to the Home Screen to avoid this, and turn on{' '}
+            Pictures are kept on the device, so they can be lost if the browser’s data is cleared. Safari on iPhone, iPad and Mac clears
+            sites that have not been opened for 7 days. To avoid this, on iPhone or iPad tap Share, then Add to Home Screen. On a Mac,
+            choose File, then Add to Dock in Safari (macOS Sonoma or later). Then open Little Mandala from there, and turn on{' '}
             <Link href="/parent/cloud-saving" className={linkClass}>
               cloud saving
             </Link>{' '}

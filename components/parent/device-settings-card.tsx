@@ -32,11 +32,14 @@ const TOGGLES: { key: keyof DeviceSettings; label: string; hint: string }[] = [
 const CLEAR_WORD = 'CLEAR'
 
 const noSubscribe = () => () => {}
-/** iPad and iPhone browsers have no vibration API, so the switch would do nothing there. */
+/**
+ * iPad and iPhone browsers have no vibration API, and computers have the API but nothing to buzz
+ * (Chrome on a Mac), so the switch would do nothing there. A touchscreen tells them apart.
+ */
 function useCanVibrate() {
   return useSyncExternalStore(
     noSubscribe,
-    () => typeof navigator.vibrate === 'function',
+    () => typeof navigator.vibrate === 'function' && navigator.maxTouchPoints > 0,
     () => false,
   )
 }
@@ -61,7 +64,7 @@ export function DeviceSettingsCard() {
     <ParentCard
       id="this-device"
       title="On this device"
-      description="Artwork is kept on this tablet unless you turn on cloud saving."
+      description="Artwork is kept on this device unless you turn on cloud saving."
     >
       <DeviceStorageNotice />
       <div className="flex flex-col divide-y">

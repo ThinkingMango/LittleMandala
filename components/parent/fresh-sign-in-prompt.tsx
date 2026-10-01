@@ -60,7 +60,7 @@ export function FreshSignInPrompt({ email, action, returnPath }: Props) {
             <>
               <p className="font-bold">Confirm it’s you with a fresh sign-in email</p>
               <p>
-                {`To protect your child, only a grown-up who signed in during the last 10 minutes can ${action}. This stops anyone using an already signed-in family tablet from doing it.`}
+                {`To protect your child, only a grown-up who signed in during the last 10 minutes can ${action}. This stops anyone using an already signed-in family device from doing it.`}
               </p>
             </>
           )}
