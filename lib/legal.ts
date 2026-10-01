@@ -2,7 +2,7 @@ export const OPERATOR_NAME = 'SmartMango'
 export const SUPPORT_EMAIL = 'support@smartmango.ai'
 export const SUPPORT_MAILTO = `mailto:${SUPPORT_EMAIL}`
 export const REFUND_WINDOW_DAYS = 14
-export const POLICIES_UPDATED = '28 September 2026'
+export const POLICIES_UPDATED = '1 October 2026'
 
 export const PRIVACY_HREF = '/privacy'
 export const REFUNDS_HREF = '/refunds'

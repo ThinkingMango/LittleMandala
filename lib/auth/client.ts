@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import type { AuthError, User } from '@supabase/supabase-js'
 import { AFTER_SIGN_IN_COOKIE, safeNext } from '@/lib/auth/redirect'
+import { forgetSavedRights } from '@/lib/billing/saved-rights'
 import type { AuthClient, AuthState, ParentUser } from '@/lib/auth/types'
 import { createClient } from '@/lib/supabase/client'
 
@@ -128,6 +129,8 @@ export const authClient: AuthClient = {
     document.cookie = `${AFTER_SIGN_IN_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`
   },
   async signOut() {
+    // Whoever uses this device next mustn't inherit this parent's packs while offline.
+    forgetSavedRights()
     const { error } = await createClient().auth.signOut({ scope: 'local' })
     if (error) throw new Error('Signing out didn’t finish. Please try again.')
   },
