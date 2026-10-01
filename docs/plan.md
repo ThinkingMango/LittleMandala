@@ -79,7 +79,7 @@ All prices are in `lib/billing/pricing.ts`, in US cents. None depends on how man
 | `/color/[id]` | Kid | Coloring: white canvas, palette and eraser, Undo, Start over, Done. `?art=<artworkId>` reopens a garden picture. |
 | `/garden` | Kid | My garden: every finished picture, newest first. |
 | `/parent` | Parent gate | Answer a multiplication (12–19 × 3–5). There's no press-and-hold, which a child can pass alone. Sets `sessionStorage["lm:gate"]`. Counts as a children's screen for analytics. "Clear saved coloring" behind it also needs CLEAR typed. |
-| `/parent/sign-in` | Parent | One-time email link through Supabase Auth. |
+| `/parent/sign-in` | Parent | One email through Supabase Auth with a link and a code: tap the link on this device, or type the code (for an email open on another device). Both count as a fresh sign-in. |
 | `/auth/callback`, `/auth/confirm` | Server | Finish the email-link sign-in. |
 | `/parent/home` | Parent | Overview: Picture packs, Pictures, Account, Cloud saving, This device ("Clear saved coloring", sign out). |
 | `/parent/pictures` | Parent | **Pictures**: each garden picture's save state (this device only / also in your account / not copied yet), then **Print** or **Download PDF**, one picture per page with its name and date. Made on the device, and nothing is uploaded. |

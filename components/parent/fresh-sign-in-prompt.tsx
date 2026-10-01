@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { Mail, MailCheck, ShieldCheck } from 'lucide-react'
+import { EmailCodeForm } from '@/components/parent/email-code-form'
 import { Button } from '@/components/ui/button'
 import { authClient } from '@/lib/auth/client'
+import { refreshRecentSignIn } from '@/lib/auth/recent-sign-in'
 
 const RESEND_COOLDOWN_SECONDS = 60
 
@@ -49,14 +51,14 @@ export function FreshSignInPrompt({ email, action, returnPath }: Props) {
             <>
               <p className="font-bold">Check your email</p>
               <p>
-                {'We sent a fresh link to '}
+                {'We sent a fresh link and code to '}
                 <span className="font-bold break-all">{email}</span>
-                {`. Open it in this browser. It brings you back here, and you then have 10 minutes to ${action}.`}
+                {`. Open the link in this browser, or type the code below. You then have 10 minutes to ${action}.`}
               </p>
             </>
           ) : (
             <>
-              <p className="font-bold">Confirm it’s you with a fresh email link</p>
+              <p className="font-bold">Confirm it’s you with a fresh sign-in email</p>
               <p>
                 {`To protect your child, only a grown-up who signed in during the last 10 minutes can ${action}. This stops anyone using an already signed-in family tablet from doing it.`}
               </p>
@@ -64,6 +66,7 @@ export function FreshSignInPrompt({ email, action, returnPath }: Props) {
           )}
         </div>
       </div>
+      {sent && <EmailCodeForm email={email} submitLabel="Confirm" onVerified={refreshRecentSignIn} />}
       {error && (
         <p role="alert" className="text-sm font-semibold text-destructive">
           {error}
@@ -81,7 +84,7 @@ export function FreshSignInPrompt({ email, action, returnPath }: Props) {
             ? `Send again in ${secondsLeft}s`
             : sent
               ? 'Send again'
-              : 'Email me a fresh link'}
+              : 'Email me a link and code'}
       </Button>
     </div>
   )

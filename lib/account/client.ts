@@ -10,7 +10,7 @@ export const DELETION_ERRORS = [
 export type DeletionErrorCode = (typeof DELETION_ERRORS)[number]
 
 const MESSAGES: Record<DeletionErrorCode, string> = {
-  recent_sign_in_required: 'For your child’s safety, please confirm with a fresh email link first.',
+  recent_sign_in_required: 'For your child’s safety, please confirm with a fresh sign-in email first.',
   not_signed_in: 'Please sign in again to delete your account.',
   confirmation_mismatch: 'The email address you typed doesn’t match this account.',
   active_plan: 'A subscription on this account is still active. Email support@smartmango.ai and we’ll cancel it first.',

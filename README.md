@@ -16,7 +16,7 @@ The full product plan, pricing, data model and open gaps are in [docs/plan.md](d
 ### For grown-ups (`/parent`)
 
 - **Grown-up check**: a multiplication question (such as 14 × 3) that young children can't answer. Clearing all saved coloring also needs CLEAR typed.
-- **Sign in** with a one-time email link (Supabase Auth). No passwords.
+- **Sign in** with one email (Supabase Auth): tap its link, or type its code on another device such as the child’s tablet. No passwords.
 - **Pricing**: one-time packs ($4.99 each, any 3 for $12.99, any 5 for $19.99, Standard unlock $1.99), paid with Stripe Embedded Checkout. Prices are worked out on the server.
 - **Cloud saving**: optional, only after a parent agrees to the notice with a fresh sign-in.
 - **Pictures**: print or download a PDF, made on the device.
@@ -51,6 +51,10 @@ Production (`VERCEL_ENV=production`) uses live Stripe keys and charges real card
 ## Database
 
 Migrations live in `supabase/migrations/`. They are **not** applied automatically: apply each new one to the Supabase project (`supabase-teal-umbrella`) in the SQL editor or through v0, in filename order, before merging code that depends on it.
+
+## Sign-in emails
+
+Supabase sends the sign-in emails. `supabase/templates/` holds the designs: `magic-link.html` (sign in) and `confirm-signup.html` (new account). Each email has a link and a code (`{{ .Token }}`), and the app accepts either. Supabase keeps its own copy, so after editing a file, paste it into Supabase → Authentication → Emails → Templates. Update the templates **before** deploying app changes that depend on them.
 
 ## Project structure
 

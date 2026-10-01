@@ -72,6 +72,30 @@ function describeEmailLinkError(error: AuthError) {
   }
 }
 
+/** Supabase sends 6 digits by default; the project can set up to 10. Spaces and dashes are ignored. */
+const CODE_PATTERN = /^\d{6,10}$/
+
+export function normalizeEmailCode(code: string) {
+  return code.replace(/[\s-]/g, '')
+}
+
+function describeEmailCodeError(error: AuthError) {
+  switch (error.code) {
+    case 'over_request_rate_limit':
+      return 'Too many tries for now. Please wait a minute, then try again.'
+    case 'otp_expired':
+    case 'otp_disabled':
+      return 'That code didn’t work. Use the code from the newest email: each code works once and expires after an hour.'
+    default:
+      if (error.status === 429) return 'Too many tries for now. Please wait a minute, then try again.'
+      if (error.status === 401 || error.status === 403) {
+        return 'That code didn’t work. Use the code from the newest email: each code works once and expires after an hour.'
+      }
+      console.error('Email code sign-in failed', error.code ?? error.status)
+      return 'We couldn’t check that code. Please try again in a moment.'
+  }
+}
+
 export const authClient: AuthClient = {
   getState: () => state,
   subscribe(listener) {
@@ -94,6 +118,14 @@ export const authClient: AuthClient = {
       },
     })
     if (error) throw new Error(describeEmailLinkError(error))
+  },
+  async verifyEmailCode(email, code) {
+    const token = normalizeEmailCode(code)
+    if (!CODE_PATTERN.test(token)) throw new Error('Type the number code from the email.')
+    const { error } = await createClient().auth.verifyOtp({ email: email.trim().toLowerCase(), token, type: 'email' })
+    if (error) throw new Error(describeEmailCodeError(error))
+    // The emailed link would have used this to choose where to land; the code sign-in has arrived already.
+    document.cookie = `${AFTER_SIGN_IN_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`
   },
   async signOut() {
     const { error } = await createClient().auth.signOut({ scope: 'local' })
