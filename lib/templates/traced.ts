@@ -1,4 +1,4 @@
-import type { Drawing, Region, TemplateDefinition } from '@/lib/mandalas'
+import type { Drawing, RawOutline, TemplateDefinition } from '@/lib/mandalas'
 import type { PackIconName } from '@/lib/pack-icons'
 import type { PackId } from '@/lib/packs'
 import { EARLIER_DRAWINGS } from '@/lib/templates/earlier-drawings'
@@ -9,13 +9,19 @@ export type PackStatus = 'draft' | 'published'
 /** Who a pack is drawn for. Grown-up pages are finer and get the 24-color palette. */
 export type PackAudience = 'children' | 'grown-ups'
 
-export type TracedArt = {
+/**
+ * A traced page as the registry lists it. The areas and their spoken names are listed inline, since
+ * every screen needs them; the outline, nearly all of a page's size, is fetched when it's drawn.
+ */
+export type TracedPage = Readonly<{
   id: string
   name: string
-  line?: string
-  regions: Region[]
-  details: { kind: string; d: string }[]
-}
+  /** Written only for grown-up pages; bold is the default. */
+  line?: 'fine'
+  /** `[id, spoken name]` for every area, in drawing order. */
+  regions: readonly (readonly [string, string])[]
+  outline: () => Promise<{ default: RawOutline }>
+}>
 
 /** A pack made from art/<pack>, as listed in the generated registry. */
 export type TracedPackSource = Readonly<{
@@ -26,7 +32,7 @@ export type TracedPackSource = Readonly<{
   status: PackStatus
   /** Written only for grown-up packs; children is the default. */
   audience?: 'grown-ups'
-  pages: readonly TracedArt[]
+  pages: readonly TracedPage[]
 }>
 
 export type TracedPack = Omit<TracedPackSource, 'id'> & { id: (typeof TRACED_PACK_SOURCES)[number]['id'] }
@@ -43,31 +49,30 @@ export const LISTED_TRACED_PACKS: readonly TracedPack[] = TRACED_PACKS.filter(
   (pack) => pack.status === 'published' || SHOW_DRAFT_PACKS,
 )
 
-/** A page made by `pnpm packs trace` from its source image in art/<pack>/source. */
-export function traced(art: TracedArt): Drawing {
-  return {
-    regions: art.regions.map(({ id, label, d }) => ({ id, label, d })),
-    details: art.details.map(({ kind, d }) => ({ kind: kind === 'line' ? 'line' : 'dot', d })),
-    ...(art.line === 'fine' && { line: 'fine' as const }),
-  }
-}
-
 /**
  * A paid page in a traced pack. Earlier drawings for pages that shipped before their traced art stay
  * as the first versions, so saved artwork keeps opening on the version it was started on.
  */
-export function tracedPage(pack: PackId, art: TracedArt, earlier: readonly Drawing[] = []): TemplateDefinition {
+export function tracedPage(pack: PackId, page: TracedPage, earlier: readonly Drawing[] = []): TemplateDefinition {
   return {
-    id: art.id,
-    name: art.name,
+    id: page.id,
+    name: page.name,
     tier: 'paid',
     pack,
-    versions: [...earlier, traced(art)].map((drawing, index) => ({ version: index + 1, drawing })),
+    versions: [
+      ...earlier.map((drawing, index) => ({ version: index + 1, drawing })),
+      {
+        version: earlier.length + 1,
+        regions: page.regions.map(([id, label]) => ({ id, label })),
+        line: page.line,
+        load: () => page.outline().then((module) => module.default),
+      },
+    ],
   }
 }
 
 export function listedTracedPages(): TemplateDefinition[] {
   return LISTED_TRACED_PACKS.flatMap((pack) =>
-    pack.pages.map((art) => tracedPage(pack.id, art, EARLIER_DRAWINGS[art.id])),
+    pack.pages.map((page) => tracedPage(pack.id, page, EARLIER_DRAWINGS[page.id])),
   )
 }

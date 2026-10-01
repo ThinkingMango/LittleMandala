@@ -1,5 +1,5 @@
 import type { Fills } from '@/lib/artwork/library'
-import type { TemplateVersion } from '@/lib/mandalas'
+import type { Outline, TemplateVersion } from '@/lib/mandalas'
 import type { ColorKey } from '@/lib/palette'
 
 /** sRGB versions of the palette tokens in globals.css, so the file looks right outside the app. */
@@ -44,16 +44,19 @@ const FILE_COLORS: Record<ColorKey, string> = {
 const CANVAS = '#ffffff'
 const INK = '#242b3b'
 
-/** A standalone image of one garden picture, drawn exactly like the garden tile. */
-export function renderArtworkSvg(version: TemplateVersion, fills: Fills) {
-  const paths = version.regions
+/**
+ * A standalone image of one garden picture, drawn exactly like the garden tile. Takes the outline
+ * explicitly (see `loadOutline`), so a picture can't be drawn before its outline has arrived.
+ */
+export function renderArtworkSvg(version: TemplateVersion, outline: Outline, fills: Fills) {
+  const paths = outline.regions
     .map((region) => {
       const color = fills[region.id]
       const fill = color ? FILE_COLORS[color] : CANVAS
       return `<path d="${region.d}" fill="${fill}"/>`
     })
     .join('')
-  const details = version.details
+  const details = outline.details
     .map((detail) =>
       detail.kind === 'dot'
         ? `<path d="${detail.d}" fill="${INK}" stroke="none"/>`

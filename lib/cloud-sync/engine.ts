@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Artwork, ArtworkLibrary, CloudArtwork } from '@/lib/artwork/library'
 import { renderArtworkSvg } from '@/lib/cloud-sync/artwork-svg'
+import { loadOutline } from '@/lib/templates/outlines'
 
 const BUCKET = 'artwork'
 const MAX_ROWS = 1000
@@ -150,7 +151,10 @@ export function createCloudSync({ library, client, now = Date.now }: Deps) {
     const filePath = `${uid}/${artwork.id}.svg`
 
     if (!hasFile) {
-      const svg = renderArtworkSvg(version, artwork.fills)
+      const outline = await loadOutline(version).catch((error: unknown) => {
+        throw toFailure(error)
+      })
+      const svg = renderArtworkSvg(version, outline, artwork.fills)
       const { error } = await supabase.storage
         .from(BUCKET)
         .upload(filePath, new Blob([svg], { type: 'image/svg+xml' }), {

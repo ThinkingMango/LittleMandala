@@ -2,8 +2,9 @@
 
 import type { KeyboardEvent, MouseEvent } from 'react'
 import type { Fills } from '@/lib/artwork/library'
-import type { Region, TemplateVersion } from '@/lib/mandalas'
+import type { RegionInfo, TemplateVersion } from '@/lib/mandalas'
 import { colorLabel, colorVar } from '@/lib/palette'
+import { useOutline } from '@/lib/templates/use-outline'
 import { cn } from '@/lib/utils'
 
 type MandalaArtProps = {
@@ -14,19 +15,20 @@ type MandalaArtProps = {
   /** Accessible name for the interactive canvas. */
   label?: string
   /** When provided, regions become tappable, focusable buttons. */
-  onRegionTap?: (region: Region, element: SVGPathElement) => void
+  onRegionTap?: (region: RegionInfo, element: SVGPathElement) => void
 }
 
 export function MandalaArt({ version, fills, className, label, onRegionTap }: MandalaArtProps) {
+  const outline = useOutline(version)
   const interactive = Boolean(onRegionTap)
   const fine = version.line === 'fine'
-  const outline = fine ? (interactive ? 3.5 : 6) : interactive ? 7 : 14
+  const lineWidth = fine ? (interactive ? 3.5 : 6) : interactive ? 7 : 14
 
-  const handleClick = (region: Region) => (e: MouseEvent<SVGPathElement>) => {
+  const handleClick = (region: RegionInfo) => (e: MouseEvent<SVGPathElement>) => {
     onRegionTap?.(region, e.currentTarget)
   }
 
-  const handleKey = (region: Region) => (e: KeyboardEvent<SVGPathElement>) => {
+  const handleKey = (region: RegionInfo) => (e: KeyboardEvent<SVGPathElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       onRegionTap?.(region, e.currentTarget)
@@ -42,16 +44,22 @@ export function MandalaArt({ version, fills, className, label, onRegionTap }: Ma
       aria-hidden={interactive ? undefined : true}
       focusable="false"
       data-line={fine ? 'fine' : undefined}
+      aria-busy={outline ? undefined : true}
     >
-      {version.regions.map((region) => {
+      {!outline && (
+        // The page's outline is on its way: a soft blank page holds its place.
+        <circle cx="500" cy="500" r="470" fill="var(--canvas)" stroke="var(--border)" strokeWidth={6} />
+      )}
+      {outline?.regions.map(({ d }, i) => {
+        const region = version.regions[i]
         const fill = fills[region.id]
         return (
           <path
             key={region.id}
-            d={region.d}
+            d={d}
             fill={fill ? colorVar(fill) : 'var(--canvas)'}
             stroke="var(--ink)"
-            strokeWidth={outline}
+            strokeWidth={lineWidth}
             strokeLinejoin="round"
             strokeLinecap="round"
             {...(interactive && {
@@ -65,14 +73,14 @@ export function MandalaArt({ version, fills, className, label, onRegionTap }: Ma
           />
         )
       })}
-      {version.details.map((detail, i) => (
+      {outline?.details.map((detail, i) => (
         <path
           key={i}
           d={detail.d}
           fill={detail.kind === 'dot' ? 'var(--ink)' : 'none'}
           fillRule={fine ? 'evenodd' : undefined}
           stroke={detail.kind === 'dot' ? 'none' : 'var(--ink)'}
-          strokeWidth={outline}
+          strokeWidth={lineWidth}
           strokeLinecap="round"
           pointerEvents="none"
         />

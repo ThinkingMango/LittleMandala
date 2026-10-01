@@ -14,6 +14,7 @@ import { pictureSaveState } from '@/lib/cloud-sync/picture-state'
 import { saveFile, svgToPng } from '@/lib/export/rasterize'
 import { useHydrated } from '@/lib/local-store'
 import { getMandala } from '@/lib/mandalas'
+import { loadOutline } from '@/lib/templates/outlines'
 
 const longDate = new Intl.DateTimeFormat(undefined, { dateStyle: 'long' })
 
@@ -29,6 +30,8 @@ export function PicturesView() {
   const { snapshot } = useCloudSync()
   const [deselected, setDeselected] = useState<ReadonlySet<string>>(() => new Set())
   const [pdf, setPdf] = useState<PdfStatus>({ kind: 'idle' })
+  const [printing, setPrinting] = useState(false)
+  const [printFailed, setPrintFailed] = useState(false)
 
   const pictures: ExportPicture[] = state.gallery.flatMap((artwork) => {
     const version = library.templates.version(artwork.templateId, artwork.templateVersion)
@@ -61,7 +64,8 @@ export function PicturesView() {
       const { buildPicturesPdf, picturesPdfFileName } = await import('@/lib/export/pictures-pdf')
       const pages = []
       for (const picture of chosen) {
-        const png = await svgToPng(renderArtworkSvg(picture.version, picture.artwork.fills))
+        const outline = await loadOutline(picture.version)
+        const png = await svgToPng(renderArtworkSvg(picture.version, outline, picture.artwork.fills))
         pages.push({ name: picture.name, dateLabel: picture.dateLabel, png })
         setPdf({ kind: 'working', done: pages.length, total: chosen.length })
       }
@@ -70,6 +74,23 @@ export function PicturesView() {
     } catch (error) {
       console.error('Making the pictures PDF failed', error)
       setPdf({ kind: 'error' })
+    }
+  }
+
+  /** Every chosen picture's outline is fetched first, so no sheet prints blank. */
+  const print = async () => {
+    setPrinting(true)
+    setPrintFailed(false)
+    try {
+      await Promise.all(selected.map((picture) => loadOutline(picture.version)))
+      // Let the print sheet draw the outlines that just arrived before the browser takes its copy.
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+      window.print()
+    } catch (error) {
+      console.error('Getting pictures ready to print failed', error)
+      setPrintFailed(true)
+    } finally {
+      setPrinting(false)
     }
   }
 
@@ -129,7 +150,9 @@ export function PicturesView() {
 
             <div className="sticky bottom-4 z-10 flex flex-col gap-2 rounded-3xl border bg-card p-3 shadow-lg sm:flex-row sm:items-center sm:justify-between sm:pl-5">
               <p role="status" aria-live="polite" className="text-sm font-semibold text-muted-foreground">
-                {pdf.kind === 'working'
+                {printFailed
+                  ? 'The pictures couldn’t be made ready to print. Check your connection and try again.'
+                  : pdf.kind === 'working'
                   ? `Making PDF… ${pdf.done} of ${pdf.total}`
                   : pdf.kind === 'saved'
                     ? `PDF saved with ${pdf.count} ${pdf.count === 1 ? 'picture' : 'pictures'}.`
@@ -142,8 +165,8 @@ export function PicturesView() {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => window.print()}
-                  disabled={selected.length === 0 || working}
+                  onClick={() => void print()}
+                  disabled={selected.length === 0 || working || printing}
                   className="h-11 flex-1 rounded-full px-5 font-bold sm:flex-none"
                 >
                   <Printer data-icon="inline-start" />

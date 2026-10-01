@@ -10,6 +10,7 @@ import {
   MANDALAS,
   createTemplateSource,
   defineTemplate,
+  freezeOutline,
   freezeVersion,
   type Mandala,
   type TemplateDefinition,
@@ -68,9 +69,15 @@ describe('templates', () => {
 
   it('refuses out-of-order versions and duplicate region ids', () => {
     expect(() => defineTemplate({ id: 'x', name: 'X', tier: 'free', versions: [roseV2Def] })).toThrow(/in order/)
-    const petal = { id: 'petal', d: 'M 0 0 L 10 10 Z', label: 'Petal' }
+    const petal = { id: 'petal', label: 'Petal' }
     expect(() => freezeVersion('x', 1, [petal, { ...petal, label: 'Copy' }])).toThrow(/duplicate/)
-    expect(() => freezeVersion('x', 1, [{ ...petal, d: ' ' }])).toThrow(/missing/)
+    expect(() => freezeVersion('x', 1, [{ ...petal, label: '' }])).toThrow(/missing/)
+  })
+
+  it('refuses an outline with an empty path, or whose areas differ from the page', () => {
+    expect(() => freezeOutline('x', 1, [{ id: 'petal', d: ' ' }], [], ['petal'])).toThrow(/missing a path/)
+    expect(() => freezeOutline('x', 1, [{ id: 'other', d: 'M 0 0 Z' }], [], ['petal'])).toThrow(/don't match/)
+    expect(() => freezeOutline('x', 1, [{ id: 'petal', d: 'M 0 0 Z' }], [], ['petal', 'leaf'])).toThrow(/don't match/)
   })
 })
 

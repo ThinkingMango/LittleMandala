@@ -70,7 +70,7 @@ lib/artwork/        On-device artwork library: drafts, garden, undo history
 lib/billing/        Prices, orders, fulfilment, payment mode
 lib/cloud-sync/     Optional cloud copy of garden pictures
 lib/cloud-consent/  Consent notice, records and PDF receipt
-lib/templates/      Traced pack pages and the generated pack registry
+lib/templates/      Traced pack pages, the generated pack registry, and the outline store
 scripts/            pnpm packs and the tracer
 supabase/           Database migrations and email templates
 ```
@@ -82,6 +82,10 @@ Artwork lives in the browser's `localStorage` (`lm:v2:*` keys) and works without
 - **Template versions are append-only.** Saved artwork is pinned to the version it was started on.
 - **Garden pictures never change.** Editing one creates a copy that replaces it when saved.
 - **Stored data is checked on read.** Unknown areas, colors and broken history are dropped.
+
+## How pictures load
+
+A page's outline (its drawn paths) is nearly all of its size, so the app doesn't ship them all to every screen. `lib/mandalas.ts` holds each page's areas and spoken names, which is enough to save, check and announce coloring. The outline comes from `lib/templates/outlines.ts`: code-drawn pages (Standard and earlier drawings) ship with the app, and each traced page's outline is fetched the first time it's drawn, then kept for the visit. `MandalaArt` draws a blank placeholder until it arrives (`useOutline`). Anything that draws outside React, such as cloud backup, PDFs and printing, awaits `loadOutline` first. `pnpm packs sync` writes the registry in this form, so new packs need nothing extra.
 
 ## Deployment
 

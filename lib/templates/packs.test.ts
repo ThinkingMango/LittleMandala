@@ -27,6 +27,14 @@ describe('pack registry', () => {
     expect(readFileSync(join(root, REGISTRY_FILE), 'utf8')).toBe(renderRegistry(root))
   })
 
+  it('never bundles a page outline: each is imported only when the page is drawn', () => {
+    const registry = readFileSync(join(root, REGISTRY_FILE), 'utf8')
+    expect(registry).not.toMatch(/^import\s(?!type\b).*\.json['"]/m)
+    expect(registry.match(/import\('@\/lib\/templates\/[a-z-]+\/[a-z-]+\.json'\)/g)?.length).toBe(
+      manifests.reduce((n, m) => n + m.pages.filter((p) => readTraced(root, m.pack, p.id)).length, 0),
+    )
+  })
+
   it('gives every pack, drafts included, its folder name and a known icon', () => {
     for (const manifest of manifests) {
       expect(existsSync(join(root, 'art', manifest.pack, 'pages.json')), manifest.pack).toBe(true)
@@ -74,8 +82,8 @@ describe.each(published.map((m) => [m.pack, m] as const))('%s pack', (id, manife
 
   it('draws every region and detail inside the page with no broken numbers', () => {
     for (const page of pages) {
-      const version = latestVersion(page)
-      for (const d of [...version.regions, ...(version.details ?? [])].map((x) => x.d)) {
+      const art = readTraced(root, id, page.id)!
+      for (const d of [...art.regions, ...art.details].map((x) => x.d)) {
         const numbers = d.match(/-?\d+(\.\d+)?/g)!.map(Number)
         expect(d, page.id).not.toMatch(/NaN|Infinity/)
         expect(Math.min(...numbers), page.id).toBeGreaterThanOrEqual(0)

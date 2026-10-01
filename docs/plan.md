@@ -153,6 +153,10 @@ Logic is in `startSession` and `saveSession` in `lib/artwork/library.ts`, used t
 - Each pack lives in `art/<pack>/pages.json`. `pnpm packs sync` generates `lib/templates/registry.generated.ts`.
 - The art rules (`AUDIENCE_RULES` in `scripts/trace-pack/segment.ts`) and the pipeline (`pnpm packs new | prompts | trace | sheet | labels | status | publish`) are unchanged. See `art/README.md`.
 
+## Loading
+
+Each page downloads only the outlines it draws (`lib/templates/outlines.ts`). Before this, every screen shipped all 154 outlines, about 800 KB compressed. Up front, each screen now downloads about 290–330 KB of code. With the outlines it then fetches, that comes to about 455 KB for Home (27 pack-cover pictures), 362 KB for a pack page and 323 KB for one picture, against about 1,050 KB for every page before. A new pack adds only its three cover pictures to Home, and nothing to other pages. A test fails if the registry bundles an outline again.
+
 ## UI and accessibility
 
 - Pure white canvas with charcoal outlines (bold for children, fine for grown-ups). The palette and tools sit on the sides in landscape, and along the bottom and top in portrait.
