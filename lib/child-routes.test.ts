@@ -108,6 +108,39 @@ describe('children’s screens', () => {
   })
 })
 
+describe('grown-up scripts never reach children’s screens', () => {
+  const SOURCE_DIRS = ['app', 'components', 'lib', 'hooks'].map((dir) => join(ROOT, dir))
+  const sources = SOURCE_DIRS.flatMap(walk).filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
+  const GROWN_UP_DIRS = ['app/parent/', 'app/(info)/', 'components/parent/', 'components/info/']
+  // A client-side <Link> to a children's screen would carry Stripe.js and analytics along with it.
+  const LINK_TO_KIDS = /<Link\b[^>]*?href=\{?\s*(?:["'`]\/(?:["'`?#]|garden\b|packs\/|color\/)|packHref\()/
+
+  it('load Stripe.js only when a checkout opens', () => {
+    const eager = sources
+      .filter((file) =>
+        [...readFileSync(file, 'utf8').matchAll(/\bimport\s+(type\s)?[^'"]*?from\s*['"]([^'"]+)['"]/g)].some(
+          // Type-only imports are removed from the build, so they can't load anything.
+          ([, typeOnly, specifier]) => specifier === '@stripe/stripe-js' && !typeOnly,
+        ),
+      )
+      .map((file) => relative(ROOT, file))
+    expect(eager).toEqual([])
+  })
+
+  it('leave the grown-up area with a full page load', () => {
+    const clientLinks = sources
+      .filter((file) => GROWN_UP_DIRS.some((dir) => relative(ROOT, file).startsWith(dir)))
+      .filter((file) => LINK_TO_KIDS.test(readFileSync(file, 'utf8')))
+      .map((file) => relative(ROOT, file))
+    expect(clientLinks).toEqual([])
+  })
+
+  it('reload any page that grown-up scripts have touched before a child sees it', () => {
+    expect(readFileSync(join(KID_ROUTES, 'layout.tsx'), 'utf8')).toMatch(/<GrownUpScriptGuard>/)
+    expect(readFileSync(join(ROOT, 'components/grown-up-analytics.tsx'), 'utf8')).toMatch(/markGrownUpDocument/)
+  })
+})
+
 describe('visit statistics', () => {
   it('count only grown-up pages', () => {
     for (const path of ['/parent/home', '/parent/pictures', '/parent/billing', '/privacy', '/refunds', '/support']) {

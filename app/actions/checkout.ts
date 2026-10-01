@@ -3,6 +3,7 @@
 import { headers } from 'next/headers'
 import { MAX_ORDER_PACKS, buildOrder, type OrderError } from '@/lib/billing/order'
 import { fulfilCheckoutSession } from '@/lib/billing/fulfil'
+import { countsInThisMode } from '@/lib/billing/mode'
 import { STRIPE_LIVE, stripe, stripePublishableKey } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 
@@ -50,7 +51,7 @@ export async function startPackCheckout(input: CheckoutInput): Promise<CheckoutS
   const [rights, customer] = await Promise.all([
     parent.supabase
       .from('entitlements')
-      .select('pack_id, starts_at, ends_at')
+      .select('pack_id, source_id, starts_at, ends_at')
       .eq('parent_id', parent.id)
       .eq('scope', 'pack')
       .is('revoked_at', null),
@@ -69,7 +70,10 @@ export async function startPackCheckout(input: CheckoutInput): Promise<CheckoutS
   const now = Date.now()
   const owned = new Set(
     rights.data.flatMap((row) =>
-      row.pack_id && Date.parse(row.starts_at) <= now && (!row.ends_at || Date.parse(row.ends_at) > now)
+      row.pack_id &&
+      countsInThisMode(row.source_id, STRIPE_LIVE) &&
+      Date.parse(row.starts_at) <= now &&
+      (!row.ends_at || Date.parse(row.ends_at) > now)
         ? [row.pack_id as string]
         : [],
     ),

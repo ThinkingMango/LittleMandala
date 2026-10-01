@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
+  env: {
+    // Production takes real payments; previews and local development use Stripe test mode.
+    // Packs bought with a test card don't open in production (lib/billing/mode.ts).
+    NEXT_PUBLIC_LIVE_PAYMENTS: process.env.VERCEL_ENV === 'production' ? 'true' : 'false',
   },
   images: {
     unoptimized: true,

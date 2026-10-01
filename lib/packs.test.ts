@@ -13,6 +13,7 @@ const NOW = Date.parse('2026-09-27T12:00:00Z')
 const row = (scope: 'membership' | 'pack', pack_id: string | null, ends_at: string | null = null) => ({
   scope,
   pack_id,
+  source_id: 'cs_live_a1',
   starts_at: '2026-09-01T00:00:00Z',
   ends_at,
 })
