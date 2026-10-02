@@ -1,15 +1,34 @@
-# Little Mandala — App Plan (tablet-first, ages 3–7, plus a grown-up pack)
+# Little Mandala — App Plan (tablet-first, ages 3–7)
 
 **Release 1.0, the first production release**, is live at **https://mandala.smartmango.ai** (merge commit `aca3375`, PR #11 on top of PR #10).
 
 A mandala coloring app for young children with **real parent accounts on Supabase**, **one-time pack pricing** and **live Stripe payments in production**. Children color on simple screens with no words to read. Parents buy packs, manage cloud saving, and print or download pictures from a separate area behind a parent gate. Pictures unlock only from rights rows in the database, which only the server writes after Stripe confirms payment. Stack: Next.js 16 App Router, Tailwind v4, shadcn on Base UI, lucide icons, Supabase (`@supabase/ssr`), Stripe (`stripe`, `@stripe/stripe-js`, `@stripe/react-stripe-js`), Vercel Web Analytics (grown-up pages only).
+
+## Product scope
+
+**Little Mandala is for children aged 3 to 7. Every picture pack is a children's pack. No adult (grown-up) coloring packs are planned** (decided 2 October 2026).
+
+- Parents still use the **grown-up area** (`/parent`) to sign in, buy their child's packs, turn on cloud saving and print pictures. "Grown-up" in this document means that parent area, not adult coloring.
+- Adult packs were explored before 1.0 and never offered. Their code is **switched off, not deleted**: `GROWN_UPS_OFFERED = false` in `lib/packs.ts` hides the adult shelf, the "For you" groups on Pricing and Overview, and the `/parent/grown-ups` and `/parent/color/[id]` pages (both return "Page not found"). The draft **Zen Mandalas** pack (`art/zen-mandalas`, 12 pages) is never listed, sold or opened.
+- Families are never told adult packs exist: the policy pages, Pricing and the children's screens don't mention them.
+- Bringing adult packs back would be a new product decision. It would need the Zen pack finished (its pictures exceed the cloud-backup size limit), the switch turned on, and the pricing and policy pages reviewed.
+
+## Changes since 1.0
+
+| PR | What changed |
+|---|---|
+| #15 | Payment and child-safety fixes: test-mode purchases don't open packs in Production, the multiplication parent gate, CLEAR typed to clear coloring, children's screens reload if a grown-up page loaded outside scripts, a database fix for checkouts recorded twice at once, and CI on every pull request. |
+| #16 | Sign-in emails carry a code as well as a link, so a parent can sign in on the child's tablet with the email open on a phone. |
+| #17 | Faster loading: each screen downloads only the picture outlines it draws. |
+| #18 | Offline coloring for the children's screens. Packs bought or refunded during a visit now show without a reload. |
+| #19 | The parent area names the right device (no more "this tablet" on a Mac), and Safari users on a Mac are told how to keep pictures safe. |
 
 ## Release 1.0 at a glance
 
 | Area | What shipped |
 |---|---|
 | Children's app | Pack shelf, coloring screen, **My garden**. No ads, analytics, purchase prompts or links out. |
-| Packs | **10 published packs, 154 pages.** Zen Mandalas (grown-ups) is still a draft and hidden. |
+| Packs | **10 published packs, 154 pages**, all for children. |
 | Parent area | Gate, email sign-in, Overview, **Pictures** (print and PDF), Pricing and checkout, Cloud saving, Delete account. |
 | Payments | **Stripe live mode in Production.** Preview and Development use test keys and never fall back to live ones. |
 | Privacy | Artwork stays on the device unless a parent opts into cloud saving with recorded consent. Analytics runs only on grown-up pages. |
@@ -27,9 +46,9 @@ A mandala coloring app for young children with **real parent accounts on Supabas
 | Pricing page | Plan cards | Offer cards, a pack picker with a live order summary, the cheapest mix of bundles, an "add N more to reach a bundle" nudge, and **Buy** with Stripe checkout. |
 | Parent overview | Account, plan, every picture, settings | One column: Picture packs, **Pictures**, Account, Cloud saving, This device. |
 | Printing and export | Not planned | **Pictures page**: per-picture save state, then **Print** or **Download PDF**, made on the device. |
-| Packs | 5 packs, 74 pages | **10 published packs (154 pages)** plus the draft **Zen Mandalas**. |
+| Packs | 5 packs, 74 pages | **10 published packs (154 pages)**, all for children. |
 | Saved pictures | One draft per page | **My garden**: finished pictures live on their own page, and pack pages always start white. |
-| Audience | Children only | Packs have an `audience`: `children` (default) or `grown-ups`. It sets the art rules, line weight and palette. |
+| Audience | Children only | **Still children only.** The code supports a `grown-ups` audience, but no adult packs are planned (see Product scope). |
 | Analytics | Site-wide | **Grown-up pages only**, with events from children's pages dropped as well. |
 | Tests | 80 | 187 in 16 files. |
 
@@ -84,7 +103,7 @@ All prices are in `lib/billing/pricing.ts`, in US cents. None depends on how man
 | `/parent/home` | Parent | Overview: Picture packs, Pictures, Account, Cloud saving, This device ("Clear saved coloring", sign out). |
 | `/parent/pictures` | Parent | **Pictures**: each garden picture's save state (this device only / also in your account / not copied yet), then **Print** or **Download PDF**, one picture per page with its name and date. Made on the device, and nothing is uploaded. |
 | `/parent/billing` | Parent | Pricing, pack picker, order summary, the Standard unlock and **Buy**. Also confirms returning checkouts. |
-| `/parent/grown-ups`, `/parent/color/[id]` | Parent | Grown-up shelf and coloring. 404 while `GROWN_UPS_OFFERED` is `false`. Locked pages here use `GrownUpLocked`, which may link to pricing. |
+| `/parent/grown-ups`, `/parent/color/[id]` | — | **Switched off.** Always "Page not found", because no adult packs are offered (`GROWN_UPS_OFFERED = false`). |
 | `/parent/cloud-saving` | Parent | Opt in to copying finished pictures to the account (needs recorded consent). |
 | `/parent/delete-account` | Parent | Deletes the account. Payment records are kept as the law requires. |
 | `/privacy`, `/refunds`, `/support` | Grown-ups | Policy and help pages. |
@@ -95,12 +114,12 @@ Layouts and child safety:
 - `app/(kid)/layout.tsx`: full-bleed white, with no text navigation, links out, purchase prompts or analytics.
 - `lib/child-routes.test.ts` walks every module the kid routes load. It fails on tracker packages or snippets, outside links, new windows, pricing links or grown-up-only modules.
 - Vercel Web Analytics is mounted only by `app/parent/layout.tsx` and `app/(info)/layout.tsx` (`components/grown-up-analytics.tsx`). Its `beforeSend` drops any event not on a grown-up page (`lib/audience-routes.ts`).
-- `app/parent/layout.tsx` gives the calmer adult UI, and every parent route except `/parent` checks the gate flag. The header and footer are hidden when printing.
+- `app/parent/layout.tsx` gives the calmer parent UI, and every parent route except `/parent` checks the gate flag. The header and footer are hidden when printing.
 - `next.config.mjs` sends security headers: nosniff, referrer policy, HSTS, `X-Frame-Options: SAMEORIGIN` and a permissions policy (confirmed on production).
 
 ## Data
 
-One Supabase project serves Production, Preview and Development. It has 8 migrations in `supabase/migrations/`, the last being `20260930120000_stripe_live_mode.sql`, and every table has owner-only RLS.
+One Supabase project serves Production, Preview and Development. It has 9 migrations in `supabase/migrations/`, all applied, the last being `20261001120000_fulfil_checkout_race.sql` (applied 1 October 2026), and every table has owner-only RLS.
 - `profiles`, `consent_notices`, `consent_records`: parent accounts and the consent notice they agreed to (notice v2 is approved).
 - `artworks`, `artwork_deletions`: cloud copies of pictures, only after cloud-saving consent (`has_cloud_consent()`).
 - `billing_customers`: keyed by `(parent_id, livemode)`, so each parent has separate test and live Stripe customers. Rows from before the live launch are test mode.
@@ -125,12 +144,12 @@ Logic is in `startSession` and `saveSession` in `lib/artwork/library.ts`, used t
 
 - `lib/export/pictures-pdf.ts` builds the PDF, one picture per page with its name and date, and `lib/export/rasterize.ts` draws each picture in the browser. Nothing is uploaded.
 - Print uses `components/parent/pictures/print-sheet.tsx`, with the parent header and footer hidden on paper and a 14mm `@page` margin.
-- Saved picture files and PDFs use the fine outline for grown-up pages (`lib/cloud-sync/artwork-svg.ts`).
+- Saved picture files and PDFs use the same bold outline as the screen (`lib/cloud-sync/artwork-svg.ts`).
 
 ## Palette
 
 - **Children: 12 colors** in six bold/soft pairs (`PALETTE`), with swatches of 64px on tablets and 44px on phones.
-- **Grown-ups: 24 colors** in six families of four shades (`GROWN_UP_FAMILIES`), with chips of 56px on tablets and 40px on phones.
+- A 24-color adult palette (`GROWN_UP_FAMILIES`) is still in the code for the switched-off adult packs. Children never see it.
 - Color keys never change once shipped, because saved artwork stores them. `ALL_COLORS` holds all 36 keys.
 
 ## Picture packs
@@ -147,9 +166,10 @@ Logic is in `startSession` and `saveSession` in `lib/artwork/library.ts`, used t
 | Christmas Garden 2 (`christmas-garden-two`) | Children | Published | 16 | $4.99, or part of a bundle |
 | Flowers Garden | Children | Published | 16 | $4.99, or part of a bundle |
 | Surprise Garden | Children | Published | 16 | $4.99, or part of a bundle |
-| Zen Mandalas | Grown-ups | **Draft** | 8 | Not sold until published |
+| Zen Mandalas | Grown-ups | **Shelved draft, not planned** | 12 | Never listed or sold (see Product scope) |
 
-- 154 published pages, and nine packs are sold separately. Draft packs appear only in development and the v0 preview.
+- 154 published pages, all for children, and nine packs are sold separately. Draft packs appear only in local development and the v0 preview, and the Zen draft stays hidden even there because `GROWN_UPS_OFFERED` is `false`.
+- New packs are children's packs (`pnpm packs new` without `--audience`).
 - Each pack lives in `art/<pack>/pages.json`. `pnpm packs sync` generates `lib/templates/registry.generated.ts`.
 - The art rules (`AUDIENCE_RULES` in `scripts/trace-pack/segment.ts`) and the pipeline (`pnpm packs new | prompts | trace | sheet | labels | status | publish`) are unchanged. See `art/README.md`.
 
@@ -177,15 +197,15 @@ Each page downloads only the outlines it draws (`lib/templates/outlines.ts`). Be
 
 ## UI and accessibility
 
-- Pure white canvas with charcoal outlines (bold for children, fine for grown-ups). The palette and tools sit on the sides in landscape, and along the bottom and top in portrait.
+- Pure white canvas with bold charcoal outlines. The palette and tools sit on the sides in landscape, and along the bottom and top in portrait.
 - Controls have an icon, an `aria-label` and a focus ring, and are at least 44px on phones and 64px on tablets.
 - Start over and removing a garden picture both ask first with a big Yes/No dialog.
 - Motion respects `prefers-reduced-motion`. Nunito, light mode only.
 
 ## Tests
 
-`pnpm test`: **187 tests in 16 files**, all passing, and `pnpm exec tsc --noEmit` is clean.
-- Pack manifests, art rules, unique ids and `SOLD_PACKS`.
+`pnpm test`: **248 tests in 27 files** (after PR #19), all passing, and `pnpm exec tsc --noEmit` is clean. 1.0 shipped with 187 tests in 16 files.
+- Pack manifests, art rules, unique ids and `SOLD_PACKS`. `lib/grown-up-packs.test.ts` checks that adult packs stay hidden while the switch is off.
 - Pricing, checkout order building and rejections, and unlock rules.
 - Saving rules, palettes, tracer, coloring screen, cloud consent and the cloud-sync engine.
 - **New in 1.0:** child routes stay free of trackers, outside links and pricing, and analytics only counts grown-up pages (`lib/child-routes.test.ts`). Per-picture save state (`lib/cloud-sync/picture-state.test.ts`) and the pictures PDF (`lib/export/pictures-pdf.test.ts`) are covered too.
@@ -193,32 +213,31 @@ Each page downloads only the outlines it draws (`lib/templates/outlines.ts`). Be
 
 ## Test account
 
-`lawrence.law@hotmail.com` (user `b8986e6c-…`) holds:
-- Ocean Friends ($4.99 single, Stripe **test mode**).
-- Christmas Garden, Easter Garden and Safari Garden ($12.99 bundle, **test mode**).
-- **Standard**: a complimentary grant (`comp:standard:…`), permanent, with no charge or order.
+`lawrence.law@hotmail.com` (user `b8986e6c-…`) holds five **complimentary grants** (`comp:…`), permanent, with no charge or order: **Standard, Ocean Friends, Christmas Garden, Easter Garden and Safari Garden**. They open in every environment, including Production.
 
 Still locked for this account: Ocean Friends 2, Safari Garden 2, Christmas Garden 2, Flowers Garden and Surprise Garden. In Preview, test purchases use card `4242 4242 4242 4242`. On production, any purchase charges a real card.
 
 ## Open gaps
 
-1. **Fixed: test-mode rights no longer open packs in Production.** `lib/billing/mode.ts` ignores rows whose `source_id` starts with `cs_test_` when `VERCEL_ENV=production`, both on the device and in checkout's "already owned" check. Complimentary grants still count. Packs the test account bought with the test card now stay locked on the live site; give it `comp:` grants if it should keep them.
+1. **Fixed: test-mode rights no longer open packs in Production.** `lib/billing/mode.ts` ignores rows whose `source_id` starts with `cs_test_` when `VERCEL_ENV=production`, both on the device and in checkout's "already owned" check. Complimentary grants still count. The test account's packs are now `comp:` grants, so they stay open on the live site.
 2. **Preview checkout is broken.** The test Stripe keys are empty since the sandbox integration was disconnected, so Buy shows an error in Preview. Add `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` and `STRIPE_WEBHOOK_SECRET` from Stripe test mode, scoped to Preview and Development.
 3. **No live purchase has been tested end to end.** The keys, account status, webhook endpoint and signature rejection are confirmed, but the first real charge and refund haven't been run.
 4. **Partial refunds revoke nothing.** Only a full refund closes packs. Partial refunds are handled by hand in the Stripe dashboard.
 5. **Complimentary grants are hand-written SQL.** There's no admin screen or audit trail beyond the `comp:` source id.
-6. **Grown-up packs are hidden.** `GROWN_UPS_OFFERED = false`, and Zen Mandalas is a draft.
+6. **Decided: no adult packs.** The code stays switched off (`GROWN_UPS_OFFERED = false`) and the Zen draft is shelved. See Product scope. Optional clean-up: delete the adult-pack code and the Zen draft, so there's less to maintain.
 7. **Fixed: the unused `NotConnectedBadge` is deleted**, along with the unused `cn` package.
 8. **Print dialog not checked in a browser.** The print styles are compiled and the PDF was tested, but the browser print preview hasn't been checked.
 
 ## Next steps (after 1.0)
 
 1. **Smoke test live payments:** buy the $1.99 Standard unlock on production with a real card on an account that doesn't own it, check it opens without a reload and appears in `transactions` with `livemode = true`, then refund it in full and check it locks again.
-2. **Apply `20261001120000_fulfil_checkout_race.sql`**, so the confirm step and the webhook can record the same checkout at once without an error.
-3. **Restore Preview checkout** with the Stripe test keys, only after the gap 1 fix is live.
-4. **Keep CI green:** every pull request runs typecheck, tests and build, and builds now fail on type errors.
-5. **Publish Zen Mandalas:** finish the review sheets, publish and set `GROWN_UPS_OFFERED = true`.
+2. **Restore Preview checkout** with the Stripe test keys (the gap 1 fix is live).
+3. **Keep CI green:** every pull request runs typecheck, tests and build, and builds fail on type errors.
+4. **Check the sign-in emails in Supabase** match `supabase/templates/` (with the code), and that `support@smartmango.ai` receives mail, since every policy page points families there.
+5. **Optional:** delete the switched-off adult-pack code and the Zen draft (gap 6).
 6. **Optional:** a small admin action for complimentary grants and revocations, so they don't need SQL.
+
+Done since 1.0: `20261001120000_fulfil_checkout_race.sql` was applied on 1 October 2026.
 
 ## Release checklist (1.0)
 
