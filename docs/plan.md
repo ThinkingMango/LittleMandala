@@ -198,7 +198,7 @@ Each page downloads only the outlines it draws (`lib/templates/outlines.ts`). Be
 ## UI and accessibility
 
 - Pure white canvas with bold charcoal outlines. The palette and tools sit on the sides in landscape, and along the bottom and top in portrait.
-- Controls have an icon, an `aria-label` and a focus ring, and are at least 44px on phones and 64px on tablets.
+- Controls have an icon, an `aria-label` and a focus ring, and are at least 44px on phones and 64px on tablets. On the coloring screen, the tool buttons (44–64px) and the palette grow or shrink with the phone's screen so all of them fit.
 - Start over and removing a garden picture both ask first with a big Yes/No dialog.
 - Motion respects `prefers-reduced-motion`. Nunito, light mode only.
 
