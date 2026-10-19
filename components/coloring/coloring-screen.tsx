@@ -103,7 +103,7 @@ export function ColoringScreen({ mandala, gardenArtworkId = null, lockedView }: 
   }
 
   return (
-    <main className="flex h-dvh flex-col gap-4 overflow-hidden p-4 md:gap-6 md:p-6 landscape:flex-row">
+    <main className="safe-edge flex h-dvh flex-col gap-3 overflow-hidden [--edge:--spacing(3)] [container-type:size] roomy:gap-4 roomy:[--edge:--spacing(4)] md:roomy:gap-6 md:roomy:[--edge:--spacing(6)] landscape:flex-row">
       <h1 className="sr-only">{`Coloring ${mandala.name}`}</h1>
 
       <nav
@@ -169,7 +169,7 @@ export function ColoringScreen({ mandala, gardenArtworkId = null, lockedView }: 
         <ColorPalette
           value={tool}
           onChange={setTool}
-          className="self-center landscape:order-1 landscape:flex-col"
+          className="-mx-1.5 self-stretch landscape:order-1 landscape:mx-0 landscape:-my-1.5 landscape:flex-col roomy:mx-0 roomy:self-center landscape:roomy:my-0"
         />
       )}
 
