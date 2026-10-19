@@ -19,6 +19,17 @@ import { DEFAULT_COLOR, DEFAULT_GROWN_UP_COLOR, ERASER, colorLabel, type Tool } 
 
 const GARDEN_HREF = '/garden'
 
+/**
+ * On phones the five tool buttons share out the screen's length, across in portrait and down in
+ * landscape, at 44-64px. Besides the buttons, that length holds two 16px gaps, the 16px gap between
+ * Home and Start over, and the undo group's 16px of padding and 8px gap. Tablets keep 64px, then 72px.
+ */
+const TOOL_SIZE = [
+  '[--tool:clamp(2.75rem,calc((100cqw_-_72px)_/_5),4rem)]',
+  'landscape:[--tool:clamp(2.75rem,calc((100cqh_-_72px)_/_5),4rem)]',
+  'roomy:[--tool:4rem] md:roomy:[--tool:4.5rem]',
+].join(' ')
+
 const POP_FRAMES: Keyframe[] = [
   { transform: 'scale(1)' },
   { transform: 'scale(1.06)' },
@@ -103,12 +114,12 @@ export function ColoringScreen({ mandala, gardenArtworkId = null, lockedView }: 
   }
 
   return (
-    <main className="flex h-dvh flex-col gap-4 overflow-hidden p-4 md:gap-6 md:p-6 landscape:flex-row">
+    <main className="safe-edge flex h-dvh flex-col gap-3 overflow-hidden [--edge:--spacing(3)] [container-type:size] roomy:gap-4 roomy:[--edge:--spacing(4)] md:roomy:gap-6 md:roomy:[--edge:--spacing(6)] landscape:flex-row">
       <h1 className="sr-only">{`Coloring ${mandala.name}`}</h1>
 
       <nav
         aria-label="Tools"
-        className="flex items-center justify-between gap-4 landscape:order-3 landscape:flex-col"
+        className={`flex items-center justify-between gap-4 landscape:order-3 landscape:flex-col ${TOOL_SIZE}`}
       >
         <div className="flex items-center gap-4 landscape:flex-col">
           <ToolLink
@@ -169,7 +180,7 @@ export function ColoringScreen({ mandala, gardenArtworkId = null, lockedView }: 
         <ColorPalette
           value={tool}
           onChange={setTool}
-          className="self-center landscape:order-1 landscape:flex-col"
+          className="-mx-1.5 self-stretch landscape:order-1 landscape:mx-0 landscape:-my-1.5 landscape:flex-col roomy:mx-0 roomy:self-center landscape:roomy:my-0"
         />
       )}
 

@@ -2,7 +2,10 @@ import Link from 'next/link'
 import type { ComponentProps, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
-/** `inset` sits inside a `bg-secondary` group, so paired buttons read as one unit. */
+/**
+ * `inset` sits inside a `bg-secondary` group, so paired buttons read as one unit. Set `--tool` on a
+ * parent to size the buttons inside it.
+ */
 type Variant = 'primary' | 'secondary' | 'inset'
 
 const VARIANT_CLASS: Record<Variant, string> = {
@@ -13,10 +16,10 @@ const VARIANT_CLASS: Record<Variant, string> = {
 
 export function toolButtonClass(variant: Variant = 'secondary', className?: string) {
   return cn(
-    'tactile flex size-16 shrink-0 items-center justify-center rounded-full outline-none md:size-18',
+    'tactile flex size-(--tool,--spacing(16)) shrink-0 items-center justify-center rounded-full outline-none md:size-(--tool,--spacing(18))',
     'focus-visible:ring-4 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background',
     'disabled:cursor-not-allowed disabled:opacity-35 disabled:shadow-none',
-    '[&_svg]:size-8 [&_svg]:shrink-0',
+    '[&_svg]:size-[calc(var(--tool,--spacing(16))/2)] [&_svg]:shrink-0',
     VARIANT_CLASS[variant],
     className,
   )

@@ -148,7 +148,7 @@ Logic is in `startSession` and `saveSession` in `lib/artwork/library.ts`, used t
 
 ## Palette
 
-- **Children: 12 colors** in six bold/soft pairs (`PALETTE`), with swatches of 64px on tablets and 44px on phones.
+- **Children: 12 colors** in six bold/soft pairs (`PALETTE`), with swatches of 64px on tablets. On phones the palette fills the screen's short side, so swatches are 44–60px (about 39px on a 320px-wide screen, such as Display Zoom). Tablet sizes need both sides of the screen to be 640px or more, so a phone on its side keeps phone sizes (the `roomy` variant).
 - A 24-color adult palette (`GROWN_UP_FAMILIES`) is still in the code for the switched-off adult packs. Children never see it.
 - Color keys never change once shipped, because saved artwork stores them. `ALL_COLORS` holds all 36 keys.
 
@@ -198,7 +198,7 @@ Each page downloads only the outlines it draws (`lib/templates/outlines.ts`). Be
 ## UI and accessibility
 
 - Pure white canvas with bold charcoal outlines. The palette and tools sit on the sides in landscape, and along the bottom and top in portrait.
-- Controls have an icon, an `aria-label` and a focus ring, and are at least 44px on phones and 64px on tablets.
+- Controls have an icon, an `aria-label` and a focus ring, and are at least 44px on phones and 64px on tablets. On the coloring screen, the tool buttons (44–64px) and the palette grow or shrink with the phone's screen so all of them fit.
 - Start over and removing a garden picture both ask first with a big Yes/No dialog.
 - Motion respects `prefers-reduced-motion`. Nunito, light mode only.
 
@@ -254,7 +254,7 @@ Done since 1.0: `20261001120000_fulfil_checkout_race.sql` was applied on 1 Octob
 
 ## Verification
 
-- Click through every route at tablet landscape (1180×820), portrait (820×1180) and phone (390×844).
+- Click through every route at tablet landscape (1180×820), portrait (820×1180) and phone (390×844). On the coloring screen also check 320×568, 360×780, 430×932 and a phone on its side (844×390): every swatch and tool is on screen. Check notches and the home bar on a real iPhone, which headless browsers don't simulate.
 - In Preview (once test keys are back), buy a pack with the test card. It should open without a reload, and appear once in `transactions` and once per pack in `entitlements`. Replaying the webhook must not duplicate anything, and a full refund must lock it again.
 - On production, run the smoke test in next step 1.
 - Locked tiles on children's pages never link to pricing, and the charged amount matches the order summary.

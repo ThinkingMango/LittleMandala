@@ -2,6 +2,9 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
+/* Tablet sizes only when both sides are roomy, so a phone on its side keeps phone sizes. */
+@custom-variant roomy (@media (min-width: 40rem) and (min-height: 40rem));
+
 @theme inline {
   --font-sans: var(--font-nunito), ui-rounded, system-ui, sans-serif;
 
@@ -155,6 +158,12 @@
     transform: translateY(4px);
     box-shadow: 0 2px 0 0 var(--tactile-edge, var(--border));
   }
+}
+
+/* Padding of --edge on every side, or more where a notch or home bar needs it. Set --edge to change it. */
+@utility safe-edge {
+  padding: max(var(--edge), env(safe-area-inset-top)) max(var(--edge), env(safe-area-inset-right))
+    max(var(--edge), env(safe-area-inset-bottom)) max(var(--edge), env(safe-area-inset-left));
 }
 
 /* A pack's crayon, softened for surfaces and deepened for pressed edges. Set --pack on the same element. */
